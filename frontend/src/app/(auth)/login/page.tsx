@@ -4,10 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { Sparkles, Mail, Lock, Loader2, Search } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+
+import { authApi } from "@/api/auth";
 
 interface LoginFormData {
   email: string;
@@ -23,16 +28,46 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormData>();
 
+  const { setAuth } = useAuthStore();
+  const router = useRouter();
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    console.log("Login:", data);
-    setIsLoading(false);
+    try {
+      const response = await authApi.login(data);
+      setAuth(response.user, response.token);
+      router.push("/dashboard");
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      // Bạn có thể dùng toast ở đây để hiện lỗi user-friendly hơn
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsLoading(true);
+      try {
+        const data = await authApi.googleLogin({
+          id_token: tokenResponse.access_token,
+        });
+        console.log(data)
+        setAuth(data.user, data.token);
+        router.push("/");
+      } catch (error: any) {
+        console.error("Google Login Error:", error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => {
+      console.log("Login Failed");
+    },
+  });
+
   const handleGoogleSignIn = () => {
-    console.log("Google Sign In");
+    googleLogin();
   };
 
   return (

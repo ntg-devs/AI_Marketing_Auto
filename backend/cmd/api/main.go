@@ -2,6 +2,7 @@ package main
 
 import (
 	"bityagi/internal/app"
+	"bityagi/internal/domain"
 	"log"
 	"net/http"
 	"os"
@@ -27,6 +28,13 @@ func main() {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
+	}
+
+	// 2.1 Auto Migrate Models
+	log.Println("Running database migrations...")
+	err = db.AutoMigrate(&domain.User{}, &domain.UserCredentials{})
+	if err != nil {
+		log.Fatal("Failed to migrate database:", err)
 	}
 
 	// 3. Environment Configs

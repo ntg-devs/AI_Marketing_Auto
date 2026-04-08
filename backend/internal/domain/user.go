@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -13,18 +14,18 @@ type User struct {
 	AvatarURL       string    `json:"avatar_url"`
 	Role            string    `json:"role" gorm:"default:user"`
 	IsActive        bool      `json:"is_active" gorm:"default:true"`
-	Provider        string    `json:"provider" gorm:"default:credentials"`
-	EmailVerifiedAt *int64    `json:"email_verified_at"`
-	CreatedAt       int64     `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt       int64     `json:"updated_at" gorm:"autoUpdateTime"`
+	Provider        string    `json:"provider" gorm:"default:	"`
+	EmailVerifiedAt *time.Time    `json:"email_verified_at"`
+	CreatedAt       time.Time     `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt       time.Time     `json:"updated_at" gorm:"autoUpdateTime"`
 }
 
 type UserCredentials struct {
 	UserID       uuid.UUID `gorm:"primaryKey"`
 	PasswordHash string
 	OTPCode      string
-	OTPExpiresAt *int64
-	LastLoginAt  *int64
+	OTPExpiresAt *time.Time
+	LastLoginAt  *time.Time
 }
 
 type RegisterRequest struct {
@@ -36,6 +37,10 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
+}
+
+type GoogleLoginRequest struct {
+	IDToken string `json:"id_token" validate:"required"`
 }
 
 type AuthResponse struct {
@@ -55,4 +60,5 @@ type UserRepository interface {
 type UserService interface {
 	Register(ctx context.Context, req *RegisterRequest) (*AuthResponse, error)
 	Login(ctx context.Context, req *LoginRequest) (*AuthResponse, error)
+	GoogleLogin(ctx context.Context, req *GoogleLoginRequest) (*AuthResponse, error)
 }

@@ -13,6 +13,9 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,8 +90,43 @@ export default function RegisterPage() {
     setIsLoading(false);
   };
 
+  const { setAuth } = useAuthStore();
+  const router = useRouter();
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      console.log(tokenResponse);
+      setIsLoading(true);
+      try {
+        // Exchange access token for user info on backend
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/auth/google`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id_token: tokenResponse.access_token, // We'll update backend to handle access token too or rename field
+          }),
+        });
+
+        if (!response.ok) throw new Error("Google login failed");
+
+        const data = await response.json();
+        setAuth(data.user, data.token);
+        router.push("/");
+      } catch (error) {
+        console.error("Google Login Error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => {
+      console.log("Login Failed");
+    },
+  });
+
   const handleGoogleSignUp = () => {
-    console.log("Google Sign Up");
+    googleLogin();
   };
 
   const getPasswordStrengthColor = () => {
