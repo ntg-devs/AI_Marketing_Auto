@@ -1,0 +1,34 @@
+.next/types/app/approval/page.ts(8,13): error TS2344: Type 'OmitWithTag<typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/approval/page"), "metadata" | "default" | "config" | "generateStaticParams" | "revalidate" | "dynamic" | ... 4 more ... | "generateMetadata", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+  Property 'ApprovalPage' is incompatible with index signature.
+    Type '() => Element' is not assignable to type 'never'.
+.next/types/app/approval/page.ts(22,4): error TS2344: Type 'typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/approval/page")' does not satisfy the constraint '{ default: Function; config?: {} | undefined; generateStaticParams?: Function | undefined; revalidate?: false | undefined; dynamic?: "auto" | "error" | "force-dynamic" | "force-static" | undefined; ... 5 more ...; generateMetadata?: Function | undefined; }'.
+.next/types/app/approval/page.ts(22,4): error TS2344: Type 'typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/approval/page")' does not satisfy the constraint '{ default: Function; config?: {} | undefined; generateStaticParams?: Function | undefined; revalidate?: false | undefined; dynamic?: "auto" | "error" | "force-dynamic" | "force-static" | undefined; ... 5 more ...; generateMetadata?: Function | undefined; }'.
+  Property 'default' is missing in type 'typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/approval/page")' but required in type '{ default: Function; config?: {} | undefined; generateStaticParams?: Function | undefined; revalidate?: false | undefined; dynamic?: "auto" | "error" | "force-dynamic" | "force-static" | undefined; ... 5 more ...; generateMetadata?: Function | undefined; }'.
+.next/types/app/approval/page.ts(25,45): error TS2339: Property 'default' does not exist on type 'typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/approval/page")'.
+.next/types/app/distribution/page.ts(2,24): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/distribution/page.tsx' is not a module.
+.next/types/app/distribution/page.ts(5,29): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/distribution/page.tsx' is not a module.
+.next/types/app/intake/page.ts(2,24): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/intake/page.tsx' is not a module.
+.next/types/app/intake/page.ts(5,29): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/intake/page.tsx' is not a module.
+.next/types/app/optimization/page.ts(2,24): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/optimization/page.tsx' is not a module.
+.next/types/app/optimization/page.ts(5,29): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/optimization/page.tsx' is not a module.
+.next/types/app/page.ts(8,13): error TS2344: Type 'OmitWithTag<typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/page"), "metadata" | "default" | "config" | "generateStaticParams" | "revalidate" | "dynamic" | "dynamicParams" | "fetchCache" | "preferredRegion" | "runtime" | "generateMetadata", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+  Property 'DashboardPage' is incompatible with index signature.
+    Type '() => Element' is not assignable to type 'never'.
+.next/types/app/page.ts(22,4): error TS2344: Type 'typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/page")' does not satisfy the constraint '{ default: Function; config?: {} | undefined; generateStaticParams?: Function | undefined; revalidate?: false | undefined; dynamic?: "auto" | "error" | "force-dynamic" | "force-static" | undefined; ... 5 more ...; generateMetadata?: Function | undefined; }'.
+.next/types/app/page.ts(22,4): error TS2344: Type 'typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/page")' does not satisfy the constraint '{ default: Function; config?: {} | undefined; generateStaticParams?: Function | undefined; revalidate?: false | undefined; dynamic?: "auto" | "error" | "force-dynamic" | "force-static" | undefined; ... 5 more ...; generateMetadata?: Function | undefined; }'.
+  Property 'default' is missing in type 'typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/page")' but required in type '{ default: Function; config?: {} | undefined; generateStaticParams?: Function | undefined; revalidate?: false | undefined; dynamic?: "auto" | "error" | "force-dynamic" | "force-static" | undefined; ... 5 more ...; generateMetadata?: Function | undefined; }'.
+.next/types/app/page.ts(25,45): error TS2339: Property 'default' does not exist on type 'typeof import("D:/DevProject_2026/ai_marketing_auto/frontend/src/app/page")'.
+.next/types/app/product/page.ts(2,24): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/product/page.tsx' is not a module.
+.next/types/app/product/page.ts(5,29): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/product/page.tsx' is not a module.
+.next/types/app/research/page.ts(2,24): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/research/page.tsx' is not a module.
+.next/types/app/research/page.ts(5,29): error TS2306: File 'D:/DevProject_2026/ai_marketing_auto/frontend/src/app/research/page.tsx' is not a module.
+src/app/layout.tsx(3,20): error TS2307: Cannot find module '@/components/Navbar' or its corresponding type declarations.
+src/app/layout.tsx(4,20): error TS2307: Cannot find module '@/components/Footer' or its corresponding type declarations.
+src/app/page.tsx(141,15): error TS2322: Type 'Element' is not assignable to type 'ReactNode'.
+  Property 'children' is missing in type 'ReactElement<any, any>' but required in type 'ReactPortal'.
+src/app/page.tsx(151,15): error TS2322: Type 'Element' is not assignable to type 'ReactNode'.
+src/app/page.tsx(152,15): error TS2322: Type 'Element' is not assignable to type 'ReactNode'.
+src/app/page.tsx(153,15): error TS2322: Type 'Element' is not assignable to type 'ReactNode'.
+src/app/page.tsx(154,15): error TS2322: Type 'Element' is not assignable to type 'ReactNode'.
+src/app/page.tsx(161,15): error TS2322: Type 'Element' is not assignable to type 'ReactNode'.
+src/app/page.tsx(169,15): error TS2322: Type 'Element' is not assignable to type 'ReactNode'.

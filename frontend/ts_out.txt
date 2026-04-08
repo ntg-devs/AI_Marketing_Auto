@@ -1,0 +1,47 @@
+src/components/ui/badge.tsx(38,6): error TS2322: Type '{ ref?: LegacyRef<HTMLSpanElement> | undefined; key?: Key | null | undefined; defaultChecked?: boolean | undefined; defaultValue?: string | number | readonly string[] | undefined; ... 260 more ...; className: any; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLSpanElement> | undefined' is not assignable to type 'Ref<HTMLElement> | undefined'.
+      Type 'string' is not assignable to type 'Ref<HTMLElement> | undefined'.
+src/components/ui/breadcrumb.tsx(44,6): error TS2322: Type '{ ref?: LegacyRef<HTMLAnchorElement> | undefined; key?: Key | null | undefined; download?: any; href?: string | undefined; hrefLang?: string | undefined; ... 267 more ...; className: any; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLAnchorElement> | undefined' is not assignable to type 'Ref<HTMLElement> | undefined'.
+      Type 'string' is not assignable to type 'Ref<HTMLElement> | undefined'.
+src/components/ui/button.tsx(50,6): error TS2322: Type '{ ref?: LegacyRef<HTMLButtonElement> | undefined; key?: Key | null | undefined; disabled?: boolean | undefined; form?: string | undefined; formAction?: string | ... 1 more ... | undefined; ... 269 more ...; className: any; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLButtonElement> | undefined' is not assignable to type 'Ref<HTMLElement> | undefined'.
+      Type 'string' is not assignable to type 'Ref<HTMLElement> | undefined'.
+src/components/ui/calendar.tsx(5,27): error TS2307: Cannot find module 'react-day-picker' or its corresponding type declarations.
+src/components/ui/calendar.tsx(63,22): error TS7031: Binding element 'className' implicitly has an 'any' type.
+src/components/ui/calendar.tsx(66,23): error TS7031: Binding element 'className' implicitly has an 'any' type.
+src/components/ui/carousel.tsx(6,8): error TS2307: Cannot find module 'embla-carousel-react' or its corresponding type declarations.
+src/components/ui/carousel.tsx(56,7): error TS2698: Spread types may only be created from object types.
+src/components/ui/carousel.tsx(114,33): error TS2339: Property 'axis' does not exist on type '{}'.
+src/components/ui/chart.tsx(4,36): error TS2307: Cannot find module 'recharts' or its corresponding type declarations.
+src/components/ui/chart.tsx(182,23): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/chart.tsx(182,29): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/ui/chart.tsx(278,21): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/command.tsx(4,45): error TS2307: Cannot find module 'cmdk' or its corresponding type declarations.
+src/components/ui/drawer.tsx(4,43): error TS2307: Cannot find module 'vaul' or its corresponding type declarations.
+src/components/ui/form.tsx(14,8): error TS2307: Cannot find module 'react-hook-form' or its corresponding type declarations.
+src/components/ui/input-otp.tsx(4,43): error TS2307: Cannot find module 'input-otp' or its corresponding type declarations.
+src/components/ui/input-otp.tsx(47,61): error TS2339: Property 'slots' does not exist on type 'string | number | boolean | ServerContextJSONArray | { [key: string]: ServerContextJSONValue; }'.
+  Property 'slots' does not exist on type 'string'.
+src/components/ui/resizable.tsx(5,37): error TS2307: Cannot find module 'react-resizable-panels' or its corresponding type declarations.
+src/components/ui/sidebar.tsx(404,6): error TS2322: Type '{ ref?: LegacyRef<HTMLDivElement> | undefined; key?: Key | null | undefined; defaultChecked?: boolean | undefined; defaultValue?: string | number | readonly string[] | undefined; ... 261 more ...; className: any; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLDivElement> | undefined' is not assignable to type 'Ref<HTMLElement> | undefined'.
+      Type 'string' is not assignable to type 'Ref<HTMLElement> | undefined'.
+src/components/ui/sidebar.tsx(425,6): error TS2322: Type '{ ref?: LegacyRef<HTMLButtonElement> | undefined; key?: Key | null | undefined; disabled?: boolean | undefined; form?: string | undefined; formAction?: string | ... 1 more ... | undefined; ... 270 more ...; className: any; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLButtonElement> | undefined' is not assignable to type 'Ref<HTMLElement> | undefined'.
+src/components/ui/sidebar.tsx(515,6): error TS2322: Type '{ ref?: LegacyRef<HTMLButtonElement> | undefined; key?: Key | null | undefined; disabled?: boolean | undefined; form?: string | undefined; formAction?: string | ... 1 more ... | undefined; ... 272 more ...; className: any; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLButtonElement> | undefined' is not assignable to type 'Ref<HTMLElement> | undefined'.
+src/components/ui/sidebar.tsx(560,6): error TS2322: Type '{ ref?: LegacyRef<HTMLButtonElement> | undefined; key?: Key | null | undefined; disabled?: boolean | undefined; form?: string | undefined; formAction?: string | ... 1 more ... | undefined; ... 270 more ...; className: any; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLButtonElement> | undefined' is not assignable to type 'Ref<HTMLElement> | undefined'.
+src/components/ui/sidebar.tsx(683,6): error TS2322: Type '{ ref?: LegacyRef<HTMLAnchorElement> | undefined; key?: Key | null | undefined; download?: any; href?: string | undefined; hrefLang?: string | undefined; ... 270 more ...; className: any; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLAnchorElement> | undefined' is not assignable to type 'Ref<HTMLElement> | undefined'.
+src/components/ui/sonner.tsx(3,26): error TS2307: Cannot find module 'next-themes' or its corresponding type declarations.
+src/components/ui/utils.ts(2,25): error TS2307: Cannot find module 'tailwind-merge' or its corresponding type declarations.

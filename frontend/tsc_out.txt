@@ -1,0 +1,11 @@
+src/components/ui/chart.tsx(109,3): error TS2339: Property 'payload' does not exist on type 'Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean; allowEscapeViewBox?: AllowInDimension; ... 24 more ...; wrapperStyle?: CSSProperties; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }'.
+src/components/ui/chart.tsx(114,3): error TS2339: Property 'label' does not exist on type 'Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean; allowEscapeViewBox?: AllowInDimension; ... 24 more ...; wrapperStyle?: CSSProperties; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }'.
+src/components/ui/chart.tsx(147,11): error TS2322: Type 'import("D:/DevProject_2026/ai_marketing_auto/frontend/node_modules/recharts/node_modules/@types/react/ts5.0/index").ReactNode' is not assignable to type 'React.ReactNode'.
+  Type 'bigint' is not assignable to type 'ReactNode'.
+src/components/ui/chart.tsx(195,15): error TS2322: Type 'string | number | bigint | boolean | Iterable<ReactNode> | Promise<AwaitedReactNode> | Element' is not assignable to type 'ReactNode'.
+  Type 'bigint' is not assignable to type 'ReactNode'.
+src/components/ui/chart.tsx(260,39): error TS2344: Type '"payload" | "verticalAlign"' does not satisfy the constraint '"string" | "children" | "slot" | "style" | "clipPath" | "filter" | "mask" | "path" | "id" | "className" | "key" | "suppressHydrationWarning" | "lang" | "nonce" | "tabIndex" | "role" | ... 434 more ... | "portal"'.
+  Type '"payload"' is not assignable to type '"string" | "children" | "slot" | "style" | "clipPath" | "filter" | "mask" | "path" | "id" | "className" | "key" | "suppressHydrationWarning" | "lang" | "nonce" | "tabIndex" | "role" | ... 434 more ... | "portal"'.
+src/components/ui/chart.tsx(266,17): error TS2339: Property 'length' does not exist on type 'unknown'.
+src/components/ui/chart.tsx(278,16): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/components/ui/utils.ts(2,25): error TS2307: Cannot find module 'tailwind-merge' or its corresponding type declarations.

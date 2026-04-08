@@ -1,0 +1,7 @@
+src/components/ui/sidebar.tsx(515,6): error TS2322: Type '{ ref?: LegacyRef<HTMLButtonElement>; key?: Key; disabled?: boolean; form?: string; formAction?: string; formEncType?: string; formMethod?: string; formNoValidate?: boolean; ... 268 more ...; className: string; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLButtonElement>' is not assignable to type 'Ref<HTMLElement>'.
+      Type 'string' is not assignable to type 'Ref<HTMLElement>'.
+src/components/ui/sidebar.tsx(560,6): error TS2322: Type '{ ref?: LegacyRef<HTMLButtonElement>; key?: Key; disabled?: boolean; form?: string; formAction?: string; formEncType?: string; formMethod?: string; formNoValidate?: boolean; ... 266 more ...; className: string; }' is not assignable to type 'RefAttributes<HTMLElement>'.
+  Types of property 'ref' are incompatible.
+    Type 'LegacyRef<HTMLButtonElement>' is not assignable to type 'Ref<HTMLElement>'.
