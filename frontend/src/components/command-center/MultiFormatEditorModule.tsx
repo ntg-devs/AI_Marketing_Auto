@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import {
   ResizableHandle,
   ResizablePanel,
@@ -313,7 +313,7 @@ export default function MultiFormatEditorModule() {
           >
             {editorMode === "outline" ? (
               /* Master Outline View */
-              <ScrollArea className="flex-1 scrollbar-custom">
+              <div className="flex-1 overflow-y-auto scrollbar-custom">
                 <div className="p-4 space-y-0.5">
                   {mockOutline.map((section, idx) => {
                     const isCollapsed = collapsedSections.has(section.id);
@@ -357,7 +357,7 @@ export default function MultiFormatEditorModule() {
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
             ) : (
               /* Individual Assets View with TipTap Editor */
               <div className="flex flex-col flex-1 min-h-0">
@@ -443,7 +443,7 @@ export default function MultiFormatEditorModule() {
                     </button>
                   </div>
                 </div>
-                <ScrollArea className="flex-1 scrollbar-custom">
+                <div className="flex-1 overflow-y-auto scrollbar-custom">
                   <div className="p-3">
                     <div
                       className={`mx-auto rounded-xl border border-white/[0.08] overflow-hidden shadow-lg shadow-black/20 transition-all ${
@@ -509,7 +509,7 @@ export default function MultiFormatEditorModule() {
                       </div>
                     </div>
                   </div>
-                </ScrollArea>
+                </div>
               </ResizablePanel>
             </>
           )}
