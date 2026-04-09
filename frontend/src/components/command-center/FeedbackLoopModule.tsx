@@ -40,12 +40,12 @@ export default function FeedbackLoopModule() {
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wider">
+          <h3 className="text-xs font-semibold text-heading/80 uppercase tracking-wider">
             Feedback Loop
           </h3>
           <Badge
             variant="outline"
-            className="text-[9px] px-1.5 py-0 h-4 bg-indigo-500/10 border-indigo-500/20 text-indigo-300"
+            className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 border-primary/20 text-primary"
           >
             <Sparkles className="w-2.5 h-2.5 mr-0.5" />
             Self-optimizing
@@ -56,9 +56,9 @@ export default function FeedbackLoopModule() {
         <div className="flex items-center gap-4">
           {metrics.map((m) => (
             <div key={m.label} className="flex items-center gap-2">
-              <span className="text-[10px] text-slate-500">{m.label}</span>
-              <span className="text-xs text-slate-200 font-semibold">{m.value}</span>
-              <span className="text-[10px] text-emerald-400 font-medium">
+              <span className="text-[10px] text-dim">{m.label}</span>
+              <span className="text-xs text-heading font-semibold">{m.value}</span>
+              <span className="text-[10px] text-emerald-500 font-medium">
                 {m.change}
               </span>
             </div>
@@ -75,8 +75,8 @@ export default function FeedbackLoopModule() {
           >
             <defs>
               <linearGradient id="colorCtr" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
@@ -85,30 +85,31 @@ export default function FeedbackLoopModule() {
             </defs>
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.04)"
+              stroke="var(--grid-stroke)"
               vertical={false}
             />
             <XAxis
               dataKey="name"
-              stroke="rgba(255,255,255,0.15)"
+              stroke="var(--axis-stroke)"
               fontSize={10}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              stroke="rgba(255,255,255,0.15)"
+              stroke="var(--axis-stroke)"
               fontSize={10}
               tickLine={false}
               axisLine={false}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#16161f',
-                border: '1px solid rgba(255,255,255,0.08)',
+                backgroundColor: 'var(--tooltip-bg)',
+                border: '1px solid var(--tooltip-border)',
                 borderRadius: '8px',
                 fontSize: '11px',
+                color: 'var(--text-secondary)',
               }}
-              labelStyle={{ color: '#94a3b8', fontSize: '10px' }}
+              labelStyle={{ color: 'var(--text-tertiary)', fontSize: '10px' }}
             />
             <Area
               type="monotone"
@@ -122,15 +123,15 @@ export default function FeedbackLoopModule() {
             <Area
               type="monotone"
               dataKey="ctr"
-              stroke="#6366f1"
+              stroke="var(--primary)"
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#colorCtr)"
               dot={false}
               activeDot={{
                 r: 3,
-                fill: '#6366f1',
-                stroke: '#0a0a0f',
+                fill: 'var(--primary)',
+                stroke: 'var(--background)',
                 strokeWidth: 2,
               }}
             />

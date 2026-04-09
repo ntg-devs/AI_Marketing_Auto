@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,6 +11,7 @@ module.exports = {
       colors: {
         border: 'var(--border)',
         input: 'var(--input)',
+        'input-background': 'var(--input-background)',
         ring: 'var(--ring)',
         background: 'var(--background)',
         foreground: 'var(--foreground)',
@@ -36,6 +38,12 @@ module.exports = {
         'card-foreground': 'var(--card-foreground)',
 
         'switch-background': 'var(--switch-background)',
+
+        /* Extended surface tokens — theme-aware */
+        'surface-0': 'var(--surface-0)',
+        'surface-1': 'var(--surface-1)',
+        'surface-2': 'var(--surface-2)',
+        'surface-3': 'var(--surface-3)',
       },
 
       borderRadius: {

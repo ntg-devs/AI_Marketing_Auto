@@ -237,20 +237,20 @@ export default function MultiFormatEditorModule() {
   return (
     <div className="flex flex-col h-full">
       {/* Module Header */}
-      <div className="px-4 py-2 border-b border-white/[0.06] bg-[#0c0c14]/60">
+      <div className="px-4 py-2 border-b border-default bg-surface-1/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-heading/80 uppercase tracking-wider">
               Editor
             </h3>
             {/* Mode Toggle */}
-            <div className="flex bg-white/[0.03] rounded-md p-0.5">
+            <div className="flex bg-surface-hover rounded-md p-0.5">
               <button
                 onClick={() => setEditorMode("outline")}
                 className={`flex items-center gap-1 px-2 py-1 rounded-[5px] text-[10px] font-medium transition-all ${
                   editorMode === "outline"
-                    ? "bg-indigo-500/20 text-indigo-300"
-                    : "text-slate-500 hover:text-slate-300"
+                    ? "bg-primary/20 text-primary"
+                    : "text-dim hover:text-body"
                 }`}
               >
                 <LayoutList className="w-3 h-3" />
@@ -260,8 +260,8 @@ export default function MultiFormatEditorModule() {
                 onClick={() => setEditorMode("assets")}
                 className={`flex items-center gap-1 px-2 py-1 rounded-[5px] text-[10px] font-medium transition-all ${
                   editorMode === "assets"
-                    ? "bg-indigo-500/20 text-indigo-300"
-                    : "text-slate-500 hover:text-slate-300"
+                    ? "bg-primary/20 text-primary"
+                    : "text-dim hover:text-body"
                 }`}
               >
                 <AlignLeft className="w-3 h-3" />
@@ -272,13 +272,13 @@ export default function MultiFormatEditorModule() {
 
           <div className="flex items-center gap-1.5">
             {editorMode === "assets" && (
-              <span className="text-[10px] text-slate-600 mr-2">
+              <span className="text-[10px] text-faint mr-2">
                 {wordCount} words
               </span>
             )}
             <Button
               size="sm"
-              className="h-6 px-2.5 text-[10px] bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border-0"
+              className="h-6 px-2.5 text-[10px] bg-primary/15 hover:bg-primary/25 text-primary border-0"
             >
               <Sparkles className="w-3 h-3 mr-1" />
               AI Rewrite
@@ -288,8 +288,8 @@ export default function MultiFormatEditorModule() {
               variant="ghost"
               className={`h-6 px-2.5 text-[10px] ${
                 showPreview
-                  ? "bg-white/[0.08] text-white"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-surface-active text-heading"
+                  : "text-label hover:text-heading"
               }`}
               onClick={() => setShowPreview(!showPreview)}
             >
@@ -308,7 +308,7 @@ export default function MultiFormatEditorModule() {
             defaultSize="65%"
             minSize="40%"
             className={`flex flex-col min-w-0 ${
-              showPreview ? "border-r border-white/[0.06]" : ""
+              showPreview ? "border-r border-default" : ""
             }`}
           >
             {editorMode === "outline" ? (
@@ -320,21 +320,21 @@ export default function MultiFormatEditorModule() {
                     return (
                       <div key={section.id} className="group">
                         <div
-                          className="flex items-start gap-1.5 py-2 px-2 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer"
+                          className="flex items-start gap-1.5 py-2 px-2 rounded-lg hover:bg-surface-hover transition-colors cursor-pointer"
                           onClick={() => toggleCollapse(section.id)}
                         >
-                          <button className="mt-0.5 shrink-0 text-slate-600 hover:text-slate-300">
+                          <button className="mt-0.5 shrink-0 text-faint hover:text-body">
                             {isCollapsed ? (
                               <ChevronRight className="w-3.5 h-3.5" />
                             ) : (
                               <ChevronDown className="w-3.5 h-3.5" />
                             )}
                           </button>
-                          <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
-                          <span className="text-[10px] text-indigo-400/60 font-mono mt-0.5 shrink-0 w-4">
+                          <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-ghost opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+                          <span className="text-[10px] text-primary/60 font-mono mt-0.5 shrink-0 w-4">
                             {idx + 1}.
                           </span>
-                          <p className="text-[13px] text-slate-200 font-medium leading-relaxed">
+                          <p className="text-[13px] text-heading font-medium leading-relaxed">
                             {section.text}
                           </p>
                         </div>
@@ -342,13 +342,13 @@ export default function MultiFormatEditorModule() {
                           section.children.map((child, cIdx) => (
                             <div
                               key={child.id}
-                              className="flex items-start gap-1.5 py-1.5 px-2 pl-12 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer group/child"
+                              className="flex items-start gap-1.5 py-1.5 px-2 pl-12 rounded-lg hover:bg-surface-hover transition-colors cursor-pointer group/child"
                             >
-                              <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-slate-700 opacity-0 group-hover/child:opacity-100 transition-opacity cursor-grab" />
-                              <span className="text-[10px] text-slate-600 font-mono mt-0.5 shrink-0">
+                              <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-ghost opacity-0 group-hover/child:opacity-100 transition-opacity cursor-grab" />
+                              <span className="text-[10px] text-faint font-mono mt-0.5 shrink-0">
                                 {idx + 1}.{cIdx + 1}
                               </span>
-                              <p className="text-xs text-slate-400 leading-relaxed">
+                              <p className="text-xs text-label leading-relaxed">
                                 {child.text}
                               </p>
                             </div>
@@ -362,7 +362,7 @@ export default function MultiFormatEditorModule() {
               /* Individual Assets View with TipTap Editor */
               <div className="flex flex-col flex-1 min-h-0">
                 {/* Platform Tabs */}
-                <div className="flex items-center gap-1 px-3 py-1.5 border-b border-white/[0.06] bg-[#0c0c14]/30 shrink-0">
+                <div className="flex items-center gap-1 px-3 py-1.5 border-b border-default bg-surface-1/30 shrink-0">
                   {(Object.keys(platformConfigs) as Platform[]).map((p) => {
                     const cfg = platformConfigs[p];
                     const PIcon = cfg.icon;
@@ -372,8 +372,8 @@ export default function MultiFormatEditorModule() {
                         onClick={() => setSelectedPlatform(p)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
                           selectedPlatform === p
-                            ? "bg-indigo-500/15 text-indigo-300 shadow-sm shadow-indigo-500/5"
-                            : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.04]"
+                            ? "bg-primary/15 text-primary shadow-sm"
+                            : "text-dim hover:text-body hover:bg-surface-hover"
                         }`}
                       >
                         <PIcon
@@ -408,25 +408,25 @@ export default function MultiFormatEditorModule() {
             <>
               <ResizableHandle 
                 withHandle 
-                className="bg-white/5 data-[panel-group-direction=vertical]:h-px w-px hover:bg-indigo-500/30 transition-all"
+                className="bg-surface-hover w-px hover:bg-primary/30 transition-all"
               />
               <ResizablePanel
                 defaultSize="35%"
                 minSize="25%"
                 maxSize="50%"
-                className="min-w-0 flex flex-col bg-[#0c0c14]/30"
+                className="min-w-0 flex flex-col bg-surface-1/30"
               >
-                <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between shrink-0">
-                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                <div className="px-3 py-2 border-b border-default flex items-center justify-between shrink-0">
+                  <span className="text-[10px] text-dim font-medium uppercase tracking-wider">
                     Live Preview
                   </span>
-                  <div className="flex bg-white/[0.03] rounded-md p-0.5">
+                  <div className="flex bg-surface-hover rounded-md p-0.5">
                     <button
                       onClick={() => setPreviewDevice("desktop")}
                       className={`p-1 rounded-[4px] transition-colors ${
                         previewDevice === "desktop"
-                          ? "bg-white/[0.08] text-slate-200"
-                          : "text-slate-500 hover:text-slate-300"
+                          ? "bg-surface-active text-heading"
+                          : "text-dim hover:text-body"
                       }`}
                     >
                       <Monitor className="w-3.5 h-3.5" />
@@ -435,8 +435,8 @@ export default function MultiFormatEditorModule() {
                       onClick={() => setPreviewDevice("mobile")}
                       className={`p-1 rounded-[4px] transition-colors ${
                         previewDevice === "mobile"
-                          ? "bg-white/[0.08] text-slate-200"
-                          : "text-slate-500 hover:text-slate-300"
+                          ? "bg-surface-active text-heading"
+                          : "text-dim hover:text-body"
                       }`}
                     >
                       <Smartphone className="w-3.5 h-3.5" />
@@ -446,41 +446,41 @@ export default function MultiFormatEditorModule() {
                 <div className="flex-1 overflow-y-auto scrollbar-custom">
                   <div className="p-3">
                     <div
-                      className={`mx-auto rounded-xl border border-white/[0.08] overflow-hidden shadow-lg shadow-black/20 transition-all ${
+                      className={`mx-auto rounded-xl border border-strong overflow-hidden shadow-lg transition-all ${
                         previewDevice === "mobile" ? "max-w-[240px]" : "w-full"
                       }`}
                     >
                       {/* Platform Header Bar */}
-                      <div className="bg-white/[0.03] px-3 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
+                      <div className="bg-surface-hover px-3 py-2.5 border-b border-default flex items-center gap-2">
                         {(() => {
                           const PIcon = currentConfig.icon;
                           return (
                             <PIcon className={`w-4 h-4 ${currentConfig.color}`} />
                           );
                         })()}
-                        <span className="text-[11px] text-slate-300 font-medium">
+                        <span className="text-[11px] text-body font-medium">
                           {currentConfig.title}
                         </span>
                         <Badge
                           variant="outline"
-                          className="ml-auto text-[8px] px-1.5 py-0 h-4 border-white/[0.08] text-slate-500"
+                          className="ml-auto text-[8px] px-1.5 py-0 h-4 border-default text-dim"
                         >
                           Draft
                         </Badge>
                       </div>
 
                       {/* Author Section */}
-                      <div className="px-4 pt-3 pb-2 flex items-center gap-2.5 border-b border-white/[0.04]">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center shrink-0">
-                          <span className="text-[10px] text-indigo-300 font-semibold">
+                      <div className="px-4 pt-3 pb-2 flex items-center gap-2.5 border-b border-subtle">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-purple-500/30 flex items-center justify-center shrink-0">
+                          <span className="text-[10px] text-primary font-semibold">
                             AF
                           </span>
                         </div>
                         <div>
-                          <p className="text-[11px] text-slate-200 font-medium">
+                          <p className="text-[11px] text-heading font-medium">
                             AetherFlow
                           </p>
-                          <p className="text-[9px] text-slate-600">
+                          <p className="text-[9px] text-faint">
                             Just now · Draft Preview
                           </p>
                         </div>
@@ -501,7 +501,7 @@ export default function MultiFormatEditorModule() {
                       />
 
                       {/* Engagement Mockup */}
-                      <div className="px-4 py-2.5 border-t border-white/[0.06] flex items-center justify-between text-[9px] text-slate-600">
+                      <div className="px-4 py-2.5 border-t border-default flex items-center justify-between text-[9px] text-faint">
                         <span>👍 Like</span>
                         <span>💬 Comment</span>
                         <span>🔄 Share</span>

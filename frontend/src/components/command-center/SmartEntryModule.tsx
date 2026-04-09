@@ -38,10 +38,10 @@ const voiceProfiles = [
 ];
 
 const tagColors: Record<ContextTag['type'], string> = {
-  topic: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/20',
-  audience: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20',
-  tone: 'bg-amber-500/15 text-amber-300 border-amber-500/20',
-  platform: 'bg-sky-500/15 text-sky-300 border-sky-500/20',
+  topic: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-500/20',
+  audience: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/20',
+  tone: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/20',
+  platform: 'bg-sky-500/15 text-sky-600 dark:text-sky-300 border-sky-500/20',
 };
 
 export default function SmartEntryModule() {
@@ -82,25 +82,25 @@ export default function SmartEntryModule() {
   return (
     <div className="flex flex-col h-full">
       {/* Module Header */}
-      <div className="px-4 py-3 border-b border-white/[0.06]">
-        <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wider">
+      <div className="px-4 py-3 border-b border-default">
+        <h3 className="text-xs font-semibold text-heading/80 uppercase tracking-wider">
           Smart Entry
         </h3>
-        <p className="text-[10px] text-slate-500 mt-0.5">Input & Context</p>
+        <p className="text-[10px] text-dim mt-0.5">Input & Context</p>
       </div>
 
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-3">
           {/* Input Mode Tabs */}
-          <div className="flex bg-white/[0.03] rounded-lg p-0.5">
+          <div className="flex bg-surface-hover rounded-lg p-0.5">
             {modes.map((m) => (
               <button
                 key={m.key}
                 onClick={() => setInputMode(m.key)}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-medium transition-all ${
                   inputMode === m.key
-                    ? 'bg-indigo-500/20 text-indigo-300'
-                    : 'text-slate-500 hover:text-slate-300'
+                    ? 'bg-primary/20 text-primary'
+                    : 'text-dim hover:text-body'
                 }`}
               >
                 <m.icon className="w-3 h-3" />
@@ -113,8 +113,8 @@ export default function SmartEntryModule() {
           <div
             className={`relative rounded-lg border transition-all ${
               isDragOver
-                ? 'border-indigo-500/50 bg-indigo-500/[0.05]'
-                : 'border-white/[0.08] bg-white/[0.02]'
+                ? 'border-primary/50 bg-primary/[0.05]'
+                : 'border-default bg-surface-hover'
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -125,14 +125,14 @@ export default function SmartEntryModule() {
           >
             {inputMode === 'file' ? (
               <div className="p-4 text-center">
-                <Upload className="w-5 h-5 text-slate-500 mx-auto mb-1.5" />
-                <p className="text-[10px] text-slate-400">
+                <Upload className="w-5 h-5 text-dim mx-auto mb-1.5" />
+                <p className="text-[10px] text-label">
                   Drop file or click to upload
                 </p>
                 {inputValue && (
                   <Badge
                     variant="secondary"
-                    className="mt-2 text-[10px] bg-white/[0.06] border-white/[0.08] text-slate-300"
+                    className="mt-2 text-[10px] bg-surface-active border-default text-body"
                   >
                     {inputValue}
                     <X
@@ -154,11 +154,11 @@ export default function SmartEntryModule() {
                       ? 'Paste URL to analyze...'
                       : 'Enter keywords, topics...'
                   }
-                  className="flex-1 bg-transparent text-xs text-slate-200 placeholder:text-slate-600 px-3 py-2.5 outline-none"
+                  className="flex-1 bg-transparent text-xs text-body placeholder:text-faint px-3 py-2.5 outline-none"
                 />
                 <Button
                   size="sm"
-                  className="h-6 px-2 mr-1.5 text-[10px] bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border-0"
+                  className="h-6 px-2 mr-1.5 text-[10px] bg-primary/20 hover:bg-primary/30 text-primary border-0"
                   onClick={handleAnalyze}
                   disabled={isAnalyzing || !inputValue.trim()}
                 >
@@ -173,11 +173,11 @@ export default function SmartEntryModule() {
           </div>
 
           {/* Brand Voice DNA Toggle */}
-          <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+          <div className="rounded-lg border border-default bg-surface-hover p-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Dna className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="text-[11px] font-medium text-slate-300">
+                <Dna className="w-3.5 h-3.5 text-primary" />
+                <span className="text-[11px] font-medium text-body">
                   Brand Voice DNA
                 </span>
               </div>
@@ -189,7 +189,7 @@ export default function SmartEntryModule() {
             </div>
             {brandVoiceOn && (
               <div className="mt-1">
-                <button className="w-full flex items-center justify-between text-[10px] text-slate-400 bg-white/[0.03] rounded-md px-2.5 py-1.5 hover:bg-white/[0.05] transition-colors">
+                <button className="w-full flex items-center justify-between text-[10px] text-label bg-surface-hover rounded-md px-2.5 py-1.5 hover:bg-surface-active transition-colors">
                   <span>{selectedVoice}</span>
                   <ChevronDown className="w-3 h-3 opacity-50" />
                 </button>
@@ -200,7 +200,7 @@ export default function SmartEntryModule() {
           {/* Context Window Master - Tags */}
           {contextTags.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
+              <h4 className="text-[10px] font-medium text-dim uppercase tracking-wider">
                 Context Window
               </h4>
               <div className="flex flex-wrap gap-1.5">
@@ -223,15 +223,15 @@ export default function SmartEntryModule() {
 
           {/* Analyzing State */}
           {isAnalyzing && (
-            <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/[0.05] p-3">
+            <div className="rounded-lg border border-primary/20 bg-primary/[0.05] p-3">
               <div className="flex items-center gap-2">
-                <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
-                <span className="text-[11px] text-indigo-300">
+                <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                <span className="text-[11px] text-primary">
                   Analyzing context...
                 </span>
               </div>
-              <div className="mt-2 h-1 bg-white/[0.04] rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-500/40 rounded-full animate-pulse w-2/3" />
+              <div className="mt-2 h-1 bg-surface-hover rounded-full overflow-hidden">
+                <div className="h-full bg-primary/40 rounded-full animate-pulse w-2/3" />
               </div>
             </div>
           )}

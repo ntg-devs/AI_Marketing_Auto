@@ -113,163 +113,46 @@ const mockJobAlerts: JobAlert[] = [
 ];
 
 const mockServices: SystemService[] = [
-  {
-    id: '1',
-    name: 'Redis Cache',
-    status: 'healthy',
-    latency: '0.8ms',
-    uptime: '99.98%',
-    lastCheck: '10s ago',
-  },
-  {
-    id: '2',
-    name: 'BullMQ Workers',
-    status: 'healthy',
-    latency: '12ms',
-    uptime: '99.95%',
-    lastCheck: '10s ago',
-  },
-  {
-    id: '3',
-    name: 'Meta Graph API',
-    status: 'healthy',
-    latency: '145ms',
-    uptime: '99.90%',
-    lastCheck: '30s ago',
-  },
-  {
-    id: '4',
-    name: 'LinkedIn API',
-    status: 'degraded',
-    latency: '890ms',
-    uptime: '98.50%',
-    lastCheck: '30s ago',
-  },
-  {
-    id: '5',
-    name: 'OpenAI API',
-    status: 'healthy',
-    latency: '320ms',
-    uptime: '99.70%',
-    lastCheck: '1 min ago',
-  },
-  {
-    id: '6',
-    name: 'TikTok API',
-    status: 'down',
-    latency: '—',
-    uptime: '95.20%',
-    lastCheck: '2 min ago',
-  },
+  { id: '1', name: 'Redis Cache', status: 'healthy', latency: '0.8ms', uptime: '99.98%', lastCheck: '10s ago' },
+  { id: '2', name: 'BullMQ Workers', status: 'healthy', latency: '12ms', uptime: '99.95%', lastCheck: '10s ago' },
+  { id: '3', name: 'Meta Graph API', status: 'healthy', latency: '145ms', uptime: '99.90%', lastCheck: '30s ago' },
+  { id: '4', name: 'LinkedIn API', status: 'degraded', latency: '890ms', uptime: '98.50%', lastCheck: '30s ago' },
+  { id: '5', name: 'OpenAI API', status: 'healthy', latency: '320ms', uptime: '99.70%', lastCheck: '1 min ago' },
+  { id: '6', name: 'TikTok API', status: 'down', latency: '—', uptime: '95.20%', lastCheck: '2 min ago' },
 ];
 
 const mockFeedbackTriggers: FeedbackTrigger[] = [
-  {
-    id: '1',
-    title: 'Weekly Performance Report',
-    description: 'AI Agent analyzed 7-day engagement across LinkedIn & Facebook',
-    triggerDate: 'Apr 08, 2026',
-    daysRange: '7 days',
-    status: 'completed',
-    improvement: '+12% CTR vs previous cycle',
-  },
-  {
-    id: '2',
-    title: 'Bi-weekly Optimization',
-    description: 'Full content strategy recalibration based on 14-day data',
-    triggerDate: 'Apr 15, 2026',
-    daysRange: '14 days',
-    status: 'pending',
-  },
-  {
-    id: '3',
-    title: 'Content A/B Test Results',
-    description: 'Variant analysis for LinkedIn post formats — carousel vs article',
-    triggerDate: 'Apr 10, 2026',
-    daysRange: '7 days',
-    status: 'ready',
-    improvement: 'Carousel +34% engagement',
-  },
+  { id: '1', title: 'Weekly Performance Report', description: 'AI Agent analyzed 7-day engagement across LinkedIn & Facebook', triggerDate: 'Apr 08, 2026', daysRange: '7 days', status: 'completed', improvement: '+12% CTR vs previous cycle' },
+  { id: '2', title: 'Bi-weekly Optimization', description: 'Full content strategy recalibration based on 14-day data', triggerDate: 'Apr 15, 2026', daysRange: '14 days', status: 'pending' },
+  { id: '3', title: 'Content A/B Test Results', description: 'Variant analysis for LinkedIn post formats — carousel vs article', triggerDate: 'Apr 10, 2026', daysRange: '7 days', status: 'ready', improvement: 'Carousel +34% engagement' },
 ];
 
 /* ─── Config Maps ──────────────────────────────────────────────────── */
 
-const jobTypeConfig: Record<
-  JobAlertType,
-  { icon: typeof FileText; color: string }
-> = {
-  crawl: { icon: Database, color: 'text-cyan-400' },
-  llm: { icon: Sparkles, color: 'text-indigo-400' },
-  image: { icon: Image, color: 'text-amber-400' },
-  publish: { icon: TrendingUp, color: 'text-emerald-400' },
+const jobTypeConfig: Record<JobAlertType, { icon: typeof FileText; color: string }> = {
+  crawl: { icon: Database, color: 'text-cyan-500' },
+  llm: { icon: Sparkles, color: 'text-primary' },
+  image: { icon: Image, color: 'text-amber-500' },
+  publish: { icon: TrendingUp, color: 'text-emerald-500' },
 };
 
-const jobStatusConfig: Record<
-  JobAlertStatus,
-  { color: string; bgColor: string; label: string }
-> = {
-  completed: {
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10 border-emerald-500/15',
-    label: 'Done',
-  },
-  processing: {
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/10 border-amber-500/15',
-    label: 'Running',
-  },
-  failed: {
-    color: 'text-red-400',
-    bgColor: 'bg-red-500/10 border-red-500/15',
-    label: 'Failed',
-  },
-  queued: {
-    color: 'text-slate-400',
-    bgColor: 'bg-white/[0.03] border-white/[0.06]',
-    label: 'Queued',
-  },
+const jobStatusConfig: Record<JobAlertStatus, { color: string; bgColor: string; label: string }> = {
+  completed: { color: 'text-emerald-500', bgColor: 'bg-emerald-500/10 border-emerald-500/15', label: 'Done' },
+  processing: { color: 'text-amber-500', bgColor: 'bg-amber-500/10 border-amber-500/15', label: 'Running' },
+  failed: { color: 'text-red-500', bgColor: 'bg-red-500/10 border-red-500/15', label: 'Failed' },
+  queued: { color: 'text-gray-400', bgColor: 'bg-surface-hover border-default', label: 'Queued' },
 };
 
-const healthConfig: Record<
-  HealthStatus,
-  { color: string; dotColor: string; label: string }
-> = {
-  healthy: {
-    color: 'text-emerald-400',
-    dotColor: 'bg-emerald-400',
-    label: 'Healthy',
-  },
-  degraded: {
-    color: 'text-amber-400',
-    dotColor: 'bg-amber-400',
-    label: 'Degraded',
-  },
-  down: {
-    color: 'text-red-400',
-    dotColor: 'bg-red-400',
-    label: 'Down',
-  },
+const healthConfig: Record<HealthStatus, { color: string; dotColor: string; label: string }> = {
+  healthy: { color: 'text-emerald-500', dotColor: 'bg-emerald-400', label: 'Healthy' },
+  degraded: { color: 'text-amber-500', dotColor: 'bg-amber-400', label: 'Degraded' },
+  down: { color: 'text-red-500', dotColor: 'bg-red-400', label: 'Down' },
 };
 
-const feedbackStatusConfig: Record<
-  FeedbackTrigger['status'],
-  { color: string; bgColor: string; label: string }
-> = {
-  completed: {
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10 border-emerald-500/15',
-    label: 'Completed',
-  },
-  pending: {
-    color: 'text-slate-400',
-    bgColor: 'bg-white/[0.03] border-white/[0.06]',
-    label: 'Scheduled',
-  },
-  ready: {
-    color: 'text-indigo-300',
-    bgColor: 'bg-indigo-500/10 border-indigo-500/15',
-    label: 'Ready',
-  },
+const feedbackStatusConfig: Record<FeedbackTrigger['status'], { color: string; bgColor: string; label: string }> = {
+  completed: { color: 'text-emerald-500', bgColor: 'bg-emerald-500/10 border-emerald-500/15', label: 'Completed' },
+  pending: { color: 'text-gray-400', bgColor: 'bg-surface-hover border-default', label: 'Scheduled' },
+  ready: { color: 'text-primary', bgColor: 'bg-primary/10 border-primary/15', label: 'Ready' },
 };
 
 /* ─── Component ────────────────────────────────────────────────────── */
@@ -288,11 +171,11 @@ export default function NotificationCenterPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Panel Header */}
-      <div className="px-5 py-4 border-b border-white/[0.06] shrink-0">
+      <div className="px-5 py-4 border-b border-default shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="relative">
             <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
-              <Bell className="w-3.5 h-3.5 text-amber-400" />
+              <Bell className="w-3.5 h-3.5 text-amber-500" />
             </div>
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full flex items-center justify-center text-[7px] text-white font-bold">
@@ -301,10 +184,10 @@ export default function NotificationCenterPanel() {
             )}
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-white/90 tracking-tight">
+            <h2 className="text-sm font-semibold text-heading tracking-tight">
               Notification Center
             </h2>
-            <p className="text-[10px] text-slate-500 mt-0.5">
+            <p className="text-[10px] text-dim mt-0.5">
               Real-time Operations Status
             </p>
           </div>
@@ -314,24 +197,24 @@ export default function NotificationCenterPanel() {
       {/* Tabs */}
       <Tabs defaultValue="jobs" className="flex-1 flex flex-col min-h-0">
         <div className="px-4 pt-3 shrink-0">
-          <TabsList className="w-full bg-white/[0.03] h-8 rounded-lg p-0.5">
+          <TabsList className="w-full bg-surface-hover h-8 rounded-lg p-0.5">
             <TabsTrigger
               value="jobs"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-300 data-[state=active]:border-transparent text-slate-500"
+              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-300 data-[state=active]:border-transparent text-dim"
             >
               <Activity className="w-3 h-3 mr-1" />
               Jobs
             </TabsTrigger>
             <TabsTrigger
               value="health"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-300 data-[state=active]:border-transparent text-slate-500"
+              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-300 data-[state=active]:border-transparent text-dim"
             >
               <Server className="w-3 h-3 mr-1" />
               Health
             </TabsTrigger>
             <TabsTrigger
               value="feedback"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-300 data-[state=active]:border-transparent text-slate-500"
+              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-300 data-[state=active]:border-transparent text-dim"
             >
               <RotateCcw className="w-3 h-3 mr-1" />
               Feedback
@@ -343,22 +226,20 @@ export default function NotificationCenterPanel() {
         <TabsContent value="jobs" className="flex-1 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-2">
-              {/* Controls */}
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[9px] text-slate-500">
+                <span className="text-[9px] text-dim">
                   {alerts.length} background jobs
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={clearCompleted}
-                  className="h-5 px-1.5 text-[9px] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
+                  className="h-5 px-1.5 text-[9px] text-dim hover:text-body hover:bg-surface-hover"
                 >
                   Clear done
                 </Button>
               </div>
 
-              {/* Job Alerts */}
               {alerts.map((alert) => {
                 const typeConfig = jobTypeConfig[alert.type];
                 const stConfig = jobStatusConfig[alert.status];
@@ -378,32 +259,29 @@ export default function NotificationCenterPanel() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <p className="text-[11px] font-medium text-slate-200 truncate">
+                          <p className="text-[11px] font-medium text-heading truncate">
                             {alert.title}
                           </p>
                           <Badge
                             variant="outline"
-                            className={`text-[7px] px-1 py-0 h-3.5 border-white/[0.08] ${stConfig.color} shrink-0 ml-2`}
+                            className={`text-[7px] px-1 py-0 h-3.5 border-default ${stConfig.color} shrink-0 ml-2`}
                           >
                             {stConfig.label}
                           </Badge>
                         </div>
-                        <p className="text-[9px] text-slate-500 mt-0.5 leading-relaxed">
+                        <p className="text-[9px] text-dim mt-0.5 leading-relaxed">
                           {alert.description}
                         </p>
 
-                        {/* Progress bar for processing jobs */}
                         {alert.status === 'processing' && alert.progress && (
                           <div className="mt-2">
                             <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-[8px] text-slate-600">
-                                Progress
-                              </span>
-                              <span className="text-[8px] text-amber-400 tabular-nums font-medium">
+                              <span className="text-[8px] text-faint">Progress</span>
+                              <span className="text-[8px] text-amber-500 tabular-nums font-medium">
                                 {alert.progress}%
                               </span>
                             </div>
-                            <div className="h-0.5 bg-white/[0.04] rounded-full overflow-hidden">
+                            <div className="h-0.5 bg-surface-hover rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-amber-400/60 rounded-full transition-all duration-700"
                                 style={{ width: `${alert.progress}%` }}
@@ -412,18 +290,17 @@ export default function NotificationCenterPanel() {
                           </div>
                         )}
 
-                        {/* Retry button for failed jobs */}
                         {alert.status === 'failed' && (
                           <Button
                             size="sm"
-                            className="h-5 px-2 mt-2 text-[9px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                            className="h-5 px-2 mt-2 text-[9px] bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
                           >
                             <RefreshCw className="w-2.5 h-2.5 mr-0.5" />
                             Retry
                           </Button>
                         )}
 
-                        <span className="text-[8px] text-slate-600 block mt-1.5">
+                        <span className="text-[8px] text-faint block mt-1.5">
                           {alert.timestamp}
                         </span>
                       </div>
@@ -439,97 +316,47 @@ export default function NotificationCenterPanel() {
         <TabsContent value="health" className="flex-1 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-3">
-              {/* Overall Status */}
-              <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="rounded-lg border border-default bg-surface-hover p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
-                    <Cpu className="w-3 h-3 text-indigo-400" />
-                    <span className="text-[10px] font-medium text-slate-300">
-                      System Overview
-                    </span>
+                    <Cpu className="w-3 h-3 text-primary" />
+                    <span className="text-[10px] font-medium text-body">System Overview</span>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className="text-[8px] px-1.5 py-0 h-3.5 bg-amber-500/10 border-amber-500/20 text-amber-300"
-                  >
+                  <Badge variant="outline" className="text-[8px] px-1.5 py-0 h-3.5 bg-amber-500/10 border-amber-500/20 text-amber-500">
                     <AlertTriangle className="w-2 h-2 mr-0.5" />
                     1 Issue
                   </Badge>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {(['healthy', 'degraded', 'down'] as const).map((status) => {
-                    const count = mockServices.filter(
-                      (s) => s.status === status
-                    ).length;
+                    const count = mockServices.filter((s) => s.status === status).length;
                     const cfg = healthConfig[status];
                     return (
-                      <div
-                        key={status}
-                        className="text-center py-1.5 rounded-md bg-white/[0.03]"
-                      >
-                        <span
-                          className={`text-sm font-semibold tabular-nums ${cfg.color}`}
-                        >
-                          {count}
-                        </span>
-                        <p className="text-[8px] text-slate-500 mt-0.5">
-                          {cfg.label}
-                        </p>
+                      <div key={status} className="text-center py-1.5 rounded-md bg-surface-hover">
+                        <span className={`text-sm font-semibold tabular-nums ${cfg.color}`}>{count}</span>
+                        <p className="text-[8px] text-dim mt-0.5">{cfg.label}</p>
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Services List */}
               <div className="space-y-1.5">
                 {mockServices.map((service) => {
                   const cfg = healthConfig[service.status];
                   return (
-                    <div
-                      key={service.id}
-                      className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5 hover:bg-white/[0.04] transition-colors"
-                    >
+                    <div key={service.id} className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${cfg.dotColor} ${
-                              service.status === 'degraded'
-                                ? 'animate-pulse'
-                                : ''
-                            }`}
-                          />
-                          <span className="text-[11px] font-medium text-slate-200">
-                            {service.name}
-                          </span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotColor} ${service.status === 'degraded' ? 'animate-pulse' : ''}`} />
+                          <span className="text-[11px] font-medium text-heading">{service.name}</span>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className={`text-[7px] px-1 py-0 h-3 border-white/[0.08] ${cfg.color}`}
-                        >
-                          {cfg.label}
-                        </Badge>
+                        <Badge variant="outline" className={`text-[7px] px-1 py-0 h-3 border-default ${cfg.color}`}>{cfg.label}</Badge>
                       </div>
-                      <div className="flex items-center gap-3 mt-1.5 text-[9px] text-slate-600">
-                        <span>
-                          Latency:{' '}
-                          <span
-                            className={
-                              service.latency === '—'
-                                ? 'text-red-400'
-                                : 'text-slate-400'
-                            }
-                          >
-                            {service.latency}
-                          </span>
-                        </span>
+                      <div className="flex items-center gap-3 mt-1.5 text-[9px] text-faint">
+                        <span>Latency: <span className={service.latency === '—' ? 'text-red-500' : 'text-label'}>{service.latency}</span></span>
                         <span>•</span>
-                        <span>
-                          Uptime:{' '}
-                          <span className="text-slate-400">
-                            {service.uptime}
-                          </span>
-                        </span>
+                        <span>Uptime: <span className="text-label">{service.uptime}</span></span>
                         <span className="ml-auto">{service.lastCheck}</span>
                       </div>
                     </div>
@@ -544,66 +371,45 @@ export default function NotificationCenterPanel() {
         <TabsContent value="feedback" className="flex-1 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-3">
-              {/* Info Banner */}
-              <div className="rounded-lg border border-indigo-500/15 bg-indigo-500/[0.04] p-3">
+              <div className="rounded-lg border border-primary/15 bg-primary/[0.04] p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-3 h-3 text-indigo-400" />
-                  <span className="text-[10px] font-medium text-indigo-300">
-                    AI Optimization Loop
-                  </span>
+                  <Sparkles className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-medium text-primary">AI Optimization Loop</span>
                 </div>
-                <p className="text-[9px] text-slate-500 leading-relaxed">
+                <p className="text-[9px] text-dim leading-relaxed">
                   AI Agent automatically generates optimization reports every{' '}
-                  <span className="text-indigo-300 font-medium">7–14 days</span>,
+                  <span className="text-primary font-medium">7–14 days</span>,
                   analyzing content performance and recommending strategy adjustments.
                 </p>
               </div>
 
-              {/* Triggers */}
               <div className="space-y-2">
                 {mockFeedbackTriggers.map((trigger) => {
                   const stConfig = feedbackStatusConfig[trigger.status];
                   return (
-                    <div
-                      key={trigger.id}
-                      className={`rounded-lg border p-3 transition-colors ${stConfig.bgColor}`}
-                    >
+                    <div key={trigger.id} className={`rounded-lg border p-3 transition-colors ${stConfig.bgColor}`}>
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-[11px] font-medium text-slate-200">
-                          {trigger.title}
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={`text-[7px] px-1 py-0 h-3.5 border-white/[0.08] ${stConfig.color}`}
-                        >
-                          {stConfig.label}
-                        </Badge>
+                        <p className="text-[11px] font-medium text-heading">{trigger.title}</p>
+                        <Badge variant="outline" className={`text-[7px] px-1 py-0 h-3.5 border-default ${stConfig.color}`}>{stConfig.label}</Badge>
                       </div>
-                      <p className="text-[9px] text-slate-500 leading-relaxed">
-                        {trigger.description}
-                      </p>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.04]">
-                        <div className="flex items-center gap-2 text-[9px] text-slate-600">
+                      <p className="text-[9px] text-dim leading-relaxed">{trigger.description}</p>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-subtle">
+                        <div className="flex items-center gap-2 text-[9px] text-faint">
                           <Clock className="w-2.5 h-2.5" />
                           <span>{trigger.triggerDate}</span>
                           <span>•</span>
                           <span>{trigger.daysRange} cycle</span>
                         </div>
                         {trigger.status === 'ready' && (
-                          <Button
-                            size="sm"
-                            className="h-5 px-2 text-[9px] bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/20"
-                          >
+                          <Button size="sm" className="h-5 px-2 text-[9px] bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20">
                             View Report
                           </Button>
                         )}
                       </div>
                       {trigger.improvement && (
                         <div className="mt-2 flex items-center gap-1.5">
-                          <TrendingUp className="w-2.5 h-2.5 text-emerald-400" />
-                          <span className="text-[9px] text-emerald-400 font-medium">
-                            {trigger.improvement}
-                          </span>
+                          <TrendingUp className="w-2.5 h-2.5 text-emerald-500" />
+                          <span className="text-[9px] text-emerald-500 font-medium">{trigger.improvement}</span>
                         </div>
                       )}
                     </div>

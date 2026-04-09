@@ -86,7 +86,7 @@ const statusConfig: Record<
 > = {
   pending: {
     icon: Clock,
-    color: 'text-slate-400',
+    color: 'text-gray-400',
     label: 'Pending',
   },
   processing: {
@@ -128,11 +128,11 @@ export default function SmartSchedulerModule() {
   return (
     <div className="flex flex-col h-full">
       {/* Module Header */}
-      <div className="px-4 py-3 border-b border-white/[0.06]">
-        <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wider">
+      <div className="px-4 py-3 border-b border-default">
+        <h3 className="text-xs font-semibold text-heading/80 uppercase tracking-wider">
           Scheduler
         </h3>
-        <p className="text-[10px] text-slate-500 mt-0.5">
+        <p className="text-[10px] text-dim mt-0.5">
           Distribution & Queue
         </p>
       </div>
@@ -140,27 +140,27 @@ export default function SmartSchedulerModule() {
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-3">
           {/* Mini Calendar */}
-          <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5">
+          <div className="rounded-lg border border-default bg-surface-hover p-2.5">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
-                <CalendarDays className="w-3 h-3 text-indigo-400" />
-                <span className="text-[10px] font-medium text-slate-300">
+                <CalendarDays className="w-3 h-3 text-primary" />
+                <span className="text-[10px] font-medium text-body">
                   Best Times
                 </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => setCurrentWeekOffset((p) => p - 1)}
-                  className="p-0.5 rounded hover:bg-white/[0.06] text-slate-500"
+                  className="p-0.5 rounded hover:bg-surface-active text-dim"
                 >
                   <ChevronLeft className="w-3 h-3" />
                 </button>
-                <span className="text-[9px] text-slate-500 px-1">
+                <span className="text-[9px] text-dim px-1">
                   {currentWeekOffset === 0 ? 'This Week' : `Week ${currentWeekOffset > 0 ? '+' : ''}${currentWeekOffset}`}
                 </span>
                 <button
                   onClick={() => setCurrentWeekOffset((p) => p + 1)}
-                  className="p-0.5 rounded hover:bg-white/[0.06] text-slate-500"
+                  className="p-0.5 rounded hover:bg-surface-active text-dim"
                 >
                   <ChevronRight className="w-3 h-3" />
                 </button>
@@ -171,19 +171,19 @@ export default function SmartSchedulerModule() {
             <div className="grid grid-cols-7 gap-1">
               {weekDays.map((day, idx) => (
                 <div key={day} className="text-center">
-                  <span className="text-[8px] text-slate-600 block mb-1">
+                  <span className="text-[8px] text-faint block mb-1">
                     {day}
                   </span>
                   <div
                     className={`w-full aspect-square rounded-md flex flex-col items-center justify-center transition-colors ${
                       isToday(idx)
-                        ? 'bg-indigo-500/20 border border-indigo-500/30'
-                        : 'bg-white/[0.02] border border-white/[0.04]'
+                        ? 'bg-primary/20 border border-primary/30'
+                        : 'bg-surface-hover border border-subtle'
                     }`}
                   >
                     <span
                       className={`text-[10px] font-medium ${
-                        isToday(idx) ? 'text-indigo-300' : 'text-slate-400'
+                        isToday(idx) ? 'text-primary' : 'text-label'
                       }`}
                     >
                       {getDateForDay(idx)}
@@ -196,7 +196,7 @@ export default function SmartSchedulerModule() {
                             <span
                               key={s.id}
                               className={`w-1 h-1 rounded-full ${
-                                s.isBestTime ? 'bg-emerald-400' : 'bg-slate-500'
+                                s.isBestTime ? 'bg-emerald-400' : 'bg-gray-400'
                               }`}
                             />
                           ))}
@@ -215,22 +215,22 @@ export default function SmartSchedulerModule() {
                 .map((slot) => (
                   <div
                     key={slot.id}
-                    className="flex items-center justify-between py-1 px-1.5 rounded bg-white/[0.02]"
+                    className="flex items-center justify-between py-1 px-1.5 rounded bg-surface-hover"
                   >
                     <div className="flex items-center gap-1.5">
                       <Zap className="w-2.5 h-2.5 text-amber-400" />
-                      <span className="text-[10px] text-slate-300">
+                      <span className="text-[10px] text-body">
                         {weekDays[slot.day]} {slot.hour}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Badge
                         variant="outline"
-                        className="text-[8px] px-1 py-0 h-3.5 border-white/[0.08] text-slate-400"
+                        className="text-[8px] px-1 py-0 h-3.5 border-default text-label"
                       >
                         {slot.platform}
                       </Badge>
-                      <span className="text-[9px] text-emerald-400 font-medium">
+                      <span className="text-[9px] text-emerald-500 font-medium">
                         {slot.score}%
                       </span>
                     </div>
@@ -241,7 +241,7 @@ export default function SmartSchedulerModule() {
 
           {/* Job Queue */}
           <div>
-            <h4 className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-2 px-1">
+            <h4 className="text-[10px] font-medium text-dim uppercase tracking-wider mb-2 px-1">
               Job Queue
             </h4>
             <div className="space-y-1.5">
@@ -251,10 +251,10 @@ export default function SmartSchedulerModule() {
                 return (
                   <div
                     key={job.id}
-                    className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5"
+                    className="rounded-lg border border-default bg-surface-hover p-2.5"
                   >
                     <div className="flex items-start justify-between mb-1">
-                      <p className="text-[11px] text-slate-200 font-medium leading-snug flex-1 mr-2">
+                      <p className="text-[11px] text-heading font-medium leading-snug flex-1 mr-2">
                         {job.title}
                       </p>
                       <StatusIcon
@@ -264,18 +264,18 @@ export default function SmartSchedulerModule() {
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-slate-500">
+                      <span className="text-[9px] text-dim">
                         {job.scheduledAt}
                       </span>
                       <Badge
                         variant="outline"
-                        className={`text-[8px] px-1.5 py-0 h-3.5 border-white/[0.08] ${config.color}`}
+                        className={`text-[8px] px-1.5 py-0 h-3.5 border-default ${config.color}`}
                       >
                         {config.label}
                       </Badge>
                     </div>
                     {job.status === 'processing' && job.progress && (
-                      <div className="mt-1.5 h-0.5 bg-white/[0.04] rounded-full overflow-hidden">
+                      <div className="mt-1.5 h-0.5 bg-surface-hover rounded-full overflow-hidden">
                         <div
                           className="h-full bg-amber-400/60 rounded-full transition-all duration-500"
                           style={{ width: `${job.progress}%` }}
@@ -289,7 +289,7 @@ export default function SmartSchedulerModule() {
           </div>
 
           {/* Distribute CTA */}
-          <Button className="w-full h-8 text-[11px] bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/20">
+          <Button className="w-full h-8 text-[11px] bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20">
             <Send className="w-3 h-3 mr-1.5" />
             Distribute All Pending
           </Button>

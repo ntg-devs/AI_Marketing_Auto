@@ -197,15 +197,15 @@ export default function EditorToolbar({
   ];
 
   return (
-    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-white/[0.06] flex-wrap bg-[#0c0c14]/60">
+    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-default flex-wrap bg-surface-1/60">
       {groups.map((group, gIdx) => (
         <div key={gIdx} className="flex items-center gap-0.5">
           {gIdx > 0 && (
-            <div className="w-px h-5 bg-white/[0.06] mx-1" />
+            <div className="w-px h-5 bg-border mx-1" />
           )}
           {group.map((item) => {
             if (item === 'divider') {
-              return <div key="div" className="w-px h-5 bg-white/[0.06]" />;
+              return <div key="div" className="w-px h-5 bg-border" />;
             }
             const btn = item as ToolbarButton;
             const active = btn.isActive?.() ?? false;
@@ -217,8 +217,8 @@ export default function EditorToolbar({
                     disabled={btn.disabled}
                     className={`h-7 w-7 flex items-center justify-center rounded-md transition-all text-xs disabled:opacity-30 disabled:cursor-not-allowed ${
                       active
-                        ? 'bg-indigo-500/20 text-indigo-300 shadow-sm shadow-indigo-500/10'
-                        : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.06]'
+                        ? 'bg-primary/20 text-primary shadow-sm shadow-primary/10'
+                        : 'text-dim hover:text-heading hover:bg-surface-hover'
                     }`}
                   >
                     <btn.icon className="w-3.5 h-3.5" />

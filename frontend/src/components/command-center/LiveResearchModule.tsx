@@ -126,18 +126,18 @@ export default function LiveResearchModule() {
   return (
     <div className="flex flex-col h-full">
       {/* Module Header */}
-      <div className="px-4 py-3 border-b border-white/[0.06]">
+      <div className="px-4 py-3 border-b border-default">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-heading/80 uppercase tracking-wider">
               Live Research
             </h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Real-time Feed</p>
+            <p className="text-[10px] text-dim mt-0.5">Real-time Feed</p>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
+            className="h-6 w-6 text-dim hover:text-body hover:bg-surface-hover"
             onClick={handleRefresh}
           >
             <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -146,13 +146,13 @@ export default function LiveResearchModule() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-white/[0.06]">
+      <div className="flex border-b border-default">
         <button
           onClick={() => setActiveTab('insights')}
           className={`flex-1 py-2 text-[10px] font-medium transition-colors ${
             activeTab === 'insights'
-              ? 'text-indigo-300 border-b border-indigo-400'
-              : 'text-slate-500 hover:text-slate-300'
+              ? 'text-primary border-b border-primary'
+              : 'text-dim hover:text-body'
           }`}
         >
           Insights
@@ -161,8 +161,8 @@ export default function LiveResearchModule() {
           onClick={() => setActiveTab('sources')}
           className={`flex-1 py-2 text-[10px] font-medium transition-colors flex items-center justify-center gap-1 ${
             activeTab === 'sources'
-              ? 'text-emerald-300 border-b border-emerald-400'
-              : 'text-slate-500 hover:text-slate-300'
+              ? 'text-emerald-500 border-b border-emerald-500'
+              : 'text-dim hover:text-body'
           }`}
         >
           <ShieldCheck className="w-3 h-3" />
@@ -179,31 +179,31 @@ export default function LiveResearchModule() {
               return (
                 <div
                   key={insight.id}
-                  className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5 hover:bg-white/[0.04] transition-colors group cursor-pointer"
+                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <SourceIcon
                         className={`w-3 h-3 ${sourceColors[insight.source]}`}
                       />
-                      <span className="text-[10px] text-slate-500 capitalize">
+                      <span className="text-[10px] text-dim capitalize">
                         {insight.source}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Flame className="w-3 h-3 text-amber-400" />
-                      <span className="text-[10px] text-amber-300 font-medium">
+                      <span className="text-[10px] text-amber-500 font-medium">
                         {insight.score}
                       </span>
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-200 font-medium leading-snug mb-1">
+                  <p className="text-[11px] text-heading font-medium leading-snug mb-1">
                     {insight.title}
                   </p>
-                  <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">
+                  <p className="text-[10px] text-dim leading-relaxed line-clamp-2">
                     {insight.snippet}
                   </p>
-                  <span className="text-[9px] text-slate-600 mt-1 block">
+                  <span className="text-[9px] text-faint mt-1 block">
                     {insight.timestamp}
                   </span>
                 </div>
@@ -214,23 +214,23 @@ export default function LiveResearchModule() {
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 px-1 mb-1">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span className="text-[10px] text-emerald-300 font-medium">
+                <span className="text-[10px] text-emerald-500 font-medium">
                   Anti-Hallucination Sources
                 </span>
               </div>
               {mockSources.map((source) => (
                 <div
                   key={source.id}
-                  className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5 hover:bg-white/[0.04] transition-colors group"
+                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-slate-200 font-medium truncate">
+                      <p className="text-[11px] text-heading font-medium truncate">
                         {source.title}
                       </p>
                       <div className="flex items-center gap-1 mt-1">
-                        <ExternalLink className="w-2.5 h-2.5 text-slate-600" />
-                        <span className="text-[9px] text-slate-500 truncate">
+                        <ExternalLink className="w-2.5 h-2.5 text-faint" />
+                        <span className="text-[9px] text-dim truncate">
                           {source.url}
                         </span>
                       </div>
@@ -241,7 +241,7 @@ export default function LiveResearchModule() {
                       )}
                       <Badge
                         variant="outline"
-                        className="text-[9px] px-1.5 py-0 h-4 bg-white/[0.03] border-white/[0.08] text-slate-400"
+                        className="text-[9px] px-1.5 py-0 h-4 bg-surface-hover border-default text-label"
                       >
                         {source.relevance}%
                       </Badge>
@@ -255,9 +255,9 @@ export default function LiveResearchModule() {
       </ScrollArea>
 
       {/* Live Indicator */}
-      <div className="px-3 py-2 border-t border-white/[0.06] flex items-center gap-1.5">
+      <div className="px-3 py-2 border-t border-default flex items-center gap-1.5">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="text-[9px] text-slate-500">
+        <span className="text-[9px] text-dim">
           Live · Updating every 30s
         </span>
       </div>
