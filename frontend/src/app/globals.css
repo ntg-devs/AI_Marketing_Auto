@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 @layer base {
+  /* ═══════════════════════════════════════════════════════════
+     DEFAULT THEME: Deep Cosmic Dark
+     ═══════════════════════════════════════════════════════════ */
   :root {
     --font-size: 16px;
     --background: #0a0a0f;
@@ -42,6 +45,144 @@
     --sidebar-accent-foreground: #e2e8f0;
     --sidebar-border: rgba(255, 255, 255, 0.06);
     --sidebar-ring: #6366f1;
+
+    /* Extended tokens for deep theme integration */
+    --surface-0: #0a0a0f; /* deepest bg */
+    --surface-1: #0c0c14; /* sidebar, panel bg */
+    --surface-2: #12121a; /* card, elevated */
+    --surface-3: #1a1a28; /* hover, muted */
+    --surface-hover: rgba(255, 255, 255, 0.04);
+    --surface-active: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --border-default: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.1);
+    --text-primary: #f1f5f9;
+    --text-secondary: #e2e8f0;
+    --text-tertiary: #94a3b8;
+    --text-muted: #64748b;
+    --text-faint: #475569;
+    --text-ghost: #334155;
+
+    /* Chart / tooltip */
+    --tooltip-bg: #16161f;
+    --tooltip-border: rgba(255, 255, 255, 0.08);
+    --grid-stroke: rgba(255, 255, 255, 0.04);
+    --axis-stroke: rgba(255, 255, 255, 0.15);
+
+    /* Scrollbar */
+    --scrollbar-thumb: rgba(255, 255, 255, 0.08);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.15);
+
+    /* Editor */
+    --editor-text: #e2e8f0;
+    --editor-heading: #f1f5f9;
+    --editor-paragraph: #cbd5e1;
+    --editor-strong: #f1f5f9;
+    --editor-em: #e2e8f0;
+    --editor-link: #818cf8;
+    --editor-link-hover: #a5b4fc;
+    --editor-code-bg: rgba(255, 255, 255, 0.06);
+    --editor-code-color: #e879f9;
+    --editor-pre-bg: #0d0d15;
+    --editor-pre-border: rgba(255, 255, 255, 0.06);
+    --editor-blockquote-bg: rgba(99, 102, 241, 0.05);
+    --editor-placeholder: #475569;
+    --editor-caret: #6366f1;
+    --editor-selection: rgba(99, 102, 241, 0.3);
+    --editor-marker: #64748b;
+    --editor-list-text: #cbd5e1;
+    --editor-hr: rgba(255, 255, 255, 0.08);
+    --editor-highlight-bg: rgba(250, 204, 21, 0.2);
+    --editor-highlight-color: #fef08a;
+    --editor-underline: rgba(99, 102, 241, 0.5);
+    --editor-blockquote-text: #94a3b8;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     QUITE LIGHT THEME: White + Violet-Rose
+     Inspired by Antigravity's quite-light theme
+     ═══════════════════════════════════════════════════════════ */
+  [data-theme="quite-light"] {
+    --background: #fafafc;
+    --foreground: #1e1b2e;
+    --card: #ffffff;
+    --card-foreground: #1e1b2e;
+    --popover: #ffffff;
+    --popover-foreground: #1e1b2e;
+    --primary: #a855f7; /* violet-500 */
+    --primary-foreground: #ffffff;
+    --secondary: #f3e8ff; /* violet-100 */
+    --secondary-foreground: #581c87;
+    --muted: #f1f0f5;
+    --muted-foreground: #6b7280;
+    --accent: #fce7f3; /* pink-100 */
+    --accent-foreground: #831843;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: rgba(0, 0, 0, 0.08);
+    --input: rgba(0, 0, 0, 0.08);
+    --input-background: #ffffff;
+    --switch-background: #d1d5db;
+    --ring: #a855f7;
+    --sidebar: #f7f5fa;
+    --sidebar-foreground: #1e1b2e;
+    --sidebar-primary: #a855f7;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f3e8ff;
+    --sidebar-accent-foreground: #581c87;
+    --sidebar-border: rgba(0, 0, 0, 0.06);
+    --sidebar-ring: #a855f7;
+
+    /* Extended tokens */
+    --surface-0: #fafafc;
+    --surface-1: #f7f5fa;
+    --surface-2: #ffffff;
+    --surface-3: #f1f0f5;
+    --surface-hover: rgba(0, 0, 0, 0.03);
+    --surface-active: rgba(0, 0, 0, 0.06);
+    --border-subtle: rgba(0, 0, 0, 0.04);
+    --border-default: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.12);
+    --text-primary: #1e1b2e;
+    --text-secondary: #374151;
+    --text-tertiary: #6b7280;
+    --text-muted: #9ca3af;
+    --text-faint: #c0bfc5;
+    --text-ghost: #d1d5db;
+
+    /* Chart / tooltip */
+    --tooltip-bg: #ffffff;
+    --tooltip-border: rgba(0, 0, 0, 0.1);
+    --grid-stroke: rgba(0, 0, 0, 0.06);
+    --axis-stroke: rgba(0, 0, 0, 0.2);
+
+    /* Scrollbar */
+    --scrollbar-thumb: rgba(0, 0, 0, 0.1);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
+
+    /* Editor */
+    --editor-text: #374151;
+    --editor-heading: #1e1b2e;
+    --editor-paragraph: #4b5563;
+    --editor-strong: #1e1b2e;
+    --editor-em: #374151;
+    --editor-link: #7c3aed;
+    --editor-link-hover: #a855f7;
+    --editor-code-bg: rgba(168, 85, 247, 0.08);
+    --editor-code-color: #9333ea;
+    --editor-pre-bg: #f7f5fa;
+    --editor-pre-border: rgba(0, 0, 0, 0.08);
+    --editor-blockquote-bg: rgba(168, 85, 247, 0.05);
+    --editor-placeholder: #9ca3af;
+    --editor-caret: #a855f7;
+    --editor-selection: rgba(168, 85, 247, 0.2);
+    --editor-marker: #9ca3af;
+    --editor-list-text: #4b5563;
+    --editor-hr: rgba(0, 0, 0, 0.1);
+    --editor-highlight-bg: rgba(250, 204, 21, 0.25);
+    --editor-highlight-color: #854d0e;
+    --editor-underline: rgba(168, 85, 247, 0.4);
+    --editor-blockquote-text: #6b7280;
   }
 }
 
@@ -106,8 +247,70 @@
   }
 }
 
-/* Custom scrollbar for Command Center */
+/* ═══════════════════════════════════════════════════════════
+   UTILITY CLASSES — Theme-aware
+   ═══════════════════════════════════════════════════════════ */
 @layer utilities {
+  /* Semantic surface utilities */
+  .bg-surface-0 {
+    background-color: var(--surface-0);
+  }
+  .bg-surface-1 {
+    background-color: var(--surface-1);
+  }
+  .bg-surface-2 {
+    background-color: var(--surface-2);
+  }
+  .bg-surface-3 {
+    background-color: var(--surface-3);
+  }
+  .bg-surface-hover {
+    background-color: var(--surface-hover);
+  }
+  .bg-surface-active {
+    background-color: var(--surface-active);
+  }
+
+  /* Semantic border utilities */
+  .border-subtle {
+    border-color: var(--border-subtle);
+  }
+  .border-default {
+    border-color: var(--border-default);
+  }
+  .border-strong {
+    border-color: var(--border-strong);
+  }
+
+  /* Semantic text utilities */
+  .text-heading {
+    color: var(--text-primary);
+  }
+  .text-body {
+    color: var(--text-secondary);
+  }
+  .text-label {
+    color: var(--text-tertiary);
+  }
+  .text-dim {
+    color: var(--text-muted);
+  }
+  .text-faint {
+    color: var(--text-faint);
+  }
+  .text-ghost {
+    color: var(--text-ghost);
+  }
+
+  /* Hover utilities */
+  .hover\:bg-surface-hover:hover {
+    background-color: var(--surface-hover);
+  }
+  .hover\:bg-surface-active:hover {
+    background-color: var(--surface-active);
+  }
+
+  /* Custom scrollbar for Command Center */
   .scrollbar-custom::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -116,21 +319,21 @@
     background: transparent;
   }
   .scrollbar-custom::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--scrollbar-thumb);
     border-radius: 10px;
     border: 1px solid transparent;
     background-clip: padding-box;
   }
   .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--scrollbar-thumb-hover);
     background-clip: padding-box;
   }
-  
+
   /* Hide scrollbar handle when not hovering */
   .scrollbar-custom-hover::-webkit-scrollbar-thumb {
     background: transparent;
   }
   .scrollbar-custom-hover:hover::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--scrollbar-thumb);
   }
 }

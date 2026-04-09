@@ -16,7 +16,7 @@ export default function RightPanelContainer() {
     <Sheet open={activePanel !== null} onOpenChange={(open) => !open && closePanel()}>
       <SheetContent
         side="right"
-        className="w-[380px] sm:max-w-[380px] p-0 bg-[#0c0c14] border-l border-white/[0.06] overflow-hidden"
+        className="w-[380px] sm:max-w-[380px] p-0 border-l border-default overflow-hidden !bg-surface-1"
       >
         {activePanel === 'settings' && <SystemSettingsPanel />}
         {activePanel === 'account' && <AccountTeamPanel />}

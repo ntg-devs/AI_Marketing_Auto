@@ -60,106 +60,31 @@ interface TeamMember {
 /* ─── Mock Data ────────────────────────────────────────────────────── */
 
 const mockSessions: Session[] = [
-  {
-    id: '1',
-    device: 'Chrome — Windows 11',
-    ip: '192.168.1.***',
-    location: 'Ho Chi Minh City, VN',
-    lastActive: 'Now',
-    status: 'active',
-    isCurrent: true,
-  },
-  {
-    id: '2',
-    device: 'Safari — iPhone 15',
-    ip: '10.0.0.***',
-    location: 'Ho Chi Minh City, VN',
-    lastActive: '2 hours ago',
-    status: 'active',
-    isCurrent: false,
-  },
-  {
-    id: '3',
-    device: 'Firefox — macOS',
-    ip: '172.16.0.***',
-    location: 'Hanoi, VN',
-    lastActive: '3 days ago',
-    status: 'expired',
-    isCurrent: false,
-  },
+  { id: '1', device: 'Chrome — Windows 11', ip: '192.168.1.***', location: 'Ho Chi Minh City, VN', lastActive: 'Now', status: 'active', isCurrent: true },
+  { id: '2', device: 'Safari — iPhone 15', ip: '10.0.0.***', location: 'Ho Chi Minh City, VN', lastActive: '2 hours ago', status: 'active', isCurrent: false },
+  { id: '3', device: 'Firefox — macOS', ip: '172.16.0.***', location: 'Hanoi, VN', lastActive: '3 days ago', status: 'expired', isCurrent: false },
 ];
 
 const mockTeam: TeamMember[] = [
-  {
-    id: '1',
-    name: 'Alex Nguyen',
-    email: 'alex@aetherflow.io',
-    role: 'admin',
-    avatarInitials: 'AN',
-    status: 'online',
-    isApprover: true,
-  },
-  {
-    id: '2',
-    name: 'Mai Tran',
-    email: 'mai@aetherflow.io',
-    role: 'editor',
-    avatarInitials: 'MT',
-    status: 'online',
-    isApprover: true,
-  },
-  {
-    id: '3',
-    name: 'David Le',
-    email: 'david@aetherflow.io',
-    role: 'reviewer',
-    avatarInitials: 'DL',
-    status: 'away',
-    isApprover: true,
-  },
-  {
-    id: '4',
-    name: 'Linh Pham',
-    email: 'linh@aetherflow.io',
-    role: 'viewer',
-    avatarInitials: 'LP',
-    status: 'offline',
-    isApprover: false,
-  },
+  { id: '1', name: 'Alex Nguyen', email: 'alex@aetherflow.io', role: 'admin', avatarInitials: 'AN', status: 'online', isApprover: true },
+  { id: '2', name: 'Mai Tran', email: 'mai@aetherflow.io', role: 'editor', avatarInitials: 'MT', status: 'online', isApprover: true },
+  { id: '3', name: 'David Le', email: 'david@aetherflow.io', role: 'reviewer', avatarInitials: 'DL', status: 'away', isApprover: true },
+  { id: '4', name: 'Linh Pham', email: 'linh@aetherflow.io', role: 'viewer', avatarInitials: 'LP', status: 'offline', isApprover: false },
 ];
 
 /* ─── Role Config ──────────────────────────────────────────────────── */
 
-const roleConfig: Record<
-  TeamRole,
-  { label: string; color: string; bgColor: string }
-> = {
-  admin: {
-    label: 'Admin',
-    color: 'text-amber-300',
-    bgColor: 'bg-amber-500/10 border-amber-500/20',
-  },
-  editor: {
-    label: 'Editor',
-    color: 'text-indigo-300',
-    bgColor: 'bg-indigo-500/10 border-indigo-500/20',
-  },
-  reviewer: {
-    label: 'Reviewer',
-    color: 'text-emerald-300',
-    bgColor: 'bg-emerald-500/10 border-emerald-500/20',
-  },
-  viewer: {
-    label: 'Viewer',
-    color: 'text-slate-400',
-    bgColor: 'bg-white/[0.04] border-white/[0.08]',
-  },
+const roleConfig: Record<TeamRole, { label: string; color: string; bgColor: string }> = {
+  admin: { label: 'Admin', color: 'text-amber-500', bgColor: 'bg-amber-500/10 border-amber-500/20' },
+  editor: { label: 'Editor', color: 'text-primary', bgColor: 'bg-primary/10 border-primary/20' },
+  reviewer: { label: 'Reviewer', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10 border-emerald-500/20' },
+  viewer: { label: 'Viewer', color: 'text-gray-400', bgColor: 'bg-surface-hover border-default' },
 };
 
 const statusDotColor: Record<TeamMember['status'], string> = {
   online: 'bg-emerald-400',
   away: 'bg-amber-400',
-  offline: 'bg-slate-600',
+  offline: 'bg-gray-400',
 };
 
 /* ─── Component ────────────────────────────────────────────────────── */
@@ -185,16 +110,16 @@ export default function AccountTeamPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Panel Header */}
-      <div className="px-5 py-4 border-b border-white/[0.06] shrink-0">
+      <div className="px-5 py-4 border-b border-default shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-            <Users className="w-3.5 h-3.5 text-emerald-400" />
+            <Users className="w-3.5 h-3.5 text-emerald-500" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-white/90 tracking-tight">
+            <h2 className="text-sm font-semibold text-heading tracking-tight">
               Account & Team
             </h2>
-            <p className="text-[10px] text-slate-500 mt-0.5">
+            <p className="text-[10px] text-dim mt-0.5">
               Entity Management & Security
             </p>
           </div>
@@ -204,24 +129,24 @@ export default function AccountTeamPanel() {
       {/* Tabs */}
       <Tabs defaultValue="profile" className="flex-1 flex flex-col min-h-0">
         <div className="px-4 pt-3 shrink-0">
-          <TabsList className="w-full bg-white/[0.03] h-8 rounded-lg p-0.5">
+          <TabsList className="w-full bg-surface-hover h-8 rounded-lg p-0.5">
             <TabsTrigger
               value="profile"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-300 data-[state=active]:border-transparent text-slate-500"
+              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald-300 data-[state=active]:border-transparent text-dim"
             >
               <User className="w-3 h-3 mr-1" />
               Profile
             </TabsTrigger>
             <TabsTrigger
               value="security"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-300 data-[state=active]:border-transparent text-slate-500"
+              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald-300 data-[state=active]:border-transparent text-dim"
             >
               <Shield className="w-3 h-3 mr-1" />
               Security
             </TabsTrigger>
             <TabsTrigger
               value="team"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-300 data-[state=active]:border-transparent text-slate-500"
+              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald-300 data-[state=active]:border-transparent text-dim"
             >
               <Users className="w-3 h-3 mr-1" />
               Team
@@ -236,20 +161,20 @@ export default function AccountTeamPanel() {
               {/* Avatar & Name */}
               <div className="flex items-center gap-3">
                 <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-sm font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-sm font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium text-white/90">
+                  <p className="text-sm font-medium text-heading">
                     {user?.full_name || 'AetherFlow User'}
                   </p>
-                  <p className="text-[10px] text-slate-500">
+                  <p className="text-[10px] text-dim">
                     {user?.email || 'user@aetherflow.io'}
                   </p>
                   <Badge
                     variant="outline"
-                    className="text-[8px] px-1.5 py-0 h-3.5 mt-1 bg-amber-500/10 border-amber-500/20 text-amber-300"
+                    className="text-[8px] px-1.5 py-0 h-3.5 mt-1 bg-amber-500/10 border-amber-500/20 text-amber-500"
                   >
                     <Crown className="w-2 h-2 mr-0.5" />
                     {user?.role || 'Admin'}
@@ -257,47 +182,47 @@ export default function AccountTeamPanel() {
                 </div>
               </div>
 
-              <Separator className="bg-white/[0.04]" />
+              <Separator className="bg-border" />
 
               {/* Profile Fields */}
               <div className="space-y-3">
-                <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                  <label className="text-[9px] text-slate-500 uppercase tracking-wider block mb-1">
+                <div className="rounded-lg border border-default bg-surface-hover p-3">
+                  <label className="text-[9px] text-dim uppercase tracking-wider block mb-1">
                     Full Name
                   </label>
                   <input
                     type="text"
                     defaultValue={user?.full_name || 'AetherFlow User'}
-                    className="w-full bg-transparent text-[11px] text-slate-200 outline-none"
+                    className="w-full bg-transparent text-[11px] text-heading outline-none"
                   />
                 </div>
-                <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                  <label className="text-[9px] text-slate-500 uppercase tracking-wider block mb-1">
+                <div className="rounded-lg border border-default bg-surface-hover p-3">
+                  <label className="text-[9px] text-dim uppercase tracking-wider block mb-1">
                     Email Address
                   </label>
                   <div className="flex items-center gap-2">
-                    <Mail className="w-3 h-3 text-slate-500" />
+                    <Mail className="w-3 h-3 text-dim" />
                     <input
                       type="email"
                       defaultValue={user?.email || 'user@aetherflow.io'}
-                      className="flex-1 bg-transparent text-[11px] text-slate-200 outline-none"
+                      className="flex-1 bg-transparent text-[11px] text-heading outline-none"
                     />
                   </div>
                 </div>
-                <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                  <label className="text-[9px] text-slate-500 uppercase tracking-wider block mb-1">
+                <div className="rounded-lg border border-default bg-surface-hover p-3">
+                  <label className="text-[9px] text-dim uppercase tracking-wider block mb-1">
                     Role & Permissions
                   </label>
                   <div className="flex items-center gap-2">
-                    <Key className="w-3 h-3 text-slate-500" />
-                    <span className="text-[11px] text-slate-300">
+                    <Key className="w-3 h-3 text-dim" />
+                    <span className="text-[11px] text-body">
                       Admin — Full Access
                     </span>
                   </div>
                 </div>
               </div>
 
-              <Button className="w-full h-7 text-[10px] bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/20">
+              <Button className="w-full h-7 text-[10px] bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500 border border-emerald-500/20">
                 Save Changes
               </Button>
             </div>
@@ -311,48 +236,38 @@ export default function AccountTeamPanel() {
               {/* JWT Token */}
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
-                  <Key className="w-3 h-3 text-amber-400" />
-                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                  <Key className="w-3 h-3 text-amber-500" />
+                  <span className="text-[10px] font-medium text-label uppercase tracking-wider">
                     JWT Token
                   </span>
                 </div>
-                <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5">
+                <div className="rounded-lg border border-default bg-surface-hover p-2.5">
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 text-[9px] text-slate-400 font-mono truncate">
+                    <code className="flex-1 text-[9px] text-label font-mono truncate">
                       {showToken
                         ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOi...'
                         : '••••••••••••••••••••••••••••••••••••••'}
                     </code>
                     <button
                       onClick={() => setShowToken(!showToken)}
-                      className="p-1 rounded hover:bg-white/[0.06] text-slate-500 transition-colors"
+                      className="p-1 rounded hover:bg-surface-active text-dim transition-colors"
                     >
-                      {showToken ? (
-                        <EyeOff className="w-3 h-3" />
-                      ) : (
-                        <Eye className="w-3 h-3" />
-                      )}
+                      {showToken ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                     </button>
                     <button
                       onClick={handleCopyToken}
-                      className="p-1 rounded hover:bg-white/[0.06] text-slate-500 transition-colors"
+                      className="p-1 rounded hover:bg-surface-active text-dim transition-colors"
                     >
-                      {copiedToken ? (
-                        <Check className="w-3 h-3 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-3 h-3" />
-                      )}
+                      {copiedToken ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                     </button>
                   </div>
-                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/[0.04]">
-                    <Clock className="w-2.5 h-2.5 text-slate-600" />
-                    <span className="text-[9px] text-slate-600">
-                      Expires in 23h 45m
-                    </span>
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-subtle">
+                    <Clock className="w-2.5 h-2.5 text-faint" />
+                    <span className="text-[9px] text-faint">Expires in 23h 45m</span>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-4 px-1.5 text-[9px] text-indigo-400 hover:text-indigo-300 hover:bg-white/[0.06] ml-auto"
+                      className="h-4 px-1.5 text-[9px] text-primary hover:text-primary hover:bg-surface-hover ml-auto"
                     >
                       <RefreshCw className="w-2.5 h-2.5 mr-0.5" />
                       Refresh
@@ -361,17 +276,17 @@ export default function AccountTeamPanel() {
                 </div>
               </div>
 
-              <Separator className="bg-white/[0.04]" />
+              <Separator className="bg-border" />
 
               {/* 2FA */}
-              <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="flex items-center justify-between rounded-lg border border-default bg-surface-hover p-3">
                 <div className="flex items-center gap-2">
-                  <Smartphone className="w-3.5 h-3.5 text-indigo-400" />
+                  <Smartphone className="w-3.5 h-3.5 text-primary" />
                   <div>
-                    <p className="text-[11px] font-medium text-slate-200">
+                    <p className="text-[11px] font-medium text-heading">
                       Two-Factor Authentication
                     </p>
-                    <p className="text-[9px] text-slate-500">
+                    <p className="text-[9px] text-dim">
                       TOTP via Authenticator app
                     </p>
                   </div>
@@ -383,21 +298,21 @@ export default function AccountTeamPanel() {
                 />
               </div>
 
-              <Separator className="bg-white/[0.04]" />
+              <Separator className="bg-border" />
 
               {/* Active Sessions */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                    <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                    <span className="text-[10px] font-medium text-label uppercase tracking-wider">
                       Active Sessions
                     </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-5 px-1.5 text-[9px] text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="h-5 px-1.5 text-[9px] text-red-500 hover:text-red-400 hover:bg-red-500/10"
                   >
                     Revoke All
                   </Button>
@@ -410,32 +325,32 @@ export default function AccountTeamPanel() {
                         session.isCurrent
                           ? 'bg-emerald-500/[0.06] border-emerald-500/15'
                           : session.status === 'expired'
-                          ? 'bg-white/[0.01] border-white/[0.04] opacity-50'
-                          : 'bg-white/[0.02] border-white/[0.06]'
+                          ? 'bg-surface-0 border-subtle opacity-50'
+                          : 'bg-surface-hover border-default'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Smartphone className="w-3 h-3 text-slate-500" />
-                          <span className="text-[10px] text-slate-200">
+                          <Smartphone className="w-3 h-3 text-dim" />
+                          <span className="text-[10px] text-heading">
                             {session.device}
                           </span>
                           {session.isCurrent && (
                             <Badge
                               variant="outline"
-                              className="text-[7px] px-1 py-0 h-3 bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                              className="text-[7px] px-1 py-0 h-3 bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
                             >
                               Current
                             </Badge>
                           )}
                         </div>
                         {!session.isCurrent && session.status === 'active' && (
-                          <button className="p-0.5 rounded hover:bg-red-500/10 text-slate-600 hover:text-red-400 transition-colors">
+                          <button className="p-0.5 rounded hover:bg-red-500/10 text-faint hover:text-red-500 transition-colors">
                             <Trash2 className="w-2.5 h-2.5" />
                           </button>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 mt-1 text-[9px] text-slate-600">
+                      <div className="flex items-center gap-3 mt-1 text-[9px] text-faint">
                         <span>{session.ip}</span>
                         <span>•</span>
                         <span>{session.location}</span>
@@ -456,14 +371,14 @@ export default function AccountTeamPanel() {
               {/* Team Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Users className="w-3 h-3 text-indigo-400" />
-                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                  <Users className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-medium text-label uppercase tracking-wider">
                     Human-in-the-Loop
                   </span>
                 </div>
                 <Badge
                   variant="outline"
-                  className="text-[8px] px-1.5 py-0 h-3.5 border-white/[0.08] text-slate-500"
+                  className="text-[8px] px-1.5 py-0 h-3.5 border-default text-dim"
                 >
                   {mockTeam.length} members
                 </Badge>
@@ -476,24 +391,22 @@ export default function AccountTeamPanel() {
                   return (
                     <div
                       key={member.id}
-                      className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 hover:bg-white/[0.04] transition-colors"
+                      className="rounded-lg border border-default bg-surface-hover p-3 hover:bg-surface-active transition-colors"
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="relative">
                           <Avatar className="h-7 w-7">
-                            <AvatarFallback className="bg-white/[0.08] text-slate-300 text-[9px] font-medium">
+                            <AvatarFallback className="bg-surface-active text-body text-[9px] font-medium">
                               {member.avatarInitials}
                             </AvatarFallback>
                           </Avatar>
                           <span
-                            className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#0c0c14] ${
-                              statusDotColor[member.status]
-                            }`}
+                            className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-surface-1 ${statusDotColor[member.status]}`}
                           />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-medium text-slate-200 truncate">
+                            <span className="text-[11px] font-medium text-heading truncate">
                               {member.name}
                             </span>
                             <Badge
@@ -503,7 +416,7 @@ export default function AccountTeamPanel() {
                               {role.label}
                             </Badge>
                           </div>
-                          <p className="text-[9px] text-slate-600 truncate">
+                          <p className="text-[9px] text-faint truncate">
                             {member.email}
                           </p>
                         </div>
@@ -511,7 +424,7 @@ export default function AccountTeamPanel() {
                           {member.isApprover && (
                             <Badge
                               variant="outline"
-                              className="text-[7px] px-1 py-0 h-3 bg-indigo-500/10 border-indigo-500/20 text-indigo-300"
+                              className="text-[7px] px-1 py-0 h-3 bg-primary/10 border-primary/20 text-primary"
                             >
                               Approver
                             </Badge>
@@ -524,21 +437,21 @@ export default function AccountTeamPanel() {
               </div>
 
               {/* Approval Flow Info */}
-              <div className="rounded-lg border border-indigo-500/15 bg-indigo-500/[0.04] p-3">
+              <div className="rounded-lg border border-primary/15 bg-primary/[0.04] p-3">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <ShieldCheck className="w-3 h-3 text-indigo-400" />
-                  <span className="text-[10px] font-medium text-indigo-300">
+                  <ShieldCheck className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-medium text-primary">
                     Approval Workflow
                   </span>
                 </div>
-                <p className="text-[9px] text-slate-500 leading-relaxed">
+                <p className="text-[9px] text-dim leading-relaxed">
                   Content requires approval from at least{' '}
-                  <span className="text-indigo-300 font-medium">1 reviewer</span>{' '}
+                  <span className="text-primary font-medium">1 reviewer</span>{' '}
                   before publishing. Admins can bypass this rule.
                 </p>
               </div>
 
-              <Button className="w-full h-7 text-[10px] bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 border border-white/[0.06]">
+              <Button className="w-full h-7 text-[10px] bg-surface-hover hover:bg-surface-active text-label border border-default">
                 <UserPlus className="w-3 h-3 mr-1" />
                 Invite Team Member
               </Button>

@@ -153,25 +153,25 @@ const statusConfig: Record<
   { color: string; bgColor: string; label: string; icon: typeof CheckCircle2 }
 > = {
   connected: {
-    color: 'text-emerald-400',
+    color: 'text-emerald-500',
     bgColor: 'bg-emerald-500/10 border-emerald-500/20',
     label: 'Connected',
     icon: CheckCircle2,
   },
   disconnected: {
-    color: 'text-slate-500',
-    bgColor: 'bg-white/[0.03] border-white/[0.06]',
+    color: 'text-gray-400',
+    bgColor: 'bg-surface-hover border-default',
     label: 'Disconnected',
     icon: XCircle,
   },
   syncing: {
-    color: 'text-amber-400',
+    color: 'text-amber-500',
     bgColor: 'bg-amber-500/10 border-amber-500/20',
     label: 'Syncing',
     icon: Loader2,
   },
   error: {
-    color: 'text-red-400',
+    color: 'text-red-500',
     bgColor: 'bg-red-500/10 border-red-500/20',
     label: 'Error',
     icon: XCircle,
@@ -207,16 +207,16 @@ export default function SystemSettingsPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Panel Header */}
-      <div className="px-5 py-4 border-b border-white/[0.06] shrink-0">
+      <div className="px-5 py-4 border-b border-default shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-            <Settings className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+            <Settings className="w-3.5 h-3.5 text-primary" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-white/90 tracking-tight">
+            <h2 className="text-sm font-semibold text-heading tracking-tight">
               System Settings
             </h2>
-            <p className="text-[10px] text-slate-500 mt-0.5">
+            <p className="text-[10px] text-dim mt-0.5">
               Core Configuration — AI Brain
             </p>
           </div>
@@ -226,24 +226,24 @@ export default function SystemSettingsPanel() {
       {/* Tabs */}
       <Tabs defaultValue="api" className="flex-1 flex flex-col min-h-0">
         <div className="px-4 pt-3 shrink-0">
-          <TabsList className="w-full bg-white/[0.03] h-8 rounded-lg p-0.5">
+          <TabsList className="w-full bg-surface-hover h-8 rounded-lg p-0.5">
             <TabsTrigger
               value="api"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-indigo-500/15 data-[state=active]:text-indigo-300 data-[state=active]:border-transparent text-slate-500"
+              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:border-transparent text-dim"
             >
               <Link2 className="w-3 h-3 mr-1" />
               API
             </TabsTrigger>
             <TabsTrigger
               value="brand"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-indigo-500/15 data-[state=active]:text-indigo-300 data-[state=active]:border-transparent text-slate-500"
+              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:border-transparent text-dim"
             >
               <Dna className="w-3 h-3 mr-1" />
               Brand DNA
             </TabsTrigger>
             <TabsTrigger
               value="automation"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-indigo-500/15 data-[state=active]:text-indigo-300 data-[state=active]:border-transparent text-slate-500"
+              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:border-transparent text-dim"
             >
               <CalendarClock className="w-3 h-3 mr-1" />
               Automation
@@ -269,11 +269,11 @@ export default function SystemSettingsPanel() {
                           {conn.icon}
                         </span>
                         <div>
-                          <p className="text-[11px] font-medium text-slate-200">
+                          <p className="text-[11px] font-medium text-heading">
                             {conn.platform}
                           </p>
                           {conn.accountName && (
-                            <p className="text-[9px] text-slate-500 mt-0.5">
+                            <p className="text-[9px] text-dim mt-0.5">
                               {conn.accountName}
                             </p>
                           )}
@@ -287,7 +287,7 @@ export default function SystemSettingsPanel() {
                         />
                         <Badge
                           variant="outline"
-                          className={`text-[8px] px-1.5 py-0 h-4 border-white/[0.08] ${config.color}`}
+                          className={`text-[8px] px-1.5 py-0 h-4 border-default ${config.color}`}
                         >
                           {config.label}
                         </Badge>
@@ -295,9 +295,9 @@ export default function SystemSettingsPanel() {
                     </div>
 
                     {/* Action row */}
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.04]">
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-subtle">
                       {conn.lastSync && (
-                        <span className="text-[9px] text-slate-600">
+                        <span className="text-[9px] text-faint">
                           Last sync: {conn.lastSync}
                         </span>
                       )}
@@ -306,7 +306,7 @@ export default function SystemSettingsPanel() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-5 px-1.5 text-[9px] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]"
+                            className="h-5 px-1.5 text-[9px] text-label hover:text-heading hover:bg-surface-hover"
                           >
                             <RefreshCw className="w-2.5 h-2.5 mr-0.5" />
                             Sync
@@ -315,7 +315,7 @@ export default function SystemSettingsPanel() {
                         {conn.status === 'disconnected' && (
                           <Button
                             size="sm"
-                            className="h-5 px-2 text-[9px] bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/20"
+                            className="h-5 px-2 text-[9px] bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20"
                           >
                             Connect
                           </Button>
@@ -323,7 +323,7 @@ export default function SystemSettingsPanel() {
                         {conn.status === 'error' && (
                           <Button
                             size="sm"
-                            className="h-5 px-2 text-[9px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                            className="h-5 px-2 text-[9px] bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
                           >
                             Retry
                           </Button>
@@ -334,7 +334,7 @@ export default function SystemSettingsPanel() {
                 );
               })}
 
-              <Button className="w-full h-7 text-[10px] mt-2 bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 border border-white/[0.06]">
+              <Button className="w-full h-7 text-[10px] mt-2 bg-surface-hover hover:bg-surface-active text-label border border-default">
                 <Plus className="w-3 h-3 mr-1" />
                 Add Integration
               </Button>
@@ -349,8 +349,8 @@ export default function SystemSettingsPanel() {
               {/* Brand Voice Profiles */}
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
-                  <BrainCircuit className="w-3 h-3 text-indigo-400" />
-                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                  <BrainCircuit className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-medium text-label uppercase tracking-wider">
                     Voice Profiles
                   </span>
                 </div>
@@ -360,19 +360,19 @@ export default function SystemSettingsPanel() {
                       key={vp.id}
                       className={`flex items-center justify-between rounded-lg border p-2.5 transition-colors ${
                         vp.active
-                          ? 'bg-indigo-500/[0.08] border-indigo-500/20'
-                          : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
+                          ? 'bg-primary/[0.08] border-primary/20'
+                          : 'bg-surface-hover border-default hover:bg-surface-active'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <div
                           className={`w-1.5 h-1.5 rounded-full ${
-                            vp.active ? 'bg-indigo-400' : 'bg-slate-600'
+                            vp.active ? 'bg-primary' : 'bg-gray-400'
                           }`}
                         />
                         <span
                           className={`text-[11px] font-medium ${
-                            vp.active ? 'text-indigo-300' : 'text-slate-400'
+                            vp.active ? 'text-primary' : 'text-label'
                           }`}
                         >
                           {vp.name}
@@ -381,7 +381,7 @@ export default function SystemSettingsPanel() {
                       {vp.active && (
                         <Badge
                           variant="outline"
-                          className="text-[8px] px-1.5 py-0 h-3.5 bg-indigo-500/10 border-indigo-500/20 text-indigo-300"
+                          className="text-[8px] px-1.5 py-0 h-3.5 bg-primary/10 border-primary/20 text-primary"
                         >
                           Active
                         </Badge>
@@ -391,13 +391,13 @@ export default function SystemSettingsPanel() {
                 </div>
               </div>
 
-              <Separator className="bg-white/[0.04]" />
+              <Separator className="bg-border" />
 
               {/* Customer Personas */}
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
-                  <Globe className="w-3 h-3 text-emerald-400" />
-                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                  <Globe className="w-3 h-3 text-emerald-500" />
+                  <span className="text-[10px] font-medium text-label uppercase tracking-wider">
                     Persona Segments
                   </span>
                 </div>
@@ -405,12 +405,12 @@ export default function SystemSettingsPanel() {
                   {personaSegments.map((ps) => (
                     <div
                       key={ps.id}
-                      className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5 hover:bg-white/[0.04] transition-colors"
+                      className="flex items-center justify-between rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors"
                     >
-                      <span className="text-[11px] text-slate-300">
+                      <span className="text-[11px] text-body">
                         {ps.label}
                       </span>
-                      <span className="text-[9px] text-slate-500 tabular-nums">
+                      <span className="text-[9px] text-dim tabular-nums">
                         {ps.count.toLocaleString()} records
                       </span>
                     </div>
@@ -418,18 +418,18 @@ export default function SystemSettingsPanel() {
                 </div>
               </div>
 
-              <Separator className="bg-white/[0.04]" />
+              <Separator className="bg-border" />
 
               {/* Banned Words */}
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
-                  <Ban className="w-3 h-3 text-red-400" />
-                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                  <Ban className="w-3 h-3 text-red-500" />
+                  <span className="text-[10px] font-medium text-label uppercase tracking-wider">
                     Banned Words
                   </span>
                   <Badge
                     variant="outline"
-                    className="text-[8px] px-1 py-0 h-3.5 border-white/[0.08] text-slate-500 ml-auto"
+                    className="text-[8px] px-1 py-0 h-3.5 border-default text-dim ml-auto"
                   >
                     {bannedWords.length}
                   </Badge>
@@ -439,7 +439,7 @@ export default function SystemSettingsPanel() {
                     <Badge
                       key={bw.id}
                       variant="outline"
-                      className="text-[10px] px-2 py-0.5 bg-red-500/[0.06] border-red-500/15 text-red-300 cursor-default group"
+                      className="text-[10px] px-2 py-0.5 bg-red-500/[0.06] border-red-500/15 text-red-500 cursor-default group"
                     >
                       {bw.word}
                       <button
@@ -458,34 +458,34 @@ export default function SystemSettingsPanel() {
                     onChange={(e) => setNewBannedWord(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addBannedWord()}
                     placeholder="Add word..."
-                    className="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-md px-2.5 py-1 text-[10px] text-slate-300 placeholder:text-slate-600 outline-none focus:border-indigo-500/30"
+                    className="flex-1 bg-surface-hover border border-default rounded-md px-2.5 py-1 text-[10px] text-body placeholder:text-faint outline-none focus:border-primary/30"
                   />
                   <Button
                     size="sm"
                     onClick={addBannedWord}
-                    className="h-6 px-2 text-[10px] bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 border border-white/[0.06]"
+                    className="h-6 px-2 text-[10px] bg-surface-hover hover:bg-surface-active text-label border border-default"
                   >
                     <Plus className="w-2.5 h-2.5" />
                   </Button>
                 </div>
               </div>
 
-              <Separator className="bg-white/[0.04]" />
+              <Separator className="bg-border" />
 
               {/* Save to Vector DB */}
-              <div className="rounded-lg border border-indigo-500/15 bg-indigo-500/[0.04] p-3">
+              <div className="rounded-lg border border-primary/15 bg-primary/[0.04] p-3">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <Shield className="w-3 h-3 text-indigo-400" />
-                  <span className="text-[10px] font-medium text-indigo-300">
+                  <Shield className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-medium text-primary">
                     Vector DB Status
                   </span>
                 </div>
-                <p className="text-[9px] text-slate-500 mb-2">
+                <p className="text-[9px] text-dim mb-2">
                   Brand DNA synced to vector database. AI will not repeat patterns.
                 </p>
                 <Button
                   size="sm"
-                  className="w-full h-6 text-[10px] bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/20"
+                  className="w-full h-6 text-[10px] bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20"
                 >
                   <Save className="w-2.5 h-2.5 mr-1" />
                   Sync to Vector DB
@@ -502,14 +502,14 @@ export default function SystemSettingsPanel() {
               {/* Smart Scheduling Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Zap className="w-3 h-3 text-amber-400" />
-                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                  <Zap className="w-3 h-3 text-amber-500" />
+                  <span className="text-[10px] font-medium text-label uppercase tracking-wider">
                     Smart Scheduling Rules
                   </span>
                 </div>
                 <Badge
                   variant="outline"
-                  className="text-[8px] px-1.5 py-0 h-3.5 bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                  className="text-[8px] px-1.5 py-0 h-3.5 bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
                 >
                   <BarChart3 className="w-2 h-2 mr-0.5" />
                   Data-driven
@@ -523,18 +523,18 @@ export default function SystemSettingsPanel() {
                     key={rule.id}
                     className={`rounded-lg border p-3 transition-colors ${
                       rule.enabled
-                        ? 'bg-white/[0.03] border-white/[0.08]'
-                        : 'bg-white/[0.01] border-white/[0.04] opacity-60'
+                        ? 'bg-surface-hover border-strong'
+                        : 'bg-surface-0 border-subtle opacity-60'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-medium text-slate-200">
+                        <span className="text-[11px] font-medium text-heading">
                           {rule.platform}
                         </span>
                         <Badge
                           variant="outline"
-                          className="text-[8px] px-1 py-0 h-3.5 border-white/[0.08] text-slate-500"
+                          className="text-[8px] px-1 py-0 h-3.5 border-default text-dim"
                         >
                           {rule.timeSlot}
                         </Badge>
@@ -550,23 +550,23 @@ export default function SystemSettingsPanel() {
                         {rule.days.map((day) => (
                           <span
                             key={day}
-                            className="text-[8px] bg-white/[0.06] rounded px-1.5 py-0.5 text-slate-400"
+                            className="text-[8px] bg-surface-active rounded px-1.5 py-0.5 text-label"
                           >
                             {day}
                           </span>
                         ))}
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-[9px] text-slate-500">
+                        <span className="text-[9px] text-dim">
                           Avg score:
                         </span>
                         <span
                           className={`text-[9px] font-medium tabular-nums ${
                             rule.scoreAvg >= 85
-                              ? 'text-emerald-400'
+                              ? 'text-emerald-500'
                               : rule.scoreAvg >= 75
-                              ? 'text-amber-400'
-                              : 'text-slate-400'
+                              ? 'text-amber-500'
+                              : 'text-gray-400'
                           }`}
                         >
                           {rule.scoreAvg}%
@@ -577,26 +577,26 @@ export default function SystemSettingsPanel() {
                 ))}
               </div>
 
-              <Button className="w-full h-7 text-[10px] bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 border border-white/[0.06]">
+              <Button className="w-full h-7 text-[10px] bg-surface-hover hover:bg-surface-active text-label border border-default">
                 <Plus className="w-3 h-3 mr-1" />
                 Add Schedule Rule
               </Button>
 
               {/* Historical Insight */}
-              <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 mt-2">
+              <div className="rounded-lg border border-default bg-surface-hover p-3 mt-2">
                 <div className="flex items-center gap-1.5 mb-2">
-                  <BarChart3 className="w-3 h-3 text-indigo-400" />
-                  <span className="text-[10px] font-medium text-slate-300">
+                  <BarChart3 className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-medium text-body">
                     Historical Insight
                   </span>
                 </div>
-                <p className="text-[9px] text-slate-500 leading-relaxed">
+                <p className="text-[9px] text-dim leading-relaxed">
                   Based on 90 days of engagement data, your best posting window is{' '}
-                  <span className="text-indigo-300 font-medium">
+                  <span className="text-primary font-medium">
                     Mon–Wed 09:00–11:00
                   </span>{' '}
                   for LinkedIn and{' '}
-                  <span className="text-indigo-300 font-medium">
+                  <span className="text-primary font-medium">
                     Thu 14:00–16:00
                   </span>{' '}
                   for Facebook. Recommend enabling TikTok weekend slots.
