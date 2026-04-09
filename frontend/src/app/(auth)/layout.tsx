@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthLayout } from "@/components/AuthLayout";
+import GoogleAuthProvider from "@/components/providers/google-auth-provider";
 
 export default function RootAuthLayout({
   children,
@@ -8,8 +9,10 @@ export default function RootAuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthLayout>
-      {children}
-    </AuthLayout>
+    <GoogleAuthProvider>
+      <AuthLayout>
+        {children}
+      </AuthLayout>
+    </GoogleAuthProvider>
   );
 }

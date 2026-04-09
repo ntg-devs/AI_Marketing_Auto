@@ -18,7 +18,7 @@ const campaigns = [
   { id: 3, name: 'SEO Content Sprint', status: 'draft' },
 ];
 
-export function CommandHeader() {
+export default function CommandHeader() {
   const { user } = useAuthStore();
   const initials = user?.full_name
     ?.split(' ')
