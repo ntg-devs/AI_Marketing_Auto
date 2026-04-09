@@ -1,6 +1,7 @@
 'use client';
 
 import CommandHeader from '@/components/command-center/CommandHeader';
+import RightPanelContainer from '@/components/panels/RightPanelContainer';
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default function DashboardLayout({
     <div className="flex flex-col h-screen bg-[#0a0a0f] overflow-hidden font-sans antialiased">
       <CommandHeader />
       <main className="flex-1 overflow-hidden">{children}</main>
+      <RightPanelContainer />
     </div>
   );
 }

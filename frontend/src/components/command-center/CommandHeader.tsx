@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/useAuthStore';
+import { usePanelStore } from '@/store/usePanelStore';
 
 const campaigns = [
   { id: 1, name: 'Product Launch Q2', status: 'active' },
@@ -20,6 +21,7 @@ const campaigns = [
 
 export default function CommandHeader() {
   const { user } = useAuthStore();
+  const { togglePanel, activePanel } = usePanelStore();
   const initials = user?.full_name
     ?.split(' ')
     .map((n) => n[0])
@@ -72,27 +74,52 @@ export default function CommandHeader() {
         </DropdownMenu>
       </div>
 
-      {/* Right: Actions */}
-      <div className="flex items-center gap-2">
+      {/* Right: Actions — Notification / Settings / Avatar */}
+      <div className="flex items-center gap-1.5">
+        {/* Notification Bell */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]"
+          onClick={() => togglePanel('notifications')}
+          className={`relative h-7 w-7 transition-colors ${
+            activePanel === 'notifications'
+              ? 'bg-amber-500/15 text-amber-300'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]'
+          }`}
         >
           <Bell className="w-3.5 h-3.5" />
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
         </Button>
+
+        {/* Settings Gear */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]"
+          onClick={() => togglePanel('settings')}
+          className={`h-7 w-7 transition-colors ${
+            activePanel === 'settings'
+              ? 'bg-indigo-500/15 text-indigo-300'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]'
+          }`}
         >
           <Settings className="w-3.5 h-3.5" />
         </Button>
-        <Avatar className="h-6 w-6 cursor-pointer">
-          <AvatarFallback className="bg-indigo-500/20 text-indigo-300 text-[10px] font-medium">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+
+        {/* Avatar — Account & Team */}
+        <button
+          onClick={() => togglePanel('account')}
+          className={`rounded-full transition-all ${
+            activePanel === 'account'
+              ? 'ring-2 ring-emerald-500/40 ring-offset-1 ring-offset-[#0c0c14]'
+              : ''
+          }`}
+        >
+          <Avatar className="h-6 w-6 cursor-pointer">
+            <AvatarFallback className="bg-indigo-500/20 text-indigo-300 text-[10px] font-medium">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+        </button>
       </div>
     </header>
   );
