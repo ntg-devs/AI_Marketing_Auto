@@ -16,6 +16,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import TipTapEditor from "./editor/TipTapEditor";
 import "./editor/tiptap-editor.css";
 
@@ -297,203 +302,218 @@ export default function MultiFormatEditorModule() {
 
       {/* Content Area */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Editor Panel */}
-        <div
-          className={`flex-1 flex flex-col min-w-0 ${
-            showPreview ? "border-r border-white/[0.06]" : ""
-          }`}
-        >
-          {editorMode === "outline" ? (
-            /* Master Outline View */
-            <ScrollArea className="flex-1">
-              <div className="p-4 space-y-0.5">
-                {mockOutline.map((section, idx) => {
-                  const isCollapsed = collapsedSections.has(section.id);
-                  return (
-                    <div key={section.id} className="group">
-                      <div
-                        className="flex items-start gap-1.5 py-2 px-2 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer"
-                        onClick={() => toggleCollapse(section.id)}
-                      >
-                        <button className="mt-0.5 shrink-0 text-slate-600 hover:text-slate-300">
-                          {isCollapsed ? (
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          ) : (
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                        <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
-                        <span className="text-[10px] text-indigo-400/60 font-mono mt-0.5 shrink-0 w-4">
-                          {idx + 1}.
-                        </span>
-                        <p className="text-[13px] text-slate-200 font-medium leading-relaxed">
-                          {section.text}
-                        </p>
+        <ResizablePanelGroup direction="horizontal">
+          {/* Editor Panel */}
+          <ResizablePanel
+            defaultSize="65%"
+            minSize="40%"
+            className={`flex flex-col min-w-0 ${
+              showPreview ? "border-r border-white/[0.06]" : ""
+            }`}
+          >
+            {editorMode === "outline" ? (
+              /* Master Outline View */
+              <ScrollArea className="flex-1 scrollbar-custom">
+                <div className="p-4 space-y-0.5">
+                  {mockOutline.map((section, idx) => {
+                    const isCollapsed = collapsedSections.has(section.id);
+                    return (
+                      <div key={section.id} className="group">
+                        <div
+                          className="flex items-start gap-1.5 py-2 px-2 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer"
+                          onClick={() => toggleCollapse(section.id)}
+                        >
+                          <button className="mt-0.5 shrink-0 text-slate-600 hover:text-slate-300">
+                            {isCollapsed ? (
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            ) : (
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+                          <span className="text-[10px] text-indigo-400/60 font-mono mt-0.5 shrink-0 w-4">
+                            {idx + 1}.
+                          </span>
+                          <p className="text-[13px] text-slate-200 font-medium leading-relaxed">
+                            {section.text}
+                          </p>
+                        </div>
+                        {!isCollapsed &&
+                          section.children.map((child, cIdx) => (
+                            <div
+                              key={child.id}
+                              className="flex items-start gap-1.5 py-1.5 px-2 pl-12 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer group/child"
+                            >
+                              <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-slate-700 opacity-0 group-hover/child:opacity-100 transition-opacity cursor-grab" />
+                              <span className="text-[10px] text-slate-600 font-mono mt-0.5 shrink-0">
+                                {idx + 1}.{cIdx + 1}
+                              </span>
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                {child.text}
+                              </p>
+                            </div>
+                          ))}
                       </div>
-                      {!isCollapsed &&
-                        section.children.map((child, cIdx) => (
-                          <div
-                            key={child.id}
-                            className="flex items-start gap-1.5 py-1.5 px-2 pl-12 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer group/child"
-                          >
-                            <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-slate-700 opacity-0 group-hover/child:opacity-100 transition-opacity cursor-grab" />
-                            <span className="text-[10px] text-slate-600 font-mono mt-0.5 shrink-0">
-                              {idx + 1}.{cIdx + 1}
-                            </span>
-                            <p className="text-xs text-slate-400 leading-relaxed">
-                              {child.text}
-                            </p>
-                          </div>
-                        ))}
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          ) : (
-            /* Individual Assets View with TipTap Editor */
-            <div className="flex flex-col flex-1 min-h-0">
-              {/* Platform Tabs */}
-              <div className="flex items-center gap-1 px-3 py-1.5 border-b border-white/[0.06] bg-[#0c0c14]/30 shrink-0">
-                {(Object.keys(platformConfigs) as Platform[]).map((p) => {
-                  const cfg = platformConfigs[p];
-                  const PIcon = cfg.icon;
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => setSelectedPlatform(p)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-                        selectedPlatform === p
-                          ? "bg-indigo-500/15 text-indigo-300 shadow-sm shadow-indigo-500/5"
-                          : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.04]"
-                      }`}
-                    >
-                      <PIcon
-                        className={`w-3.5 h-3.5 ${selectedPlatform === p ? cfg.color : ""}`}
-                      />
-                      {cfg.title}
-                    </button>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            ) : (
+              /* Individual Assets View with TipTap Editor */
+              <div className="flex flex-col flex-1 min-h-0">
+                {/* Platform Tabs */}
+                <div className="flex items-center gap-1 px-3 py-1.5 border-b border-white/[0.06] bg-[#0c0c14]/30 shrink-0">
+                  {(Object.keys(platformConfigs) as Platform[]).map((p) => {
+                    const cfg = platformConfigs[p];
+                    const PIcon = cfg.icon;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => setSelectedPlatform(p)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                          selectedPlatform === p
+                            ? "bg-indigo-500/15 text-indigo-300 shadow-sm shadow-indigo-500/5"
+                            : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.04]"
+                        }`}
+                      >
+                        <PIcon
+                          className={`w-3.5 h-3.5 ${selectedPlatform === p ? cfg.color : ""}`}
+                        />
+                        {cfg.title}
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {/* TipTap Editor */}
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <TipTapEditor
-                  key={selectedPlatform}
-                  content={editorContent[selectedPlatform]}
-                  onChange={(html) =>
-                    setEditorContent((prev) => ({
-                      ...prev,
-                      [selectedPlatform]: html,
-                    }))
-                  }
-                  placeholder={currentConfig.placeholder}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Preview Panel */}
-        {showPreview && (
-          <div className="w-[320px] flex flex-col bg-white/[0.01] shrink-0">
-            <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between shrink-0">
-              <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                Live Preview
-              </span>
-              <div className="flex bg-white/[0.03] rounded-md p-0.5">
-                <button
-                  onClick={() => setPreviewDevice("desktop")}
-                  className={`p-1 rounded-[4px] transition-colors ${
-                    previewDevice === "desktop"
-                      ? "bg-white/[0.08] text-slate-200"
-                      : "text-slate-500 hover:text-slate-300"
-                  }`}
-                >
-                  <Monitor className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setPreviewDevice("mobile")}
-                  className={`p-1 rounded-[4px] transition-colors ${
-                    previewDevice === "mobile"
-                      ? "bg-white/[0.08] text-slate-200"
-                      : "text-slate-500 hover:text-slate-300"
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="p-3">
-                <div
-                  className={`mx-auto rounded-xl border border-white/[0.08] overflow-hidden shadow-lg shadow-black/20 transition-all ${
-                    previewDevice === "mobile" ? "max-w-[240px]" : "w-full"
-                  }`}
-                >
-                  {/* Platform Header Bar */}
-                  <div className="bg-white/[0.03] px-3 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
-                    {(() => {
-                      const PIcon = currentConfig.icon;
-                      return (
-                        <PIcon className={`w-4 h-4 ${currentConfig.color}`} />
-                      );
-                    })()}
-                    <span className="text-[11px] text-slate-300 font-medium">
-                      {currentConfig.title}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className="ml-auto text-[8px] px-1.5 py-0 h-4 border-white/[0.08] text-slate-500"
-                    >
-                      Draft
-                    </Badge>
-                  </div>
-
-                  {/* Author Section */}
-                  <div className="px-4 pt-3 pb-2 flex items-center gap-2.5 border-b border-white/[0.04]">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center shrink-0">
-                      <span className="text-[10px] text-indigo-300 font-semibold">
-                        AF
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-200 font-medium">
-                        AetherFlow
-                      </p>
-                      <p className="text-[9px] text-slate-600">
-                        Just now · Draft Preview
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Content Preview - Rendered HTML */}
-                  <div
-                    className={`px-4 py-3 tiptap-editor-content ${
-                      previewDevice === "mobile" ? "text-[10px]" : "text-[11px]"
-                    }`}
-                    style={{
-                      padding: "12px 16px",
-                      fontSize: previewDevice === "mobile" ? "10px" : "11px",
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: editorContent[selectedPlatform],
-                    }}
+                {/* TipTap Editor */}
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <TipTapEditor
+                    key={selectedPlatform}
+                    content={editorContent[selectedPlatform]}
+                    onChange={(html) =>
+                      setEditorContent((prev) => ({
+                        ...prev,
+                        [selectedPlatform]: html,
+                      }))
+                    }
+                    placeholder={currentConfig.placeholder}
+                    className="scrollbar-custom"
                   />
-
-                  {/* Engagement Mockup */}
-                  <div className="px-4 py-2.5 border-t border-white/[0.06] flex items-center justify-between text-[9px] text-slate-600">
-                    <span>👍 Like</span>
-                    <span>💬 Comment</span>
-                    <span>🔄 Share</span>
-                    <span>📤 Send</span>
-                  </div>
                 </div>
               </div>
-            </ScrollArea>
-          </div>
-        )}
+            )}
+          </ResizablePanel>
+
+          {showPreview && (
+            <>
+              <ResizableHandle 
+                withHandle 
+                className="bg-white/5 data-[panel-group-direction=vertical]:h-px w-px hover:bg-indigo-500/30 transition-all"
+              />
+              <ResizablePanel
+                defaultSize="35%"
+                minSize="25%"
+                maxSize="50%"
+                className="min-w-0 flex flex-col bg-[#0c0c14]/30"
+              >
+                <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                    Live Preview
+                  </span>
+                  <div className="flex bg-white/[0.03] rounded-md p-0.5">
+                    <button
+                      onClick={() => setPreviewDevice("desktop")}
+                      className={`p-1 rounded-[4px] transition-colors ${
+                        previewDevice === "desktop"
+                          ? "bg-white/[0.08] text-slate-200"
+                          : "text-slate-500 hover:text-slate-300"
+                      }`}
+                    >
+                      <Monitor className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setPreviewDevice("mobile")}
+                      className={`p-1 rounded-[4px] transition-colors ${
+                        previewDevice === "mobile"
+                          ? "bg-white/[0.08] text-slate-200"
+                          : "text-slate-500 hover:text-slate-300"
+                      }`}
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <ScrollArea className="flex-1 scrollbar-custom">
+                  <div className="p-3">
+                    <div
+                      className={`mx-auto rounded-xl border border-white/[0.08] overflow-hidden shadow-lg shadow-black/20 transition-all ${
+                        previewDevice === "mobile" ? "max-w-[240px]" : "w-full"
+                      }`}
+                    >
+                      {/* Platform Header Bar */}
+                      <div className="bg-white/[0.03] px-3 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
+                        {(() => {
+                          const PIcon = currentConfig.icon;
+                          return (
+                            <PIcon className={`w-4 h-4 ${currentConfig.color}`} />
+                          );
+                        })()}
+                        <span className="text-[11px] text-slate-300 font-medium">
+                          {currentConfig.title}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="ml-auto text-[8px] px-1.5 py-0 h-4 border-white/[0.08] text-slate-500"
+                        >
+                          Draft
+                        </Badge>
+                      </div>
+
+                      {/* Author Section */}
+                      <div className="px-4 pt-3 pb-2 flex items-center gap-2.5 border-b border-white/[0.04]">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center shrink-0">
+                          <span className="text-[10px] text-indigo-300 font-semibold">
+                            AF
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-slate-200 font-medium">
+                            AetherFlow
+                          </p>
+                          <p className="text-[9px] text-slate-600">
+                            Just now · Draft Preview
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Content Preview - Rendered HTML */}
+                      <div
+                        className={`px-4 py-3 tiptap-editor-content ${
+                          previewDevice === "mobile" ? "text-[10px]" : "text-[11px]"
+                        }`}
+                        style={{
+                          padding: "12px 16px",
+                          fontSize: previewDevice === "mobile" ? "10px" : "11px",
+                        }}
+                        dangerouslySetInnerHTML={{
+                          __html: editorContent[selectedPlatform],
+                        }}
+                      />
+
+                      {/* Engagement Mockup */}
+                      <div className="px-4 py-2.5 border-t border-white/[0.06] flex items-center justify-between text-[9px] text-slate-600">
+                        <span>👍 Like</span>
+                        <span>💬 Comment</span>
+                        <span>🔄 Share</span>
+                        <span>📤 Send</span>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
       </div>
     </div>
   );
