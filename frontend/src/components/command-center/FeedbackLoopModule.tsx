@@ -35,7 +35,7 @@ const metrics = [
   { label: 'AI Score', value: '94', change: '+52%', trend: 'up' as const },
 ];
 
-export function FeedbackLoopModule() {
+export default function FeedbackLoopModule() {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between px-4 py-2.5">

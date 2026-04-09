@@ -1,6 +1,6 @@
 'use client';
 
-import { CommandHeader } from '@/components/command-center/CommandHeader';
+import CommandHeader from '@/components/command-center/CommandHeader';
 
 export default function DashboardLayout({
   children,

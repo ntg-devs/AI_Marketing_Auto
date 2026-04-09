@@ -44,7 +44,7 @@ const tagColors: Record<ContextTag['type'], string> = {
   platform: 'bg-sky-500/15 text-sky-300 border-sky-500/20',
 };
 
-export function SmartEntryModule() {
+export default function SmartEntryModule() {
   const [inputMode, setInputMode] = useState<InputMode>('link');
   const [inputValue, setInputValue] = useState('');
   const [brandVoiceOn, setBrandVoiceOn] = useState(true);

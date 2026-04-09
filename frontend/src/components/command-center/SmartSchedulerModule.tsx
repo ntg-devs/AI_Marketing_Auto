@@ -106,7 +106,7 @@ const statusConfig: Record<
   },
 };
 
-export function SmartSchedulerModule() {
+export default function SmartSchedulerModule() {
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
 
   const getDateForDay = (dayIndex: number) => {

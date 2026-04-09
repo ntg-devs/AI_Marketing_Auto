@@ -1,10 +1,10 @@
 'use client';
 
-import { SmartEntryModule } from '@/components/command-center/SmartEntryModule';
-import { LiveResearchModule } from '@/components/command-center/LiveResearchModule';
-import { MultiFormatEditorModule } from '@/components/command-center/MultiFormatEditorModule';
-import { SmartSchedulerModule } from '@/components/command-center/SmartSchedulerModule';
-import { FeedbackLoopModule } from '@/components/command-center/FeedbackLoopModule';
+import SmartEntryModule from '@/components/command-center/SmartEntryModule';
+import LiveResearchModule from '@/components/command-center/LiveResearchModule';
+import MultiFormatEditorModule from '@/components/command-center/MultiFormatEditorModule';
+import SmartSchedulerModule from '@/components/command-center/SmartSchedulerModule';
+import FeedbackLoopModule from '@/components/command-center/FeedbackLoopModule';
 
 export default function CommandCenterPage() {
   return (

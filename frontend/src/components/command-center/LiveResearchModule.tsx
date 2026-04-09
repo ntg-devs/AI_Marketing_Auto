@@ -114,7 +114,7 @@ const sourceColors: Record<Insight['source'], string> = {
   trends: 'text-blue-400',
 };
 
-export function LiveResearchModule() {
+export default function LiveResearchModule() {
   const [activeTab, setActiveTab] = useState<FeedTab>('insights');
   const [isRefreshing, setIsRefreshing] = useState(false);
 

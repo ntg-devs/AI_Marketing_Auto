@@ -1,0 +1,255 @@
+/* TipTap Editor Styles - WYSIWYG Content */
+
+/* Editor Container */
+.tiptap-editor-content {
+  padding: 1.25rem 1.5rem;
+  min-height: 100%;
+  color: #e2e8f0;
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  caret-color: #6366f1;
+}
+
+/* Placeholder */
+.tiptap-editor-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #475569;
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+.is-editor-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #475569;
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* Headings */
+.tiptap-editor-content h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.tiptap-editor-content h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.tiptap-editor-content h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+  line-height: 1.4;
+}
+
+/* Paragraphs */
+.tiptap-editor-content p {
+  margin-bottom: 0.75rem;
+  color: #cbd5e1;
+}
+
+.tiptap-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Strong & Em */
+.tiptap-editor-content strong {
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.tiptap-editor-content em {
+  font-style: italic;
+  color: #e2e8f0;
+}
+
+.tiptap-editor-content u {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(99, 102, 241, 0.5);
+}
+
+.tiptap-editor-content s {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Links */
+.tiptap-link {
+  color: #818cf8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(129, 140, 248, 0.4);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.tiptap-link:hover {
+  color: #a5b4fc;
+  text-decoration-color: rgba(165, 180, 252, 0.6);
+}
+
+/* Highlight */
+.tiptap-editor-content mark {
+  background-color: rgba(250, 204, 21, 0.2);
+  color: #fef08a;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* Lists */
+.tiptap-editor-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tiptap-editor-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tiptap-editor-content li {
+  margin-bottom: 0.3rem;
+  color: #cbd5e1;
+}
+
+.tiptap-editor-content li p {
+  margin-bottom: 0.15rem;
+}
+
+.tiptap-editor-content li::marker {
+  color: #64748b;
+}
+
+/* Blockquote */
+.tiptap-editor-content blockquote {
+  border-left: 3px solid #6366f1;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 0 0.35rem 0.35rem 0;
+}
+
+.tiptap-editor-content blockquote p {
+  color: #94a3b8;
+  font-style: italic;
+  margin-bottom: 0;
+}
+
+/* Code Inline */
+.tiptap-editor-content code {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e879f9;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Code Block */
+.tiptap-editor-content pre {
+  background: #0d0d15;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.tiptap-editor-content pre code {
+  background: transparent;
+  color: #cbd5e1;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+/* Horizontal Rule */
+.tiptap-editor-content hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 1.5rem 0;
+}
+
+/* Images - WYSIWYG rendering */
+.tiptap-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  cursor: pointer;
+  display: block;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.tiptap-image:hover {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* Selected Image */
+.tiptap-editor-content .ProseMirror-selectednode .tiptap-image,
+.tiptap-editor-content img.ProseMirror-selectednode {
+  box-shadow: 0 0 0 2px #6366f1;
+  border-radius: 0.5rem;
+}
+
+/* Selection */
+.tiptap-editor-content ::selection {
+  background: rgba(99, 102, 241, 0.3);
+  color: inherit;
+}
+
+/* Text alignment */
+.tiptap-editor-content [style*="text-align: center"] {
+  text-align: center;
+}
+.tiptap-editor-content [style*="text-align: right"] {
+  text-align: right;
+}
+
+/* Gapcursor */
+.ProseMirror-gapcursor::after {
+  border-top-color: #6366f1 !important;
+}
+
+/* Dropcursor */
+.ProseMirror-dropcursor {
+  color: #6366f1 !important;
+}
+
+/* Focus outline - remove default */
+.ProseMirror:focus {
+  outline: none;
+}
+
+/* Smooth scrollbar inside editor */
+.tiptap-editor-content::-webkit-scrollbar {
+  width: 4px;
+}
+.tiptap-editor-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tiptap-editor-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
