@@ -108,18 +108,29 @@
 
 /* Custom scrollbar for Command Center */
 @layer utilities {
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
   }
-  .scrollbar-thin::-webkit-scrollbar-track {
+  .scrollbar-custom::-webkit-scrollbar-track {
     background: transparent;
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
+  .scrollbar-custom::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.08);
-    border-radius: 999px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.15);
+    background-clip: padding-box;
+  }
+  
+  /* Hide scrollbar handle when not hovering */
+  .scrollbar-custom-hover::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+  .scrollbar-custom-hover:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
   }
 }

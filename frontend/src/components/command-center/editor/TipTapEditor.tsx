@@ -157,7 +157,7 @@ export default function TipTapEditor({
 
 
       {/* Editor Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-custom">
         <EditorContent editor={editor} className="h-full" />
       </div>
 
