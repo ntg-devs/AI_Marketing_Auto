@@ -26,6 +26,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const TypedResponsiveContainer = ResponsiveContainer as any;
 
@@ -73,12 +74,15 @@ const recentActivities = [
 const TypedAreaChart = AreaChart as any;
 
 export default function DashboardPage() {
+
+  const {user, isAuthenticated} = useAuthStore();
+
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl text-white mb-2">Welcome back, GLabs</h1>
+          <h1 className="text-3xl text-white mb-2">Welcome back, {user?.full_name}</h1>
           <p className="text-slate-400">
             Here&apos;s what&apos;s happening with your projects today
           </p>
