@@ -241,14 +241,4 @@
   outline: none;
 }
 
-/* Smooth scrollbar inside editor */
-.tiptap-editor-content::-webkit-scrollbar {
-  width: 4px;
-}
-.tiptap-editor-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-.tiptap-editor-content::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 999px;
-}
+
