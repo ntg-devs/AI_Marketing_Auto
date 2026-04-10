@@ -24,12 +24,15 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 
 	// 1. Repository
 	userRepo := repository.NewUserRepository(db)
+	crawlRepo := repository.NewCrawlRepository(db)
 
 	// 2. Service
 	userService := service.NewUserService(userRepo, jwtSecret, distributor)
+	crawlService := service.NewCrawlService(crawlRepo, distributor)
 
 	// 3. Handlers
 	userHandler := http.NewUserHandler(userService)
+	crawlHandler := http.NewCrawlHandler(crawlService)
 
 	// 4. Router Setup
 	r := chi.NewRouter()
@@ -50,6 +53,8 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 		r.Post("/auth/login", userHandler.Login)
 		r.Post("/auth/verify-otp", userHandler.VerifyOTP)
 		r.Post("/auth/google", userHandler.GoogleLogin)
+		r.Post("/research/url", crawlHandler.SubmitURL)
+		r.Get("/research/jobs/{jobID}", crawlHandler.GetJob)
 	})
 
 	return &App{

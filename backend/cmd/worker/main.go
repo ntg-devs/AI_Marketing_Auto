@@ -1,13 +1,18 @@
 package main
 
 import (
+	"bityagi/internal/domain"
+	"bityagi/internal/repository"
 	"bityagi/internal/task"
+	"bityagi/pkg/crawlerclient"
 	"bityagi/pkg/mail"
 	"log"
 	"os"
 
 	"github.com/hibiken/asynq"
 	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -20,6 +25,20 @@ func main() {
 		redisAddr = "localhost:6379"
 	}
 
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		dsn = "host=localhost user=postgres password=postgres dbname=ai_marketing_auto port=5432 sslmode=disable"
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	if err := db.AutoMigrate(&domain.KnowledgeSource{}, &domain.CrawlJob{}, &domain.CrawlPage{}); err != nil {
+		log.Fatal("Failed to migrate database:", err)
+	}
+
 	// Initialize Mailer Config
 	mailer := mail.NewSMTPSender(
 		os.Getenv("SMTP_HOST"),
@@ -29,8 +48,12 @@ func main() {
 		os.Getenv("SMTP_FROM"),
 	)
 
+	crawlRepo := repository.NewCrawlRepository(db)
+	crawlerAPIURL := os.Getenv("CRAWLER_API_URL")
+	crawlerSvc := crawlerclient.New(crawlerAPIURL)
+
 	redisOpt := asynq.RedisClientOpt{Addr: redisAddr}
-	processor := task.NewRedisTaskProcessor(redisOpt, mailer)
+	processor := task.NewRedisTaskProcessor(redisOpt, mailer, crawlRepo, crawlerSvc)
 
 	log.Printf("Worker server starting on Redis %s...", redisAddr)
 	if err := processor.Start(); err != nil {

@@ -73,11 +73,32 @@ services:
       - DATABASE_URL=host=db user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} port=5432 sslmode=disable
       - REDIS_URL=redis:6379
       - JWT_SECRET=${JWT_SECRET}
+      - CRAWLER_API_URL=http://crawler:3100
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      crawler:
+        condition: service_started
+    networks:
+      - app-network
+
+  # ==================== CRAWLER ====================
+  crawler:
+    build:
+      context: ./crawler
+      dockerfile: Dockerfile
+    container_name: ai-content-crawler
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      - PORT=3100
+      - BROWSERLESS_WS_ENDPOINT=${BROWSERLESS_WS_ENDPOINT}
+      - PLAYWRIGHT_PROXY_SERVER=${PLAYWRIGHT_PROXY_SERVER}
+      - PLAYWRIGHT_PROXY_USERNAME=${PLAYWRIGHT_PROXY_USERNAME}
+      - PLAYWRIGHT_PROXY_PASSWORD=${PLAYWRIGHT_PROXY_PASSWORD}
     networks:
       - app-network
 
