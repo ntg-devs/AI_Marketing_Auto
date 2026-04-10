@@ -90,7 +90,7 @@ const statusDotColor: Record<TeamMember['status'], string> = {
 /* ─── Component ────────────────────────────────────────────────────── */
 
 export default function AccountTeamPanel() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [showToken, setShowToken] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
   const [copiedToken, setCopiedToken] = useState(false);
@@ -225,7 +225,13 @@ export default function AccountTeamPanel() {
               <Button className="w-full h-7 text-[10px] bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500 border border-emerald-500/20">
                 Save Changes
               </Button>
-              <Button className="w-full h-7 text-[10px] bg-red-500/15 hover:bg-red-500/25 text-red-500 border border-red-500/20">
+              <Button 
+                onClick={() => {
+                  logout();
+                  window.location.href = '/login';
+                }}
+                className="w-full h-7 text-[10px] bg-red-500/15 hover:bg-red-500/25 text-red-500 border border-red-500/20"
+              >
                 Log out
               </Button>
             </div>

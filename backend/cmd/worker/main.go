@@ -2,6 +2,7 @@ package main
 
 import (
 	"bityagi/internal/task"
+	"bityagi/pkg/mail"
 	"log"
 	"os"
 
@@ -19,8 +20,17 @@ func main() {
 		redisAddr = "localhost:6379"
 	}
 
+	// Initialize Mailer Config
+	mailer := mail.NewSMTPSender(
+		os.Getenv("SMTP_HOST"),
+		os.Getenv("SMTP_PORT"),
+		os.Getenv("SMTP_USERNAME"),
+		os.Getenv("SMTP_PASSWORD"),
+		os.Getenv("SMTP_FROM"),
+	)
+
 	redisOpt := asynq.RedisClientOpt{Addr: redisAddr}
-	processor := task.NewRedisTaskProcessor(redisOpt)
+	processor := task.NewRedisTaskProcessor(redisOpt, mailer)
 
 	log.Printf("Worker server starting on Redis %s...", redisAddr)
 	if err := processor.Start(); err != nil {

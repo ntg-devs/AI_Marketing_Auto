@@ -14,15 +14,15 @@ type User struct {
 	AvatarURL       string    `json:"avatar_url"`
 	Role            string    `json:"role" gorm:"default:user"`
 	IsActive        bool      `json:"is_active" gorm:"default:true"`
-	Provider        string    `json:"provider" gorm:"default:	"`
+	Provider        string    `json:"provider" gorm:"default:credentials"`
 	EmailVerifiedAt *time.Time    `json:"email_verified_at"`
 	CreatedAt       time.Time     `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt       time.Time     `json:"updated_at" gorm:"autoUpdateTime"`
 }
 
 type UserCredentials struct {
-	UserID       uuid.UUID `gorm:"primaryKey"`
-	PasswordHash string
+	UserID       uuid.UUID `gorm:"primaryKey;column:user_id"`
+	PasswordHash string    `gorm:"column:password_hash"`
 	OTPCode      string
 	OTPExpiresAt *time.Time
 	LastLoginAt  *time.Time
