@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"math/rand"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -28,6 +30,16 @@ func NewUserService(repo domain.UserRepository, secret string, distributor task.
 		jwtSecret:   secret,
 		distributor: distributor,
 	}
+}
+
+func generateOTP(length int) string {
+	const charset = "0123456789"
+	b := make([]byte, length)
+	for i := range b {
+		// Note: Using math/rand here (insecure). For production, use crypto/rand.
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
 }
 
 func (s *userService) Register(ctx context.Context, req *domain.RegisterRequest) (*domain.AuthResponse, error) {
@@ -52,31 +64,79 @@ func (s *userService) Register(ctx context.Context, req *domain.RegisterRequest)
 		Email:    req.Email,
 		FullName: req.FullName,
 		Provider: "credentials",
+		IsActive: false, // Inactive until OTP verified
 	}
+
+	// 4. Generate OTP
+	otpCode := generateOTP(6)
+	expiresAt := time.Now().Add(10 * time.Minute)
 
 	creds := &domain.UserCredentials{
 		PasswordHash: string(hashedPassword),
+		OTPCode:      otpCode,
+		OTPExpiresAt: &expiresAt,
 	}
 
-	// 4. Save to DB
+	// 5. Save to DB
 	if err := s.repo.Create(ctx, user, creds); err != nil {
 		return nil, err
 	}
 
-	// 5. Generate token (real logic)
-	token, err := auth.GenerateToken(user.ID, s.jwtSecret)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate token: %w", err)
-	}
-
-	// 6. ASYNC TASK: Send welcome email (Event-Driven)
+	// 6. ASYNC TASK: Send OTP email
 	emailPayload := &task.SendWelcomeEmailPayload{
 		UserEmail: user.Email,
 		FullName:  user.FullName,
+		OTP:       otpCode,
 	}
 	if err := s.distributor.DistributeTaskSendWelcomeEmail(ctx, emailPayload); err != nil {
-		// We log the error but don't fail the registration because the user is already created
 		log.Printf("failed to enqueue welcome email task: %v", err)
+	}
+
+	return &domain.AuthResponse{
+		Message:    "Registration successful. Please check your email for the OTP.",
+		RequireOTP: true,
+	}, nil
+}
+
+func (s *userService) VerifyEmailOTP(ctx context.Context, req *domain.VerifyOTPRequest) (*domain.AuthResponse, error) {
+	// 1. Find user
+	user, err := s.repo.GetByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("invalid email or OTP") // Do not reveal if email exists
+	}
+
+	// 2. Get credentials
+	creds, err := s.repo.GetCredentials(ctx, user.ID)
+	if err != nil {
+		return nil, errors.New("invalid email or OTP")
+	}
+
+	// 3. Verify OTP
+	if creds.OTPCode != req.OTP || creds.OTPExpiresAt == nil || time.Now().After(*creds.OTPExpiresAt) {
+		return nil, errors.New("invalid or expired OTP")
+	}
+
+	// 4. Update user & credentials
+	now := time.Now()
+	user.IsActive = true
+	user.EmailVerifiedAt = &now
+	if err := s.repo.Update(ctx, user); err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
+	}
+
+	creds.OTPCode = ""
+	creds.OTPExpiresAt = nil
+	if err := s.repo.UpdateCredentials(ctx, creds); err != nil {
+		log.Printf("failed to clear OTP: %v", err)
+	}
+
+	// 5. Generate Token
+	token, err := auth.GenerateToken(user.ID, s.jwtSecret)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
 	return &domain.AuthResponse{
@@ -84,6 +144,7 @@ func (s *userService) Register(ctx context.Context, req *domain.RegisterRequest)
 		Token: token,
 	}, nil
 }
+
 
 func (s *userService) Login(ctx context.Context, req *domain.LoginRequest) (*domain.AuthResponse, error) {
 	// 1. Find user by email

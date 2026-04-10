@@ -46,8 +46,9 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 
 	// 5. Build Routes
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Post("/register", userHandler.Register)
-		r.Post("/login", userHandler.Login)
+		r.Post("/auth/register", userHandler.Register)
+		r.Post("/auth/login", userHandler.Login)
+		r.Post("/auth/verify-otp", userHandler.VerifyOTP)
 		r.Post("/auth/google", userHandler.GoogleLogin)
 	})
 

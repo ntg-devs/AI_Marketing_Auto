@@ -9,13 +9,15 @@ interface GoogleLoginRequest {
 }
 
 interface AuthResponse {
-  user: {
+  user?: {
     id: string;
     email: string;
     full_name: string;
     avatar_url?: string;
   };
-  token: string;
+  token?: string;
+  message?: string;
+  require_otp?: boolean;
 }
 
 /**
@@ -36,6 +38,14 @@ export const authApi = {
    */
   async register(data: any): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/api/v1/auth/register', data);
+    return response as any;
+  },
+
+  /**
+   * Xác thực tài khoản với OTP
+   */
+  async verifyOtp(data: { email: string; otp: string }): Promise<AuthResponse> {
+    const response = await apiClient.post<AuthResponse>('/api/v1/auth/verify-otp', data);
     return response as any;
   },
 

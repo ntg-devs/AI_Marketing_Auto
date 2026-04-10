@@ -225,6 +225,9 @@ export default function AccountTeamPanel() {
               <Button className="w-full h-7 text-[10px] bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500 border border-emerald-500/20">
                 Save Changes
               </Button>
+              <Button className="w-full h-7 text-[10px] bg-red-500/15 hover:bg-red-500/25 text-red-500 border border-red-500/20">
+                Log out
+              </Button>
             </div>
           </ScrollArea>
         </TabsContent>
