@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"bityagi/pkg/mail"
 	"github.com/hibiken/asynq"
 )
 
@@ -17,9 +18,10 @@ type TaskProcessor interface {
 
 type RedisTaskProcessor struct {
 	server *asynq.Server
+	mailer *mail.SMTPSender
 }
 
-func NewRedisTaskProcessor(redisOpt asynq.RedisConnOpt) TaskProcessor {
+func NewRedisTaskProcessor(redisOpt asynq.RedisConnOpt, mailer *mail.SMTPSender) TaskProcessor {
 	server := asynq.NewServer(
 		redisOpt,
 		asynq.Config{
@@ -32,6 +34,7 @@ func NewRedisTaskProcessor(redisOpt asynq.RedisConnOpt) TaskProcessor {
 	)
 	return &RedisTaskProcessor{
 		server: server,
+		mailer: mailer,
 	}
 }
 
@@ -63,8 +66,27 @@ func (p *RedisTaskProcessor) ProcessTaskSendWelcomeEmail(ctx context.Context, t 
 
 	if payload.OTP != "" {
 		log.Printf("Worker: Sending OTP email to %s (%s). OTP Code: %s\n", payload.UserEmail, payload.FullName, payload.OTP)
+		
+		// Render HTML body
+		htmlBody, err := mail.GenerateOTPTemplate(payload.FullName, payload.OTP)
+		if err != nil {
+			return fmt.Errorf("could not generate OTP template: %w", err)
+		}
+
+		// Send email if mailer is configured
+		if p.mailer != nil && p.mailer.Host != "" {
+			err = p.mailer.SendEmail([]string{payload.UserEmail}, "Verify your AetherFlow account", htmlBody)
+			if err != nil {
+				return fmt.Errorf("could not send SMTP email: %w", err)
+			}
+			log.Println("Worker: SMTP Email successfully delivered.")
+		} else {
+			log.Println("Worker: SMTP is not configured. Email bypassed.")
+		}
+
 	} else {
 		log.Printf("Worker: Sending welcome email to %s (%s)\n", payload.UserEmail, payload.FullName)
+		// For welcome emails without OTP...
 	}
 
 	return nil
