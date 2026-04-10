@@ -272,7 +272,7 @@ export default function MultiFormatEditorModule() {
 
           <div className="flex items-center gap-1.5">
             {editorMode === "assets" && (
-              <span className="text-[10px] text-faint mr-2">
+              <span className="text-[10px] text-faint mr-2 !text-white">
                 {wordCount} words
               </span>
             )}

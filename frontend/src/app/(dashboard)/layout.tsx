@@ -2,6 +2,7 @@
 
 import CommandHeader from '@/components/command-center/CommandHeader';
 import RightPanelContainer from '@/components/panels/RightPanelContainer';
+import CampaignHistoryOverlay from '@/components/campaign-history/CampaignHistoryOverlay';
 
 export default function DashboardLayout({
   children,
@@ -13,6 +14,7 @@ export default function DashboardLayout({
       <CommandHeader />
       <main className="flex-1 overflow-hidden">{children}</main>
       <RightPanelContainer />
+      <CampaignHistoryOverlay />
     </div>
   );
 }
