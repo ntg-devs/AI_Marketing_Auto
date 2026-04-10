@@ -32,7 +32,13 @@ func main() {
 
 	// 2.1 Auto Migrate Models
 	log.Println("Running database migrations...")
-	err = db.AutoMigrate(&domain.User{}, &domain.UserCredentials{})
+	err = db.AutoMigrate(
+		&domain.User{},
+		&domain.UserCredentials{},
+		&domain.KnowledgeSource{},
+		&domain.CrawlJob{},
+		&domain.CrawlPage{},
+	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}

@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	TypeGenerateContent = "task:generate_content"
+	TypeGenerateContent  = "task:generate_content"
 	TypeSendWelcomeEmail = "task:send_welcome_email"
+	TypeCrawlSourceURL   = "task:crawl_source_url"
 )
 
 type GenerateContentPayload struct {
@@ -21,6 +22,15 @@ type SendWelcomeEmailPayload struct {
 	UserEmail string `json:"user_email"`
 	FullName  string `json:"full_name"`
 	OTP       string `json:"otp,omitempty"`
+}
+
+type CrawlSourceURLPayload struct {
+	JobID       uuid.UUID `json:"job_id"`
+	URL         string    `json:"url"`
+	Strategy    string    `json:"strategy"`
+	MaxPages    int       `json:"max_pages"`
+	UseStealth  bool      `json:"use_stealth,omitempty"`
+	ProxyRegion string    `json:"proxy_region,omitempty"`
 }
 
 func MarshalPayload(payload interface{}) ([]byte, error) {

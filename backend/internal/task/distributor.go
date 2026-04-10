@@ -17,6 +17,11 @@ type TaskDistributor interface {
 		payload *SendWelcomeEmailPayload,
 		opts ...asynq.Option,
 	) error
+	DistributeTaskCrawlSourceURL(
+		ctx context.Context,
+		payload *CrawlSourceURLPayload,
+		opts ...asynq.Option,
+	) error
 }
 
 type RedisTaskDistributor struct {
@@ -56,6 +61,21 @@ func (d *RedisTaskDistributor) DistributeTaskSendWelcomeEmail(
 	}
 
 	task := asynq.NewTask(TypeSendWelcomeEmail, jsonPayload, opts...)
+	_, err = d.client.EnqueueContext(ctx, task)
+	return err
+}
+
+func (d *RedisTaskDistributor) DistributeTaskCrawlSourceURL(
+	ctx context.Context,
+	payload *CrawlSourceURLPayload,
+	opts ...asynq.Option,
+) error {
+	jsonPayload, err := MarshalPayload(payload)
+	if err != nil {
+		return err
+	}
+
+	task := asynq.NewTask(TypeCrawlSourceURL, jsonPayload, opts...)
 	_, err = d.client.EnqueueContext(ctx, task)
 	return err
 }
