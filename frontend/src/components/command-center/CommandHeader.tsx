@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Settings, Bell, Sparkles, Sun, Moon } from 'lucide-react';
+import { ChevronDown, Settings, Bell, Sparkles, Sun, Moon, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/useAuthStore';
 import { usePanelStore } from '@/store/usePanelStore';
 import { useUIStore } from '@/store/useUIStore';
+import { useCampaignHistoryStore } from '@/store/useCampaignHistoryStore';
 
 const campaigns = [
   { id: 1, name: 'Product Launch Q2', status: 'active' },
@@ -24,6 +25,7 @@ export default function CommandHeader() {
   const { user } = useAuthStore();
   const { togglePanel, activePanel } = usePanelStore();
   const { theme, setTheme } = useUIStore();
+  const { isOpen: isHistoryOpen, toggleHistory } = useCampaignHistoryStore();
   const initials = user?.full_name
     ?.split(' ')
     .map((n) => n[0])
@@ -76,6 +78,20 @@ export default function CommandHeader() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleHistory}
+          className={` transition-colors px-2 py-1 ${
+            isHistoryOpen
+              ? 'bg-primary/15 text-primary'
+              : 'text-dim hover:text-heading hover:bg-surface-hover'
+          }`}
+        >
+          <History className="w-3.5 h-3.5" />
+          History
+        </Button>
       </div>
 
       {/* Right: Actions */}
