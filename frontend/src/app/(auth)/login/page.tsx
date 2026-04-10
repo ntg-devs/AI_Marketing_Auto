@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { authApi } from "@/api/auth";
+import { gooeyToast } from "goey-toast";
 
 interface LoginFormData {
   email: string;
@@ -35,11 +36,15 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const response = await authApi.login(data);
+      if (!response.user || !response.token) {
+        throw new Error("Invalid response from server");
+      }
       setAuth(response.user, response.token);
-      router.push("/dashboard");
+      router.push("/");
     } catch (error: any) {
       console.error("Login Error:", error);
-      // Bạn có thể dùng toast ở đây để hiện lỗi user-friendly hơn
+      const errMsg = error.response?.data?.error || error.message || "An error occurred during login";
+      gooeyToast.error(errMsg);
     } finally {
       setIsLoading(false);
     }
@@ -52,17 +57,23 @@ export default function LoginPage() {
         const data = await authApi.googleLogin({
           id_token: tokenResponse.access_token,
         });
-        console.log(data)
+        if (!data.user || !data.token) {
+          throw new Error("Invalid response from server");
+        }
         setAuth(data.user, data.token);
+        gooeyToast.success("Google login successful!");
         router.push("/");
       } catch (error: any) {
         console.error("Google Login Error:", error.message);
+        const errMsg = error.response?.data?.error || error.message || "An error occurred during Google sign-in";
+        gooeyToast.error(errMsg);
       } finally {
         setIsLoading(false);
       }
     },
     onError: () => {
       console.log("Login Failed");
+      gooeyToast.error("Google sign-in was canceled or failed.");
     },
   });
 
@@ -171,12 +182,12 @@ export default function LoginPage() {
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Signing in...
+              Log in...
             </>
           ) : (
             <>
               <Sparkles className="w-4 h-4 mr-2" />
-              Sign in
+              Log in
             </>
           )}
         </Button>
