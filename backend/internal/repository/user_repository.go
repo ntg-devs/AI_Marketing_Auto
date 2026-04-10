@@ -60,3 +60,11 @@ func (r *userRepository) GetCredentials(ctx context.Context, userID uuid.UUID) (
 	}
 	return &creds, nil
 }
+
+func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
+}
+
+func (r *userRepository) UpdateCredentials(ctx context.Context, creds *domain.UserCredentials) error {
+	return r.db.WithContext(ctx).Save(creds).Error
+}

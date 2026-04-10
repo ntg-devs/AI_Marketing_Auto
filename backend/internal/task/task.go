@@ -20,6 +20,7 @@ type GenerateContentPayload struct {
 type SendWelcomeEmailPayload struct {
 	UserEmail string `json:"user_email"`
 	FullName  string `json:"full_name"`
+	OTP       string `json:"otp,omitempty"`
 }
 
 func MarshalPayload(payload interface{}) ([]byte, error) {

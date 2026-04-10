@@ -61,7 +61,11 @@ func (p *RedisTaskProcessor) ProcessTaskSendWelcomeEmail(ctx context.Context, t 
 		return fmt.Errorf("could not decode payload: %w", err)
 	}
 
-	log.Printf("Worker: Sending welcome email to %s (%s)\n", payload.UserEmail, payload.FullName)
+	if payload.OTP != "" {
+		log.Printf("Worker: Sending OTP email to %s (%s). OTP Code: %s\n", payload.UserEmail, payload.FullName, payload.OTP)
+	} else {
+		log.Printf("Worker: Sending welcome email to %s (%s)\n", payload.UserEmail, payload.FullName)
+	}
 
 	return nil
 }

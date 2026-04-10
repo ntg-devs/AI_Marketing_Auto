@@ -40,9 +40,26 @@ apiClient.interceptors.request.use(
  */
 apiClient.interceptors.response.use(
   (response) => {
-    // Nếu backend trả về bọc trong object { data: ... }, ta bóc ra lấy data luôn
-    // Giúp lúc gọi api.get() nhận được kết quả sạch
-    return response.data; 
+    const resData = response.data;
+    // Un-wrap standardized backend response { success, data, message, error }
+    if (resData && typeof resData === 'object' && 'success' in resData) {
+      if (resData.success) {
+        // If it has standard data wrapper, unwrap it but attach the message
+        if (resData.data && typeof resData.data === 'object') {
+          return {
+            ...resData.data,
+            message: resData.message
+          };
+        }
+        return resData.data || resData; 
+      } else {
+         return Promise.reject({
+             message: resData.error || resData.message || 'Error from server',
+             ...resData
+         });
+      }
+    }
+    return resData; 
   },
   async (error: AxiosError<ApiResponse>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };

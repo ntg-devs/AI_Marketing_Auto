@@ -1,6 +1,8 @@
 import "./globals.css";
+import "goey-toast/styles.css";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { ToasterProvider } from "@/components/providers/ToasterProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,6 +22,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
         </ThemeProvider>
+        <ToasterProvider />
       </body>
     </html>
   );
