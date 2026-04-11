@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 import {
   Link2,
   Search,
@@ -9,44 +9,46 @@ import {
   Dna,
   ChevronDown,
   Loader2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-type InputMode = 'link' | 'keyword' | 'file';
+type InputMode = "link" | "keyword" | "file";
 
 interface ContextTag {
   id: string;
   label: string;
-  type: 'topic' | 'audience' | 'tone' | 'platform';
+  type: "topic" | "audience" | "tone" | "platform";
 }
 
 const mockContextTags: ContextTag[] = [
-  { id: '1', label: 'SaaS B2B', type: 'audience' },
-  { id: '2', label: 'Pain: Churn Rate', type: 'topic' },
-  { id: '3', label: 'Tone: Professional', type: 'tone' },
-  { id: '4', label: 'SEO Focused', type: 'topic' },
+  { id: "1", label: "SaaS B2B", type: "audience" },
+  { id: "2", label: "Pain: Churn Rate", type: "topic" },
+  { id: "3", label: "Tone: Professional", type: "tone" },
+  { id: "4", label: "SEO Focused", type: "topic" },
 ];
 
 const voiceProfiles = [
-  'Default — Neutral Pro',
-  'Thought Leader',
-  'Casual Storyteller',
-  'Data-Driven Analyst',
+  "Default — Neutral Pro",
+  "Thought Leader",
+  "Casual Storyteller",
+  "Data-Driven Analyst",
 ];
 
-const tagColors: Record<ContextTag['type'], string> = {
-  topic: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-500/20',
-  audience: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/20',
-  tone: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/20',
-  platform: 'bg-sky-500/15 text-sky-600 dark:text-sky-300 border-sky-500/20',
+const tagColors: Record<ContextTag["type"], string> = {
+  topic:
+    "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-500/20",
+  audience:
+    "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/20",
+  tone: "bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/20",
+  platform: "bg-sky-500/15 text-sky-600 dark:text-sky-300 border-sky-500/20",
 };
 
 export default function SmartEntryModule() {
-  const [inputMode, setInputMode] = useState<InputMode>('link');
-  const [inputValue, setInputValue] = useState('');
+  const [inputMode, setInputMode] = useState<InputMode>("link");
+  const [inputValue, setInputValue] = useState("");
   const [brandVoiceOn, setBrandVoiceOn] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
@@ -54,9 +56,9 @@ export default function SmartEntryModule() {
   const [selectedVoice, setSelectedVoice] = useState(voiceProfiles[0]);
 
   const modes: { key: InputMode; icon: typeof Link2; label: string }[] = [
-    { key: 'link', icon: Link2, label: 'Link' },
-    { key: 'keyword', icon: Search, label: 'Keywords' },
-    { key: 'file', icon: Upload, label: 'File' },
+    { key: "link", icon: Link2, label: "Link" },
+    { key: "keyword", icon: Search, label: "Keywords" },
+    { key: "file", icon: Upload, label: "File" },
   ];
 
   const handleAnalyze = useCallback(() => {
@@ -71,8 +73,8 @@ export default function SmartEntryModule() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    setInputMode('file');
-    setInputValue('document_uploaded.pdf');
+    setInputMode("file");
+    setInputValue("document_uploaded.pdf");
   }, []);
 
   const removeTag = (id: string) => {
@@ -99,8 +101,8 @@ export default function SmartEntryModule() {
                 onClick={() => setInputMode(m.key)}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-medium transition-all ${
                   inputMode === m.key
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-dim hover:text-body'
+                    ? "bg-primary/20 text-primary"
+                    : "text-dim hover:text-body"
                 }`}
               >
                 <m.icon className="w-3 h-3" />
@@ -113,8 +115,8 @@ export default function SmartEntryModule() {
           <div
             className={`relative rounded-lg border transition-all ${
               isDragOver
-                ? 'border-primary/50 bg-primary/[0.05]'
-                : 'border-default bg-surface-hover'
+                ? "border-primary/50 bg-primary/[0.05]"
+                : "border-default bg-surface-hover"
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -123,7 +125,7 @@ export default function SmartEntryModule() {
             onDragLeave={() => setIsDragOver(false)}
             onDrop={handleDrop}
           >
-            {inputMode === 'file' ? (
+            {inputMode === "file" ? (
               <div className="p-4 text-center">
                 <Upload className="w-5 h-5 text-dim mx-auto mb-1.5" />
                 <p className="text-[10px] text-label">
@@ -137,7 +139,7 @@ export default function SmartEntryModule() {
                     {inputValue}
                     <X
                       className="w-2.5 h-2.5 ml-1 cursor-pointer"
-                      onClick={() => setInputValue('')}
+                      onClick={() => setInputValue("")}
                     />
                   </Badge>
                 )}
@@ -148,11 +150,11 @@ export default function SmartEntryModule() {
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
+                  onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
                   placeholder={
-                    inputMode === 'link'
-                      ? 'Paste URL to analyze...'
-                      : 'Enter keywords, topics...'
+                    inputMode === "link"
+                      ? "Paste URL to analyze..."
+                      : "Enter keywords, topics..."
                   }
                   className="flex-1 bg-transparent text-xs text-body placeholder:text-faint px-3 py-2.5 outline-none"
                 />
@@ -165,7 +167,7 @@ export default function SmartEntryModule() {
                   {isAnalyzing ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
                   ) : (
-                    'Analyze'
+                    "Analyze"
                   )}
                 </Button>
               </div>

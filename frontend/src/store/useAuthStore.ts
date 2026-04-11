@@ -7,6 +7,7 @@ interface User {
   full_name: string;
   avatar_url?: string;
   role?: string;
+  team_id?: string;
 }
 
 interface AuthState {

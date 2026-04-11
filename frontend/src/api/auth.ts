@@ -14,6 +14,7 @@ interface AuthResponse {
     email: string;
     full_name: string;
     avatar_url?: string;
+    team_id?: string;
   };
   token?: string;
   message?: string;
