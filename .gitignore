@@ -8,3 +8,8 @@ frontend/node_modules
 backend/.env
 frontend/.env
 frontend/.env.local
+.gitnexus
+.claude
+.gitnexus
+AGENTS.md
+CLAUDE.md
