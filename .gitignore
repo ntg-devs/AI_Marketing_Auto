@@ -13,3 +13,4 @@ frontend/.env.local
 .gitnexus
 AGENTS.md
 CLAUDE.md
+crawler/node_modules
