@@ -25,6 +25,7 @@ import {
   Save,
   Clock,
   Bot,
+  Send,
 } from "lucide-react";
 import { gooeyToast } from "goey-toast";
 import { researchApi } from "@/api/research";
@@ -660,7 +661,7 @@ export default function SmartEntryModule() {
       </Sheet>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-5xl max-h-[85vh] h-[85vh] flex flex-col bg-surface-1 border-default p-0 [&>button]:right-5 [&>button]:top-5 overflow-hidden">
+        <DialogContent className="!max-w-5xl max-h-[85vh] h-[85vh] flex flex-col bg-surface-1 border-default p-0 [&>button]:right-5 [&>button]:top-5 overflow-hidden">
           <DialogHeader className="px-5 py-4 border-b border-default bg-surface-0 shrink-0">
             <DialogTitle className="text-sm font-medium text-heading">
               Crawled Content Preview
@@ -672,7 +673,7 @@ export default function SmartEntryModule() {
             )}
           </DialogHeader>
           
-          <div className="flex flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-1 min-h-0">
             {/* Sidebar */}
             <div className="w-[280px] border-r border-default bg-surface-hover/30 flex flex-col shrink-0 overflow-y-auto p-3 space-y-1">
               {previewItems.map((item) => (
@@ -697,21 +698,21 @@ export default function SmartEntryModule() {
             </div>
 
             {/* Main Content Workspace */}
-            <div className="flex-1 w-full flex flex-col min-w-0 bg-surface-0 relative">
+            <div className="flex-1 flex flex-col min-w-0 bg-surface-0 relative overflow-hidden">
               {activePreviewItem ? (
                 <>
                   {/* Workspace Toolbar */}
-                  <div className="shrink-0 border-b border-default bg-surface-1 px-5 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <h2 className="text-sm font-semibold text-heading truncate max-w-sm">
+                  <div className="shrink-0 border-b border-default bg-surface-1 px-4 md:px-5 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <h2 className="text-sm font-semibold text-heading truncate">
                         {activePreviewItem.title}
                       </h2>
-                      <Badge variant="secondary" className="text-[10px] bg-surface-active h-5 border-default whitespace-nowrap text-dim">
+                      <Badge variant="secondary" className="text-[10px] bg-surface-active h-5 border-default whitespace-nowrap text-dim shrink-0">
                         ~{Math.round(activePreviewItem.content.length / 4)} tokens
                       </Badge>
                     </div>
                     
-                    <div className="flex items-center gap-1.5 shrink-0 pl-4">
+                    <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar max-w-full">
                        <Button variant="outline" size="sm" className="h-7 text-[11px] bg-surface-0 text-primary border-primary/20 hover:bg-primary/10">
                          <Sparkles className="w-3 h-3 mr-1.5" />
                          AI Summarize
@@ -729,22 +730,23 @@ export default function SmartEntryModule() {
                   </div>
 
                   {/* Content Area */}
-                  <ScrollArea className="flex-1 bg-surface-0">
-                    <div className="p-6 md:p-8 max-w-4xl mx-auto">
-                      <div className="mb-6 pb-6 border-b border-default/50 space-y-3">
-                        <h1 className="text-2xl font-bold text-heading leading-tight tracking-tight">
+                  <div className="flex-1 flex flex-col p-4 md:p-6 w-full min-w-0 min-h-0 overflow-hidden bg-surface-0">
+                    <div className="max-w-4xl w-full mx-auto flex-1 flex flex-col min-h-0">
+                      
+                      <div className="shrink-0 mb-4 md:mb-5 pb-4 md:pb-5 border-b border-default/50 space-y-2 md:space-y-3 min-w-0">
+                        <h1 className="text-xl md:text-2xl font-bold text-heading leading-tight tracking-tight break-words">
                           {activePreviewItem.title}
                         </h1>
                         {activePreviewItem.url && (
-                          <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-[11px] text-dim">
+                          <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-[11px] text-dim min-w-0">
                             <a 
                               href={activePreviewItem.url} 
                               target="_blank" 
                               rel="noreferrer"
-                              className="inline-flex items-center text-primary/80 hover:text-primary transition-colors"
+                              className="inline-flex items-center text-primary/80 hover:text-primary transition-colors min-w-0 max-w-full"
                             >
                               <Link2 className="w-3 h-3 mr-1 shrink-0" />
-                              <span className="truncate max-w-md">{activePreviewItem.url}</span>
+                              <span className="truncate break-all">{activePreviewItem.url}</span>
                             </a>
                             <span className="flex items-center">
                               <BookOpen className="w-3 h-3 mr-1 opacity-50 shrink-0" />
@@ -758,11 +760,16 @@ export default function SmartEntryModule() {
                         )}
                       </div>
                       
-                      <div className="bg-surface-1/40 rounded-xl border border-default/40 p-6 shadow-sm">
-                        <FormattedText text={activePreviewItem.content} />
+                      <div className="flex-1 bg-surface-1/40 rounded-xl border border-default/40 shadow-sm flex flex-col min-h-0 overflow-hidden relative">
+                        <ScrollArea className="flex-1 w-full h-full relative">
+                          <div className="p-5 md:p-7 absolute inset-0 text-left overflow-auto">
+                            <FormattedText text={activePreviewItem.content} />
+                          </div>
+                        </ScrollArea>
                       </div>
+
                     </div>
-                  </ScrollArea>
+                  </div>
                 </>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-20 text-dim">
@@ -886,6 +893,13 @@ function formatTime(raw: string) {
 function FormattedText({ text }: { text?: string }) {
   if (!text) return <p className="text-dim text-xs italic">No content available.</p>;
 
+  const formatBold = (str: string) => {
+    const boldRegex = /\*\*(.*?)\*\*/g;
+    return str.split(boldRegex).map((part, i) => 
+      i % 2 === 1 ? <strong key={i} className="font-semibold text-heading">{part}</strong> : part
+    );
+  };
+
   // A very basic markdown tokenizer for professional rendering without heavy dependencies
   return (
     <div className="space-y-4 text-body pb-10">
@@ -894,27 +908,47 @@ function FormattedText({ text }: { text?: string }) {
         if (!content) return null;
         
         if (content.startsWith('# ')) return <h1 key={idx} className="text-xl font-semibold text-heading tracking-tight mt-6 mb-3">{content.replace(/^#\s+/, '')}</h1>;
-        if (content.startsWith('## ')) return <h2 key={idx} className="text-lg font-medium text-heading mt-5 mb-2">{content.replace(/^##\s+/, '')}</h2>;
-        if (content.startsWith('### ')) return <h3 key={idx} className="text-base font-medium text-heading mt-4 mb-2">{content.replace(/^###\s+/, '')}</h3>;
+        if (content.startsWith('## ')) return <h2 key={idx} className="text-lg font-semibold text-heading tracking-tight mt-5 mb-2">{content.replace(/^##\s+/, '')}</h2>;
+        if (content.startsWith('### ')) return <h3 key={idx} className="text-base font-semibold text-heading mt-4 mb-2">{content.replace(/^###\s+/, '')}</h3>;
         
-        if (content.split('\n').every(line => line.trim().startsWith('- ') || line.trim().startsWith('* '))) {
+        // Render lists
+        if (content.startsWith('- ') || content.startsWith('* ')) {
           return (
-            <ul key={idx} className="list-disc pl-5 space-y-1.5 my-3 text-[13px] leading-relaxed text-dim">
-              {content.split('\n').map((line, i) => (
-                <li key={i}>{line.trim().replace(/^[-*]\s+/, '')}</li>
+            <ul key={idx} className="list-disc pl-5 space-y-1 my-3">
+              {content.split('\n').map((item, i) => (
+                <li key={i} className="text-[13px] text-body">{formatBold(item.replace(/^[-*]\s+/, ''))}</li>
               ))}
             </ul>
           );
         }
 
-        const boldRegex = /\*\*(.*?)\*\*/g;
-        const formattedParagraph = content.split(boldRegex).map((part, i) => 
-          i % 2 === 1 ? <strong key={i} className="font-semibold text-heading">{part}</strong> : part
-        );
+        // Render images: support markdown images like ![alt](src) and isolate them or put them inline
+        const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+        if (imgRegex.test(content)) {
+            // Split text by markdown images to render them interchangeably
+            const parts = content.split(imgRegex);
+            const elements: React.ReactNode[] = [];
+            for (let i = 0; i < parts.length; i += 3) {
+                if (parts[i]) {
+                    elements.push(<span key={`t-${i}`}>{formatBold(parts[i])}</span>);
+                }
+                if (i + 1 < parts.length) {
+                    const alt = parts[i+1];
+                    const url = parts[i+2];
+                    elements.push(
+                        <span key={`img-${i}`} className="block my-5 text-center">
+                            <img src={url} alt={alt} loading="lazy" className="mx-auto max-h-[400px] object-contain rounded-lg shadow-sm border border-default/20 bg-surface-1" />
+                            {alt && <span className="block text-[11px] text-dim mt-2 italic">{alt}</span>}
+                        </span>
+                    );
+                }
+            }
+            return <div key={idx} className="text-[13px] leading-relaxed text-dim">{elements}</div>;
+        }
 
         return (
           <p key={idx} className="text-[13px] leading-relaxed text-dim">
-            {formattedParagraph}
+            {formatBold(content)}
           </p>
         );
       })}
