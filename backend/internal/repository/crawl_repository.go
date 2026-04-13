@@ -68,6 +68,62 @@ func (r *crawlRepository) GetJobDetail(ctx context.Context, jobID uuid.UUID) (*d
 	}, nil
 }
 
+func (r *crawlRepository) ListJobs(ctx context.Context, teamID uuid.UUID, limit, offset int) (*domain.CrawlJobListResponse, error) {
+	var total int64
+	if err := r.db.WithContext(ctx).
+		Model(&domain.CrawlJob{}).
+		Where("team_id = ?", teamID).
+		Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	var jobs []domain.CrawlJob
+	query := r.db.WithContext(ctx).
+		Where("team_id = ?", teamID).
+		Order("created_at desc")
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
+
+	if err := query.Find(&jobs).Error; err != nil {
+		return nil, err
+	}
+
+	return &domain.CrawlJobListResponse{
+		Jobs:  jobs,
+		Total: total,
+	}, nil
+}
+
+func (r *crawlRepository) DeleteJob(ctx context.Context, jobID uuid.UUID) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. Find the job first to get knowledge_source_id
+		var job domain.CrawlJob
+		if err := tx.First(&job, "id = ?", jobID).Error; err != nil {
+			return err
+		}
+
+		// 2. Delete associated crawl pages
+		if err := tx.Where("crawl_job_id = ?", jobID).Delete(&domain.CrawlPage{}).Error; err != nil {
+			return err
+		}
+
+		// 3. Delete associated knowledge source if exists
+		if job.KnowledgeSourceID != nil {
+			if err := tx.Where("id = ?", *job.KnowledgeSourceID).Delete(&domain.KnowledgeSource{}).Error; err != nil {
+				return err
+			}
+		}
+
+		// 4. Delete the crawl job itself
+		return tx.Delete(&domain.CrawlJob{}, "id = ?", jobID).Error
+	})
+}
+
 func (r *crawlRepository) MarkJobRunning(ctx context.Context, jobID uuid.UUID) error {
 	now := time.Now().UTC()
 

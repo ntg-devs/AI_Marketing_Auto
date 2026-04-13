@@ -69,6 +69,7 @@ export interface KnowledgeSource {
   vector_id?: string;
   embedding_model?: string;
   token_count?: number;
+  url?: string;
   last_used_at?: string;
   is_active: boolean;
   created_at: string;

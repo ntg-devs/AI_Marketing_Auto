@@ -99,6 +99,11 @@ type CrawlJobDetailResponse struct {
 	KnowledgeSource *KnowledgeSource `json:"knowledge_source,omitempty"`
 }
 
+type CrawlJobListResponse struct {
+	Jobs  []CrawlJob `json:"jobs"`
+	Total int64      `json:"total"`
+}
+
 type CrawlExtractionResult struct {
 	FinalURL      string                 `json:"final_url"`
 	StrategyUsed  string                 `json:"strategy_used"`
@@ -132,6 +137,8 @@ type CrawlRepository interface {
 	CreateJob(ctx context.Context, job *CrawlJob) error
 	GetJobByID(ctx context.Context, jobID uuid.UUID) (*CrawlJob, error)
 	GetJobDetail(ctx context.Context, jobID uuid.UUID) (*CrawlJobDetailResponse, error)
+	ListJobs(ctx context.Context, teamID uuid.UUID, limit, offset int) (*CrawlJobListResponse, error)
+	DeleteJob(ctx context.Context, jobID uuid.UUID) error
 	MarkJobRunning(ctx context.Context, jobID uuid.UUID) error
 	MarkJobFailed(ctx context.Context, jobID uuid.UUID, errorLog string) error
 	SaveJobResult(ctx context.Context, jobID uuid.UUID, result *CrawlExtractionResult) error
@@ -140,4 +147,6 @@ type CrawlRepository interface {
 type CrawlService interface {
 	StartURLResearch(ctx context.Context, req *StartURLResearchRequest) (*StartURLResearchResponse, error)
 	GetJobDetail(ctx context.Context, jobID uuid.UUID) (*CrawlJobDetailResponse, error)
+	ListJobs(ctx context.Context, teamID uuid.UUID, limit, offset int) (*CrawlJobListResponse, error)
+	DeleteJob(ctx context.Context, jobID uuid.UUID) error
 }

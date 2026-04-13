@@ -54,7 +54,9 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 		r.Post("/auth/verify-otp", userHandler.VerifyOTP)
 		r.Post("/auth/google", userHandler.GoogleLogin)
 		r.Post("/research/url", crawlHandler.SubmitURL)
+		r.Get("/research/jobs", crawlHandler.ListJobs)
 		r.Get("/research/jobs/{jobID}", crawlHandler.GetJob)
+		r.Delete("/research/jobs/{jobID}", crawlHandler.DeleteJob)
 	})
 
 	return &App{
