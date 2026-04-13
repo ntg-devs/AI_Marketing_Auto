@@ -16,6 +16,15 @@ import {
   ChevronDown,
   Loader2,
   CircleDot,
+  FileText,
+  BookOpen,
+  Database,
+  Trash2,
+  Sparkles,
+  BrainCircuit,
+  Save,
+  Clock,
+  Bot,
 } from "lucide-react";
 import { gooeyToast } from "goey-toast";
 import { researchApi } from "@/api/research";
@@ -31,6 +40,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useResearchStore } from "@/store/useResearchStore";
 import type {
@@ -75,6 +90,9 @@ export default function SmartEntryModule() {
   const setActiveJobId = useResearchStore((state) => state.setActiveJobId);
   const setActiveJob = useResearchStore((state) => state.setActiveJob);
   const setPolling = useResearchStore((state) => state.setPolling);
+  const fetchRecentJobs = useResearchStore((state) => state.fetchRecentJobs);
+  const deleteJob = useResearchStore((state) => state.deleteJob);
+  const isLoadingJobs = useResearchStore((state) => state.isLoadingJobs);
 
   const [inputMode, setInputMode] = useState<InputMode>("link");
   const [inputValue, setInputValue] = useState("");
@@ -84,6 +102,7 @@ export default function SmartEntryModule() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedVoice] = useState(voiceProfiles[0]);
   const [jobPanelOpen, setJobPanelOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const modes: { key: InputMode; icon: typeof Link2; label: string }[] = [
     { key: "link", icon: Link2, label: "Link" },
@@ -96,6 +115,47 @@ export default function SmartEntryModule() {
     () => getProgressByStatus(currentJob?.status),
     [currentJob?.status],
   );
+
+  const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
+
+  const previewItems = useMemo(() => {
+    const items = [];
+    if (activeJob?.knowledge_source) {
+      items.push({
+        id: 'ks',
+        title: activeJob.knowledge_source.title || 'Synthesized Knowledge',
+        type: 'Knowledge Source',
+        content: activeJob.knowledge_source.content_text,
+        icon: Database,
+        url: activeJob.knowledge_source.url,
+      });
+    }
+    
+    if (activeJob?.pages) {
+      activeJob.pages.forEach((page, i) => {
+        items.push({
+          id: page.id || `page-${i}`,
+          title: page.title || page.url,
+          type: `Page ${page.depth > 0 ? `(Depth ${page.depth})` : '(Entry)'}`,
+          content: page.markdown_text || page.extracted_text || 'No content extracted',
+          url: page.url,
+          icon: page.depth === 0 ? BookOpen : FileText
+        });
+      });
+    }
+    
+    return items;
+  }, [activeJob]);
+
+  useEffect(() => {
+    if (previewOpen && previewItems.length > 0) {
+      if (!selectedPreviewId || !previewItems.find(i => i.id === selectedPreviewId)) {
+        setSelectedPreviewId(previewItems[0].id);
+      }
+    }
+  }, [previewOpen, previewItems, selectedPreviewId]);
+
+  const activePreviewItem = previewItems.find(i => i.id === selectedPreviewId) || previewItems[0];
 
   const resolveTeamId = useCallback(() => {
     if (user?.team_id?.trim()) {
@@ -130,6 +190,12 @@ export default function SmartEntryModule() {
   );
 
   useEffect(() => {
+    if (jobPanelOpen) {
+      fetchRecentJobs(resolveTeamId());
+    }
+  }, [jobPanelOpen, fetchRecentJobs, resolveTeamId]);
+
+  useEffect(() => {
     if (!activeJobId) {
       return;
     }
@@ -142,7 +208,9 @@ export default function SmartEntryModule() {
         return;
       }
       await loadJobDetail(activeJobId);
-      const status = useResearchStore.getState().activeJob?.job.status.toLowerCase();
+      const status = useResearchStore
+        .getState()
+        .activeJob?.job.status.toLowerCase();
       if (status !== "pending" && status !== "running" && timer) {
         clearInterval(timer);
         timer = null;
@@ -162,7 +230,9 @@ export default function SmartEntryModule() {
 
   useEffect(() => {
     if (activeJob?.job) {
-      setContextTags(buildTagsFromJob(activeJob.job, activeJob.pages?.[0]?.title));
+      setContextTags(
+        buildTagsFromJob(activeJob.job, activeJob.pages?.[0]?.title),
+      );
     }
   }, [activeJob]);
 
@@ -211,7 +281,14 @@ export default function SmartEntryModule() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [inputMode, inputValue, resolveTeamId, setActiveJobId, setPolling, user?.id]);
+  }, [
+    inputMode,
+    inputValue,
+    resolveTeamId,
+    setActiveJobId,
+    setPolling,
+    user?.id,
+  ]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -229,6 +306,16 @@ export default function SmartEntryModule() {
       return;
     }
     await loadJobDetail(activeJobId, true);
+  };
+
+  const handleDeleteJob = async (e: React.MouseEvent, jobId: string) => {
+    e.stopPropagation();
+    try {
+      await deleteJob(jobId);
+      gooeyToast.success("Job deleted successfully");
+    } catch (error) {
+      gooeyToast.error("Failed to delete job");
+    }
   };
 
   return (
@@ -334,8 +421,10 @@ export default function SmartEntryModule() {
                 >
                   {isAnalyzing ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : inputMode === "link" ? (
+                    "Crawl"
                   ) : (
-                    inputMode === "link" ? "Crawl" : "Analyze"
+                    "Analyze"
                   )}
                 </Button>
               </div>
@@ -378,11 +467,11 @@ export default function SmartEntryModule() {
                   <Badge
                     key={tag.id}
                     variant="outline"
-                    className={`text-[10px] px-2 py-0.5 cursor-default border ${tagColors[tag.type]}`}
+                    className={`text-[10px] px-2 py-0.5 cursor-default border ${tagColors[tag.type]} max-w-full whitespace-normal h-auto text-left`}
                   >
-                    {tag.label}
+                    <span className="flex-1 min-w-0 break-words">{tag.label}</span>
                     <X
-                      className="w-2.5 h-2.5 ml-1 cursor-pointer opacity-60 hover:opacity-100"
+                      className="w-2.5 h-2.5 ml-1 shrink-0 cursor-pointer opacity-60 hover:opacity-100"
                       onClick={() => removeTag(tag.id)}
                     />
                   </Badge>
@@ -408,14 +497,16 @@ export default function SmartEntryModule() {
 
           {/* Active Crawl Status */}
           {currentJob && (
-            <div className="rounded-lg border border-default bg-surface-hover p-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] uppercase tracking-wider text-dim">
+            <div className="rounded-lg border border-default bg-surface-hover p-3 space-y-2 min-w-0">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <p className="text-[10px] uppercase tracking-wider text-dim shrink-0">
                   Active Crawl
                 </p>
-                <StatusBadge status={currentJob.status} />
+                <div className="min-w-0 shrink">
+                  <StatusBadge status={currentJob.status} />
+                </div>
               </div>
-              <p className="text-[11px] text-body line-clamp-2 break-all">
+              <p className="text-[11px] text-body line-clamp-3 break-words">
                 {currentJob.title || currentJob.source_url}
               </p>
               <Progress value={crawlProgress} className="h-1.5" />
@@ -448,14 +539,18 @@ export default function SmartEntryModule() {
 
           <div className="px-4 pb-4 space-y-3 overflow-y-auto">
             {currentJob ? (
-              <div className="rounded-lg border border-default bg-surface-hover p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-dim">
+              <div className="rounded-lg border border-default bg-surface-hover p-3 space-y-2 min-w-0">
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="text-[10px] uppercase tracking-wider text-dim shrink-0">
                     Current
                   </span>
-                  <StatusBadge status={currentJob.status} compact />
+                  <div className="min-w-0 shrink">
+                    <StatusBadge status={currentJob.status} compact />
+                  </div>
                 </div>
-                <p className="text-xs text-body break-all">{currentJob.source_url}</p>
+                <p className="text-xs text-body break-words line-clamp-2">
+                  {currentJob.source_url}
+                </p>
                 <Progress value={crawlProgress} className="h-1.5" />
                 <div className="flex items-center gap-2">
                   <Button
@@ -464,9 +559,24 @@ export default function SmartEntryModule() {
                     className="h-7 text-[10px] border-default bg-transparent"
                     onClick={handleRefreshActiveJob}
                   >
-                    <ListRestart className={`w-3 h-3 mr-1 ${isPolling ? "animate-spin" : ""}`} />
+                    <ListRestart
+                      className={`w-3 h-3 mr-1 ${isPolling ? "animate-spin" : ""}`}
+                    />
                     Refresh
                   </Button>
+
+                  {currentJob.status.toLowerCase() === "completed" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[10px] border-default bg-transparent text-primary hover:text-primary"
+                      onClick={() => setPreviewOpen(true)}
+                    >
+                      <FileText className="w-3 h-3 mr-1" />
+                      Preview
+                    </Button>
+                  )}
+
                   {currentJob.final_url && (
                     <Button
                       asChild
@@ -474,7 +584,11 @@ export default function SmartEntryModule() {
                       size="sm"
                       className="h-7 text-[10px] border-default bg-transparent"
                     >
-                      <a href={currentJob.final_url} target="_blank" rel="noreferrer">
+                      <a
+                        href={currentJob.final_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         <ExternalLink className="w-3 h-3 mr-1" />
                         Open
                       </a>
@@ -484,12 +598,16 @@ export default function SmartEntryModule() {
               </div>
             ) : (
               <div className="rounded-lg border border-dashed border-default bg-surface-hover p-3">
-                <p className="text-[11px] text-dim">Chưa có job nào đang hoạt động.</p>
+                <p className="text-[11px] text-dim">
+                  Chưa có job nào đang hoạt động.
+                </p>
               </div>
             )}
 
             <div className="space-y-2">
-              <p className="text-[10px] uppercase tracking-wider text-dim">Recent</p>
+              <p className="text-[10px] uppercase tracking-wider text-dim">
+                Recent
+              </p>
               {recentJobs.length === 0 && (
                 <div className="rounded-lg border border-dashed border-default bg-surface-hover p-3">
                   <p className="text-[11px] text-dim">
@@ -498,25 +616,37 @@ export default function SmartEntryModule() {
                 </div>
               )}
               {recentJobs.map((job) => (
-                <button
-                  key={job.jobId}
-                  onClick={() => setActiveJobId(job.jobId)}
-                  className={`w-full rounded-lg border p-2 text-left transition-colors ${
-                    activeJobId === job.jobId
+                <div
+                  key={job.id}
+                  className={`group w-full rounded-lg border p-2 text-left transition-colors relative flex flex-col ${
+                    activeJobId === job.id
                       ? "border-primary/40 bg-primary/[0.07]"
                       : "border-default bg-surface-hover hover:bg-surface-active"
                   }`}
                 >
-                  <p className="text-[11px] text-body line-clamp-1 break-all">
-                    {job.title || job.url}
-                  </p>
-                  <div className="mt-1 flex items-center justify-between">
-                    <StatusBadge status={job.status} compact />
-                    <span className="text-[10px] text-dim">
-                      {formatTime(job.createdAt)}
-                    </span>
-                  </div>
-                </button>
+                  <button
+                    onClick={() => setActiveJobId(job.id)}
+                    className="flex-1 text-left"
+                  >
+                    <p className="text-[11px] text-body line-clamp-1 break-all pr-6">
+                      {job.title || job.source_url}
+                    </p>
+                    <div className="mt-1 flex items-center justify-between">
+                      <StatusBadge status={job.status} compact />
+                      <span className="text-[10px] text-dim">
+                        {formatTime(job.created_at)}
+                      </span>
+                    </div>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleDeleteJob(e, job.id)}
+                    className="absolute top-2 right-2 h-5 w-5 p-0 text-dim opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
               ))}
             </div>
 
@@ -528,22 +658,145 @@ export default function SmartEntryModule() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl max-h-[85vh] h-[85vh] flex flex-col bg-surface-1 border-default p-0 [&>button]:right-5 [&>button]:top-5 overflow-hidden">
+          <DialogHeader className="px-5 py-4 border-b border-default bg-surface-0 shrink-0">
+            <DialogTitle className="text-sm font-medium text-heading">
+              Crawled Content Preview
+            </DialogTitle>
+            {activeJob?.job?.source_url && (
+              <p className="text-[11px] text-faint mt-1 truncate max-w-[80%]">
+                Source: {activeJob.job.source_url}
+              </p>
+            )}
+          </DialogHeader>
+          
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            {/* Sidebar */}
+            <div className="w-[280px] border-r border-default bg-surface-hover/30 flex flex-col shrink-0 overflow-y-auto p-3 space-y-1">
+              {previewItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedPreviewId(item.id)}
+                  className={`w-full text-left p-2.5 rounded-lg flex flex-col gap-1 transition-colors ${
+                    selectedPreviewId === item.id 
+                      ? "bg-surface-active border border-default ring-1 ring-primary/20" 
+                      : "hover:bg-surface-hover border border-transparent"
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <item.icon className={`w-3.5 h-3.5 shrink-0 ${selectedPreviewId === item.id ? "text-primary" : "text-dim"}`} />
+                    <span className={`text-xs font-medium truncate ${selectedPreviewId === item.id ? "text-heading" : "text-body"}`}>
+                      {item.title}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-faint ml-5">{item.type}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Main Content Workspace */}
+            <div className="flex-1 w-full flex flex-col min-w-0 bg-surface-0 relative">
+              {activePreviewItem ? (
+                <>
+                  {/* Workspace Toolbar */}
+                  <div className="shrink-0 border-b border-default bg-surface-1 px-5 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <h2 className="text-sm font-semibold text-heading truncate max-w-sm">
+                        {activePreviewItem.title}
+                      </h2>
+                      <Badge variant="secondary" className="text-[10px] bg-surface-active h-5 border-default whitespace-nowrap text-dim">
+                        ~{Math.round(activePreviewItem.content.length / 4)} tokens
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-1.5 shrink-0 pl-4">
+                       <Button variant="outline" size="sm" className="h-7 text-[11px] bg-surface-0 text-primary border-primary/20 hover:bg-primary/10">
+                         <Sparkles className="w-3 h-3 mr-1.5" />
+                         AI Summarize
+                       </Button>
+                       <Button variant="outline" size="sm" className="h-7 text-[11px] bg-surface-0 text-indigo-500 dark:text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/10">
+                         <BrainCircuit className="w-3 h-3 mr-1.5" />
+                         Extract Entities
+                       </Button>
+                       <div className="w-px h-4 bg-default mx-1" />
+                       <Button variant="ghost" size="sm" className="h-7 text-[11px] text-dim hover:text-body">
+                         <Save className="w-3.5 h-3.5 mr-1" />
+                         Save to KB
+                       </Button>
+                    </div>
+                  </div>
+
+                  {/* Content Area */}
+                  <ScrollArea className="flex-1 bg-surface-0">
+                    <div className="p-6 md:p-8 max-w-4xl mx-auto">
+                      <div className="mb-6 pb-6 border-b border-default/50 space-y-3">
+                        <h1 className="text-2xl font-bold text-heading leading-tight tracking-tight">
+                          {activePreviewItem.title}
+                        </h1>
+                        {activePreviewItem.url && (
+                          <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-[11px] text-dim">
+                            <a 
+                              href={activePreviewItem.url} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="inline-flex items-center text-primary/80 hover:text-primary transition-colors"
+                            >
+                              <Link2 className="w-3 h-3 mr-1 shrink-0" />
+                              <span className="truncate max-w-md">{activePreviewItem.url}</span>
+                            </a>
+                            <span className="flex items-center">
+                              <BookOpen className="w-3 h-3 mr-1 opacity-50 shrink-0" />
+                              {activePreviewItem.content.split(/\\s+/).length} words
+                            </span>
+                            <span className="flex items-center">
+                              <Clock className="w-3 h-3 mr-1 opacity-50 shrink-0" />
+                              {Math.max(1, Math.ceil(activePreviewItem.content.split(/\\s+/).length / 250))} min read
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="bg-surface-1/40 rounded-xl border border-default/40 p-6 shadow-sm">
+                        <FormattedText text={activePreviewItem.content} />
+                      </div>
+                    </div>
+                  </ScrollArea>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-20 text-dim">
+                  <Bot className="w-12 h-12 mb-4 opacity-20" />
+                  <p className="text-sm font-medium">Select a document to preview</p>
+                  <p className="text-xs text-faint mt-1">Ready for knowledge extraction and AI processing</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function StatusBadge({ status, compact = false }: { status: string; compact?: boolean }) {
+function StatusBadge({
+  status,
+  compact = false,
+}: {
+  status: string;
+  compact?: boolean;
+}) {
   const normalized = status.toLowerCase();
   const classes =
     normalized === "completed"
       ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
       : normalized === "failed"
-      ? "border-destructive/30 bg-destructive/10 text-destructive"
-      : normalized === "running"
-      ? "border-primary/30 bg-primary/10 text-primary"
-      : normalized === "pending"
-      ? "border-amber-500/25 bg-amber-500/10 text-amber-500"
-      : "border-default bg-surface-hover text-dim";
+        ? "border-destructive/30 bg-destructive/10 text-destructive"
+        : normalized === "running"
+          ? "border-primary/30 bg-primary/10 text-primary"
+          : normalized === "pending"
+            ? "border-amber-500/25 bg-amber-500/10 text-amber-500"
+            : "border-default bg-surface-hover text-dim";
 
   const icon =
     normalized === "completed" ? (
@@ -561,10 +814,12 @@ function StatusBadge({ status, compact = false }: { status: string; compact?: bo
   return (
     <Badge
       variant="outline"
-      className={`border ${classes} ${compact ? "h-5 px-1.5 text-[10px]" : "text-[10px]"}`}
+      className={`border ${classes} max-w-full whitespace-normal h-auto text-left ${compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-[10px]"}`}
     >
-      {icon}
-      {capitalize(normalized)}
+      <div className="flex-shrink-0 flex items-center pr-1.5">
+        {icon}
+      </div>
+      <span className="flex-1 min-w-0 break-words">{capitalize(normalized)}</span>
     </Badge>
   );
 }
@@ -626,4 +881,43 @@ function formatTime(raw: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function FormattedText({ text }: { text?: string }) {
+  if (!text) return <p className="text-dim text-xs italic">No content available.</p>;
+
+  // A very basic markdown tokenizer for professional rendering without heavy dependencies
+  return (
+    <div className="space-y-4 text-body pb-10">
+      {text.split('\n\n').map((block, idx) => {
+        const content = block.trim();
+        if (!content) return null;
+        
+        if (content.startsWith('# ')) return <h1 key={idx} className="text-xl font-semibold text-heading tracking-tight mt-6 mb-3">{content.replace(/^#\s+/, '')}</h1>;
+        if (content.startsWith('## ')) return <h2 key={idx} className="text-lg font-medium text-heading mt-5 mb-2">{content.replace(/^##\s+/, '')}</h2>;
+        if (content.startsWith('### ')) return <h3 key={idx} className="text-base font-medium text-heading mt-4 mb-2">{content.replace(/^###\s+/, '')}</h3>;
+        
+        if (content.split('\n').every(line => line.trim().startsWith('- ') || line.trim().startsWith('* '))) {
+          return (
+            <ul key={idx} className="list-disc pl-5 space-y-1.5 my-3 text-[13px] leading-relaxed text-dim">
+              {content.split('\n').map((line, i) => (
+                <li key={i}>{line.trim().replace(/^[-*]\s+/, '')}</li>
+              ))}
+            </ul>
+          );
+        }
+
+        const boldRegex = /\*\*(.*?)\*\*/g;
+        const formattedParagraph = content.split(boldRegex).map((part, i) => 
+          i % 2 === 1 ? <strong key={i} className="font-semibold text-heading">{part}</strong> : part
+        );
+
+        return (
+          <p key={idx} className="text-[13px] leading-relaxed text-dim">
+            {formattedParagraph}
+          </p>
+        );
+      })}
+    </div>
+  );
 }

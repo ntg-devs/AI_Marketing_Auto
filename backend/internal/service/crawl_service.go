@@ -99,6 +99,14 @@ func (s *crawlService) GetJobDetail(ctx context.Context, jobID uuid.UUID) (*doma
 	return detail, nil
 }
 
+func (s *crawlService) ListJobs(ctx context.Context, teamID uuid.UUID, limit, offset int) (*domain.CrawlJobListResponse, error) {
+	return s.repo.ListJobs(ctx, teamID, limit, offset)
+}
+
+func (s *crawlService) DeleteJob(ctx context.Context, jobID uuid.UUID) error {
+	return s.repo.DeleteJob(ctx, jobID)
+}
+
 func normalizeURL(raw string) (string, error) {
 	value := strings.TrimSpace(raw)
 	if value == "" {

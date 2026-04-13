@@ -1,17 +1,21 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { CrawlJobDetailResponse, RecentResearchJob } from '@/types/research';
+import type { CrawlJob, CrawlJobDetailResponse, RecentResearchJob } from '@/types/research';
+import { researchApi } from '@/api/research';
 
 interface ResearchState {
-  recentJobs: RecentResearchJob[];
+  recentJobs: CrawlJob[];
   activeJobId: string;
   activeJob: CrawlJobDetailResponse | null;
   isPolling: boolean;
+  isLoadingJobs: boolean;
+  
   setActiveJobId: (jobId: string) => void;
   setActiveJob: (detail: CrawlJobDetailResponse | null) => void;
   setPolling: (value: boolean) => void;
-  upsertRecentJob: (job: RecentResearchJob) => void;
-  clearRecentJobs: () => void;
+  
+  fetchRecentJobs: (teamId: string) => Promise<void>;
+  deleteJob: (jobId: string) => Promise<void>;
 }
 
 export const useResearchStore = create<ResearchState>()(
@@ -21,37 +25,46 @@ export const useResearchStore = create<ResearchState>()(
       activeJobId: '',
       activeJob: null,
       isPolling: false,
+      isLoadingJobs: false,
 
       setActiveJobId: (jobId) => set({ activeJobId: jobId }),
 
       setActiveJob: (detail) => {
         set({ activeJob: detail });
-        if (detail?.job) {
-          get().upsertRecentJob({
-            jobId: detail.job.id,
-            url: detail.job.source_url,
-            teamId: detail.job.team_id,
-            status: detail.job.status,
-            title: detail.job.title,
-            createdAt: detail.job.created_at,
-          });
-        }
       },
 
       setPolling: (value) => set({ isPolling: value }),
 
-      upsertRecentJob: (job) =>
-        set((state) => ({
-          recentJobs: [job, ...state.recentJobs.filter((item) => item.jobId !== job.jobId)].slice(0, 10),
-        })),
+      fetchRecentJobs: async (teamId: string) => {
+        set({ isLoadingJobs: true });
+        try {
+          const res = await researchApi.listResearchJobs(teamId);
+          set({ recentJobs: res.jobs || [] });
+        } catch (error) {
+          console.error('Failed to fetch recent jobs:', error);
+        } finally {
+          set({ isLoadingJobs: false });
+        }
+      },
 
-      clearRecentJobs: () => set({ recentJobs: [] }),
+      deleteJob: async (jobId: string) => {
+        try {
+          await researchApi.deleteResearchJob(jobId);
+          set((state) => ({
+            recentJobs: state.recentJobs.filter((j) => j.id !== jobId),
+            activeJobId: state.activeJobId === jobId ? '' : state.activeJobId,
+            activeJob: state.activeJobId === jobId ? null : state.activeJob,
+          }));
+        } catch (error) {
+          console.error('Failed to delete job:', error);
+          throw error;
+        }
+      },
     }),
     {
       name: 'research-shared-store',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        recentJobs: state.recentJobs,
         activeJobId: state.activeJobId,
       }),
     },
