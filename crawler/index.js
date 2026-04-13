@@ -47,8 +47,30 @@ app.post('/crawl', async (req, res) => {
             content_type = response.headers()['content-type'] || 'text/html';
         }
 
-        // Wait a bit extra for dynamic content
-        await page.waitForTimeout(2000);
+        // Auto-scroll to trigger IntersectionObserver based lazy loading
+        try {
+            await page.evaluate(async () => {
+                await new Promise((resolve) => {
+                    let totalHeight = 0;
+                    const distance = 800;
+                    const timer = setInterval(() => {
+                        const scrollHeight = document.body.scrollHeight;
+                        window.scrollBy(0, distance);
+                        totalHeight += distance;
+                        if (totalHeight >= scrollHeight || totalHeight > 15000) {
+                            clearInterval(timer);
+                            resolve();
+                        }
+                    }, 100);
+                });
+                window.scrollTo(0, 0);
+            });
+        } catch(e) {
+            console.log(`Auto-scroll failed: ${e.message}`);
+        }
+
+        // Wait a bit extra for dynamic content to finish loading after scroll
+        await page.waitForTimeout(2500);
 
         const html = await page.content();
         const finalUrl = page.url();
@@ -56,18 +78,60 @@ app.post('/crawl', async (req, res) => {
 
         // Use JSDOM and Readability to extract meaningful content
         const dom = new JSDOM(html, { url: finalUrl });
+        const document = dom.window.document;
+        
+        // Fix lazy-loaded, responsive (<picture>), and relative images before Readability
+        document.querySelectorAll('picture').forEach(pic => {
+            const img = pic.querySelector('img') || document.createElement('img');
+            const source = pic.querySelector('source');
+            if (source) {
+                const srcset = source.getAttribute('srcset') || source.getAttribute('data-srcset');
+                if (srcset) {
+                    const firstUrl = srcset.split(',')[0].trim().split(' ')[0];
+                    img.setAttribute('src', firstUrl);
+                }
+            }
+            if (!pic.querySelector('img')) pic.appendChild(img);
+        });
+
+        document.querySelectorAll('img').forEach(img => {
+            const lazySrc = img.getAttribute('data-src') || img.getAttribute('data-original') || img.getAttribute('data-lazy-src') || img.getAttribute('data-src-hq');
+            if (lazySrc) {
+                img.setAttribute('src', lazySrc);
+            } else if (!img.getAttribute('src') && img.getAttribute('srcset')) {
+                const srcset = img.getAttribute('srcset');
+                const firstUrl = srcset.split(',')[0].trim().split(' ')[0];
+                img.setAttribute('src', firstUrl);
+            }
+            
+            let src = img.getAttribute('src');
+            // Ignore base64 placeholders if we couldn't find a real src
+            if (src && src.startsWith('data:image/') && img.getAttribute('data-srcset')) {
+                 const srcset = img.getAttribute('data-srcset');
+                 const firstUrl = srcset.split(',')[0].trim().split(' ')[0];
+                 img.setAttribute('src', firstUrl);
+                 src = firstUrl;
+            }
+
+            if (src && (src.startsWith('/') || src.startsWith('.'))) {
+                try {
+                    const urlObj = new URL(src, finalUrl);
+                    img.setAttribute('src', urlObj.href);
+                } catch(e) {}
+            }
+        });
         
         // Extract meta tags
-        const descriptionMatch = dom.window.document.querySelector('meta[name="description"]');
+        const descriptionMatch = document.querySelector('meta[name="description"]');
         const description = descriptionMatch ? descriptionMatch.getAttribute('content') : '';
-        const canonicalMatch = dom.window.document.querySelector('link[rel="canonical"]');
+        const canonicalMatch = document.querySelector('link[rel="canonical"]');
         const canonical_url = canonicalMatch ? canonicalMatch.getAttribute('href') : finalUrl;
         
-        const langMatch = dom.window.document.querySelector('html');
+        const langMatch = document.querySelector('html');
         const language = langMatch ? langMatch.getAttribute('lang') || 'en' : 'en';
 
         // Extract reader content
-        const reader = new Readability(dom.window.document);
+        const reader = new Readability(document);
         const article = reader.parse();
         
         const extracted_text = article ? article.textContent : '';
