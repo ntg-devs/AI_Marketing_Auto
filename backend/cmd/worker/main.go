@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bityagi/internal/domain"
 	"bityagi/internal/repository"
 	"bityagi/internal/task"
 	"bityagi/pkg/crawlerclient"
@@ -35,10 +34,7 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	if err := db.AutoMigrate(&domain.KnowledgeSource{}, &domain.CrawlJob{}, &domain.CrawlPage{}); err != nil {
-		log.Fatal("Failed to migrate database:", err)
-	}
-
+	// Database connection initialized successfully
 	// Initialize Mailer Config
 	mailer := mail.NewSMTPSender(
 		os.Getenv("SMTP_HOST"),
@@ -49,11 +45,12 @@ func main() {
 	)
 
 	crawlRepo := repository.NewCrawlRepository(db)
+	aiRepo := repository.NewAIProviderRepository(db)
 	crawlerAPIURL := os.Getenv("CRAWLER_API_URL")
 	crawlerSvc := crawlerclient.New(crawlerAPIURL)
 
 	redisOpt := asynq.RedisClientOpt{Addr: redisAddr}
-	processor := task.NewRedisTaskProcessor(redisOpt, mailer, crawlRepo, crawlerSvc)
+	processor := task.NewRedisTaskProcessor(redisOpt, mailer, crawlRepo, aiRepo, crawlerSvc)
 
 	log.Printf("Worker server starting on Redis %s...", redisAddr)
 	if err := processor.Start(); err != nil {

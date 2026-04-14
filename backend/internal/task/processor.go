@@ -7,8 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
+	"bityagi/pkg/llm"
 	"bityagi/pkg/mail"
+	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 )
 
@@ -23,6 +26,7 @@ type RedisTaskProcessor struct {
 	server        *asynq.Server
 	mailer        *mail.SMTPSender
 	crawlRepo     domain.CrawlRepository
+	aiRepo        domain.AIProviderRepository
 	crawlerClient crawlerclient.Client
 }
 
@@ -30,6 +34,7 @@ func NewRedisTaskProcessor(
 	redisOpt asynq.RedisConnOpt,
 	mailer *mail.SMTPSender,
 	crawlRepo domain.CrawlRepository,
+	aiRepo domain.AIProviderRepository,
 	crawlerClient crawlerclient.Client,
 ) TaskProcessor {
 	server := asynq.NewServer(
@@ -47,6 +52,7 @@ func NewRedisTaskProcessor(
 		server:        server,
 		mailer:        mailer,
 		crawlRepo:     crawlRepo,
+		aiRepo:        aiRepo,
 		crawlerClient: crawlerClient,
 	}
 }
@@ -133,6 +139,98 @@ func (p *RedisTaskProcessor) ProcessTaskCrawlSourceURL(ctx context.Context, t *a
 	if err != nil {
 		_ = p.crawlRepo.MarkJobFailed(ctx, payload.JobID, err.Error())
 		return fmt.Errorf("crawler request failed: %w", err)
+	}
+
+	// ----------------------------------------------------------------------
+	// Móc API OpenAI/Gemini/Claude vào Pipeline bằng cấu hình động của User
+	// ----------------------------------------------------------------------
+	if p.aiRepo != nil {
+		var teamID uuid.UUID
+		job, _ := p.crawlRepo.GetJobByID(ctx, payload.JobID)
+		if job != nil {
+			teamID = job.TeamID
+		}
+		config, err := p.aiRepo.GetDefaultConfig(ctx, teamID)
+
+		apiKey := ""
+		baseURL := ""
+		modelName := ""
+		providerName := ""
+		if err == nil && config != nil && config.APIKey != "" {
+			apiKey = config.APIKey
+			baseURL = config.BaseURL
+			modelName = config.ModelName
+			providerName = config.ProviderName
+			log.Printf("Worker: Using dynamic AI config — Provider: %s, Model: %s", providerName, modelName)
+		} else {
+			apiKey = os.Getenv("OPENAI_API_KEY")
+			if apiKey != "" {
+				log.Println("Worker: No dynamic AI config found, falling back to OPENAI_API_KEY env var")
+			}
+		}
+
+		if apiKey != "" && result.Markdown != "" {
+			log.Printf("Worker: [LLM Pipeline] Connecting to provider '%s' using model '%s'...", providerName, modelName)
+			if baseURL != "" {
+				log.Printf("Worker: [LLM Pipeline] Using custom API endpoint: %s", baseURL)
+			}
+			log.Printf("Worker: [LLM Pipeline] Starting extraction for %s (Content length: %d chars)...", payload.URL, len(result.Markdown))
+
+			aiClient := llm.NewClientWithConfig(apiKey, baseURL, modelName, providerName)
+			optimizedContext, err := aiClient.SummarizeAndExtract(ctx, result.Markdown, llm.ExtractionContext{
+				Persona:          "Chuyên gia công nghệ, người làm marketing hoặc nhà sáng tạo nội dung",
+				PreviousCampaign: "Chưa có thông tin chiến dịch cũ",
+			})
+
+			if err != nil {
+				log.Printf("Worker: [LLM Pipeline] ❌ EXTRACTION FAILED for %s. Error: %v", payload.URL, err)
+			} else {
+				result.ExtractedText = optimizedContext
+				log.Printf("Worker: [LLM Pipeline] ✅ EXTRACTION SUCCESSFUL! Extracted %d characters of optimized context.", len(optimizedContext))
+				// Print the AI extracted content for debugging
+				preview := optimizedContext
+				if len(preview) > 2000 {
+					preview = preview[:2000] + "\n... [TRUNCATED]"
+				}
+				log.Printf("Worker: [LLM Pipeline] === AI EXTRACTED CONTENT ===\n%s\n=== END OF CONTENT ===", preview)
+
+				// Embedding chỉ tương thích với OpenAI — Gemini/Anthropic không có endpoint này
+				if aiClient.IsOpenAI() {
+					log.Println("Worker: Generating Embeddings for RAG (text-embedding-3-small)...")
+					_, tokenCount, embedErr := aiClient.GenerateEmbedding(ctx, optimizedContext)
+					if embedErr == nil {
+						result.VectorID = "pinecone_vec_" + payload.JobID.String()
+						result.EmbeddingModel = "text-embedding-3-small"
+						result.TokenCount = tokenCount
+						log.Printf("Worker: Embedding successful. Generated VectorID: %s, %d tokens", result.VectorID, tokenCount)
+					} else {
+						log.Printf("Worker: Warning - Embedding failed. Error: %v", embedErr)
+					}
+				} else {
+					log.Printf("Worker: Skipping Embedding (provider '%s' does not support text-embedding-3-small)", providerName)
+				}
+			}
+		} else {
+			log.Println("Worker: API Key is empty or crawled content is empty. Skipping LLM Pipeline.")
+		}
+	} else {
+		apiKey := os.Getenv("OPENAI_API_KEY")
+		if apiKey != "" && result.Markdown != "" {
+			log.Printf("Worker: Digesting context for %s using env OPENAI_API_KEY...", payload.URL)
+			aiClient := llm.NewClientWithConfig(apiKey, "", "", "openai")
+			optimizedContext, err := aiClient.SummarizeAndExtract(ctx, result.Markdown, llm.ExtractionContext{
+				Persona:          "Chuyên gia công nghệ, người làm marketing hoặc nhà sáng tạo nội dung",
+				PreviousCampaign: "Chưa có thông tin chiến dịch cũ",
+			})
+			if err != nil {
+				log.Printf("Worker: [LLM Pipeline-Fallback] ❌ EXTRACTION FAILED for %s. Error: %v", payload.URL, err)
+			} else {
+				result.ExtractedText = optimizedContext
+				log.Printf("Worker: [LLM Pipeline-Fallback] ✅ EXTRACTION SUCCESSFUL! Extracted %d characters.", len(optimizedContext))
+			}
+		} else {
+			log.Println("Worker: OPENAI_API_KEY is not set or content is empty. Skipping LLM Pipeline.")
+		}
 	}
 
 	if err := p.crawlRepo.SaveJobResult(ctx, payload.JobID, result); err != nil {

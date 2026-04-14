@@ -10,7 +10,7 @@ interface ApiResponse<T = any> {
 
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-  timeout: 15000, // Tăng lên 15s vì các tác vụ AI có thể phản hồi chậm hơn
+  timeout: 60000, // 60s — AI content generation can take 10-30s depending on model and content length
   headers: {
     'Content-Type': 'application/json',
   },

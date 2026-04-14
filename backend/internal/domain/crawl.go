@@ -116,9 +116,12 @@ type CrawlExtractionResult struct {
 	ContentType   string                 `json:"content_type"`
 	HTML          string                 `json:"html"`
 	ExtractedText string                 `json:"extracted_text"`
-	Markdown      string                 `json:"markdown"`
-	Metadata      map[string]interface{} `json:"metadata,omitempty"`
-	Pages         []CrawlPageResult      `json:"pages,omitempty"`
+	Markdown       string                 `json:"markdown"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	VectorID       string                 `json:"vector_id,omitempty"`
+	EmbeddingModel string                 `json:"embedding_model,omitempty"`
+	TokenCount     int                    `json:"token_count,omitempty"`
+	Pages          []CrawlPageResult      `json:"pages,omitempty"`
 }
 
 type CrawlPageResult struct {
@@ -142,6 +145,7 @@ type CrawlRepository interface {
 	MarkJobRunning(ctx context.Context, jobID uuid.UUID) error
 	MarkJobFailed(ctx context.Context, jobID uuid.UUID, errorLog string) error
 	SaveJobResult(ctx context.Context, jobID uuid.UUID, result *CrawlExtractionResult) error
+	GetKnowledgeSourceByID(ctx context.Context, id uuid.UUID) (*KnowledgeSource, error)
 }
 
 type CrawlService interface {

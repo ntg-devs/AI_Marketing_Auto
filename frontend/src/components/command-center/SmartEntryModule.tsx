@@ -26,9 +26,11 @@ import {
   Clock,
   Bot,
   Send,
+  PenLine,
+  Wand2,
 } from "lucide-react";
 import { gooeyToast } from "goey-toast";
-import { researchApi } from "@/api/research";
+import { researchApi, type GenerateContentRequest, type GenerateOutlineRequest } from "@/api/research";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +56,7 @@ import type {
   CrawlJobDetailResponse,
   StartResearchRequest,
 } from "@/types/research";
+import { AIProviderSettings } from "./AIProviderSettings";
 
 type InputMode = "link" | "keyword" | "file";
 
@@ -94,16 +97,36 @@ export default function SmartEntryModule() {
   const fetchRecentJobs = useResearchStore((state) => state.fetchRecentJobs);
   const deleteJob = useResearchStore((state) => state.deleteJob);
   const isLoadingJobs = useResearchStore((state) => state.isLoadingJobs);
+  const setGeneratedContent = useResearchStore((state) => state.setGeneratedContent);
 
   const [inputMode, setInputMode] = useState<InputMode>("link");
   const [inputValue, setInputValue] = useState("");
   const [brandVoiceOn, setBrandVoiceOn] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
+  const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedVoice] = useState(voiceProfiles[0]);
   const [jobPanelOpen, setJobPanelOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+
+  // Content Generation state
+  const [generatePanelOpen, setGeneratePanelOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
+  const [outlineJSON, setOutlineJSON] = useState("");
+  const [outlineEditable, setOutlineEditable] = useState("");
+  const [briefForm, setBriefForm] = useState({
+    platform: "blog",
+    tone: "professional",
+    target_audience: "",
+    content_length: "medium",
+    additional_instructions: "",
+    language: "vi",
+    brand_name: "",
+    brand_persona: "",
+    brand_guidelines: "",
+  });
 
   const modes: { key: InputMode; icon: typeof Link2; label: string }[] = [
     { key: "link", icon: Link2, label: "Link" },
@@ -319,6 +342,95 @@ export default function SmartEntryModule() {
     }
   };
 
+  // Step 3+4: Context Injection → Master Outline
+  const handleGenerateOutline = async () => {
+    const knowledgeText = activeJob?.knowledge_source?.content_text;
+    if (!knowledgeText) {
+      gooeyToast.error("No knowledge source data available. Please crawl a URL first.");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const payload: GenerateOutlineRequest = {
+        team_id: resolveTeamId(),
+        knowledge_source_id: activeJob?.knowledge_source?.id,
+        knowledge_text: knowledgeText,
+        platform: briefForm.platform,
+        tone: briefForm.tone,
+        target_audience: briefForm.target_audience || "Người quan tâm đến công nghệ và marketing",
+        additional_instructions: briefForm.additional_instructions,
+        language: briefForm.language,
+        brand_name: briefForm.brand_name,
+        brand_persona: briefForm.brand_persona,
+        brand_guidelines: briefForm.brand_guidelines,
+      };
+
+      const result = await researchApi.generateOutline(payload);
+      setOutlineJSON(result.outline_json);
+      setOutlineEditable(result.outline_json);
+      setWizardStep(2);
+      gooeyToast.success("Outline generated! Review and edit before generating content.");
+    } catch (error: any) {
+      gooeyToast.error(error?.message || "Failed to generate outline");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Step 5: Generate content from approved outline
+  const handleGenerateFromOutline = async () => {
+    const knowledgeText = activeJob?.knowledge_source?.content_text;
+    if (!knowledgeText) return;
+
+    setIsGenerating(true);
+    try {
+      const payload: GenerateContentRequest = {
+        team_id: resolveTeamId(),
+        knowledge_source_id: activeJob?.knowledge_source?.id,
+        knowledge_text: knowledgeText,
+        platform: briefForm.platform,
+        tone: briefForm.tone,
+        target_audience: briefForm.target_audience || "Người quan tâm đến công nghệ và marketing",
+        content_length: briefForm.content_length,
+        additional_instructions: briefForm.additional_instructions,
+        language: briefForm.language,
+        brand_name: briefForm.brand_name,
+        brand_persona: briefForm.brand_persona,
+        brand_guidelines: briefForm.brand_guidelines,
+        outline: outlineEditable,
+      };
+
+      const result = await researchApi.generateContent(payload);
+
+      setGeneratedContent(briefForm.platform, {
+        platform: briefForm.platform,
+        html: result.content_html,
+        modelUsed: result.model_used,
+        tokenUsage: result.token_usage,
+        generatedAt: new Date().toISOString(),
+      });
+
+      gooeyToast.success(`Content generated for ${briefForm.platform}! Check the Editor panel.`);
+      setGeneratePanelOpen(false);
+      setPreviewOpen(false);
+      setWizardStep(1);
+      setOutlineJSON("");
+      setOutlineEditable("");
+    } catch (error: any) {
+      gooeyToast.error(error?.message || "Failed to generate content");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleOpenWizard = () => {
+    setWizardStep(1);
+    setOutlineJSON("");
+    setOutlineEditable("");
+    setGeneratePanelOpen(true);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Module Header */}
@@ -330,22 +442,35 @@ export default function SmartEntryModule() {
             </h3>
             <p className="text-[10px] text-dim mt-0.5">Input & Context</p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-[10px] text-label hover:text-body"
-            onClick={() => setJobPanelOpen(true)}
-          >
-            <History className="w-3 h-3 mr-1" />
-            Jobs
-            {recentJobs.length > 0 && (
-              <Badge className="ml-1 h-4 min-w-4 px-1 text-[9px] bg-primary/20 text-primary border-0">
-                {recentJobs.length}
-              </Badge>
-            )}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-[10px] text-label hover:text-indigo-400"
+              onClick={() => setIsAiSettingsOpen(true)}
+            >
+              <Bot className="w-3.5 h-3.5 mr-1 text-indigo-500" />
+              AI Engines
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-[10px] text-label hover:text-body"
+              onClick={() => setJobPanelOpen(true)}
+            >
+              <History className="w-3 h-3 mr-1" />
+              Jobs
+              {recentJobs.length > 0 && (
+                <Badge className="ml-1 h-4 min-w-4 px-1 text-[9px] bg-primary/20 text-primary border-0">
+                  {recentJobs.length}
+                </Badge>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
+
+      <AIProviderSettings open={isAiSettingsOpen} onOpenChange={setIsAiSettingsOpen} />
 
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-3">
@@ -459,24 +584,48 @@ export default function SmartEntryModule() {
 
           {/* Context Window Master - Tags */}
           {contextTags.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-[10px] font-medium text-dim uppercase tracking-wider">
-                Context Window
-              </h4>
-              <div className="flex flex-wrap gap-1.5">
-                {contextTags.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant="outline"
-                    className={`text-[10px] px-2 py-0.5 cursor-default border ${tagColors[tag.type]} max-w-full whitespace-normal h-auto text-left`}
-                  >
-                    <span className="flex-1 min-w-0 break-words">{tag.label}</span>
+            <div className="space-y-2 mt-2">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-[10px] font-medium text-dim uppercase tracking-wider">
+                  Context Window
+                </h4>
+                {activePreviewItem?.content && (
+                  <span className="text-[9px] text-faint">
+                    ~{Math.round(activePreviewItem.content.length / 4).toLocaleString()} Tokens
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                {contextTags.find((t) => t.id === "title") && (
+                  <div className="relative group w-full rounded-md border border-amber-500/30 bg-amber-500/[0.03] p-2 pr-7">
+                    <p className="text-[11px] font-semibold text-amber-500/90 leading-snug break-words">
+                      {contextTags.find((t) => t.id === "title")?.label}
+                    </p>
                     <X
-                      className="w-2.5 h-2.5 ml-1 shrink-0 cursor-pointer opacity-60 hover:opacity-100"
-                      onClick={() => removeTag(tag.id)}
+                      className="absolute top-2 right-2 w-3.5 h-3.5 cursor-pointer opacity-50 hover:opacity-100 text-amber-500 hover:bg-amber-500/10 rounded-sm p-0.5 transition-colors"
+                      onClick={() => removeTag("title")}
                     />
-                  </Badge>
-                ))}
+                  </div>
+                )}
+                
+                <div className="flex flex-wrap gap-1.5">
+                  {contextTags
+                    .filter((t) => t.id !== "title")
+                    .map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant="outline"
+                        className="text-[10px] px-2 py-0.5 cursor-default border border-indigo-500/20 bg-indigo-500/[0.03] text-indigo-400 hover:bg-indigo-500/10 max-w-full font-medium"
+                      >
+                        <span className="truncate">{tag.label}</span>
+                        <X
+                          className="w-2.5 h-2.5 ml-1.5 shrink-0 cursor-pointer opacity-60 hover:opacity-100"
+                          onClick={() => removeTag(tag.id)}
+                        />
+                      </Badge>
+                    ))}
+                </div>
               </div>
             </div>
           )}
@@ -713,13 +862,19 @@ export default function SmartEntryModule() {
                     </div>
                     
                     <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar max-w-full">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         className="h-7 text-[11px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20 font-semibold"
+                         onClick={() => handleOpenWizard()}
+                         disabled={!activeJob?.knowledge_source?.content_text}
+                       >
+                         <Wand2 className="w-3 h-3 mr-1.5" />
+                         Generate Content
+                       </Button>
                        <Button variant="outline" size="sm" className="h-7 text-[11px] bg-surface-0 text-primary border-primary/20 hover:bg-primary/10">
                          <Sparkles className="w-3 h-3 mr-1.5" />
                          AI Summarize
-                       </Button>
-                       <Button variant="outline" size="sm" className="h-7 text-[11px] bg-surface-0 text-indigo-500 dark:text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/10">
-                         <BrainCircuit className="w-3 h-3 mr-1.5" />
-                         Extract Entities
                        </Button>
                        <div className="w-px h-4 bg-default mx-1" />
                        <Button variant="ghost" size="sm" className="h-7 text-[11px] text-dim hover:text-body">
@@ -779,6 +934,253 @@ export default function SmartEntryModule() {
                 </div>
               )}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Multi-step Generate Wizard */}
+      <Dialog open={generatePanelOpen} onOpenChange={(open) => {
+        if (!isGenerating) {
+          setGeneratePanelOpen(open);
+        }
+      }}>
+        <DialogContent className="!max-w-xl bg-surface-1 border-default p-0 flex flex-col max-h-[85vh] overflow-hidden">
+          <DialogHeader className="shrink-0 px-5 py-4 border-b border-default bg-surface-0 flex-row items-center justify-between">
+            <div>
+              <DialogTitle className="text-sm font-medium text-heading flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-emerald-500" />
+                AI Content Pipeline
+              </DialogTitle>
+              {activeJob?.knowledge_source?.title && (
+                <p className="text-[11px] text-faint mt-1 truncate max-w-sm">
+                  Source: {activeJob.knowledge_source.title}
+                </p>
+              )}
+            </div>
+            {/* Step indicator */}
+            <div className="flex items-center gap-2">
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${wizardStep >= 1 ? 'bg-emerald-500 text-white' : 'bg-surface-active text-dim'}`}>1</span>
+              <span className="w-4 h-px bg-default"></span>
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${wizardStep >= 2 ? 'bg-emerald-500 text-white' : 'bg-surface-active text-dim'}`}>2</span>
+            </div>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1">
+            <div className="p-5 space-y-6">
+              {wizardStep === 1 && (
+                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                  {/* --- BRIEF SETUP --- */}
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-semibold text-heading uppercase tracking-wider">1. Content Brief</h3>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-label">Platform</label>
+                      <div className="flex gap-2">
+                        {[
+                          { value: "blog", label: "📝 Blog" },
+                          { value: "facebook", label: "📘 Facebook" },
+                          { value: "linkedin", label: "💼 LinkedIn" },
+                        ].map((p) => (
+                          <button
+                            key={p.value}
+                            onClick={() => setBriefForm((f) => ({ ...f, platform: p.value }))}
+                            className={`flex-1 px-3 py-2 rounded-lg text-[11px] font-medium border transition-all ${
+                              briefForm.platform === p.value
+                                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500"
+                                : "bg-surface-hover border-default text-dim hover:text-body"
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-label">Tone of Voice</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: "professional", label: "🏢 Professional" },
+                          { value: "casual", label: "😊 Casual" },
+                          { value: "storyteller", label: "📖 Storyteller" },
+                          { value: "data-driven", label: "📊 Data-Driven" },
+                        ].map((t) => (
+                          <button
+                            key={t.value}
+                            onClick={() => setBriefForm((f) => ({ ...f, tone: t.value }))}
+                            className={`px-3 py-2 rounded-lg text-[11px] font-medium border transition-all ${
+                              briefForm.tone === t.value
+                                ? "bg-primary/15 border-primary/30 text-primary"
+                                : "bg-surface-hover border-default text-dim hover:text-body"
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-medium text-label">Content Length</label>
+                        <select 
+                          value={briefForm.content_length}
+                          onChange={(e) => setBriefForm(f => ({ ...f, content_length: e.target.value }))}
+                          className="w-full bg-surface-hover text-xs text-body px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
+                        >
+                          <option value="short">Short (~200 words)</option>
+                          <option value="medium">Medium (~500 words)</option>
+                          <option value="long">Long (~1000 words)</option>
+                        </select>
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-medium text-label">Language</label>
+                        <select 
+                          value={briefForm.language}
+                          onChange={(e) => setBriefForm(f => ({ ...f, language: e.target.value }))}
+                          className="w-full bg-surface-hover text-xs text-body px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
+                        >
+                          <option value="vi">🇻🇳 Tiếng Việt</option>
+                          <option value="en">🇺🇸 English</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-label">
+                        Target Audience <span className="text-faint">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={briefForm.target_audience}
+                        onChange={(e) => setBriefForm((f) => ({ ...f, target_audience: e.target.value }))}
+                        placeholder="e.g. Marketers, startup founders..."
+                        className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
+                      />
+                    </div>
+                  </div>
+
+                  {/* --- BRAND DNA (Context Injection) --- */}
+                  <div className="space-y-4 pt-4 border-t border-default/50">
+                    <h3 className="text-xs font-semibold text-heading uppercase tracking-wider flex items-center gap-2">
+                      <Dna className="w-3.5 h-3.5 text-indigo-500" />
+                      2. Context Injection (Brand DNA)
+                    </h3>
+                    <p className="text-[11px] text-dim">
+                      Inject brand identity into the synthesized knowledge so the AI writes like your brand.
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-medium text-label">Brand Name</label>
+                        <input
+                          type="text"
+                          value={briefForm.brand_name}
+                          onChange={(e) => setBriefForm(f => ({ ...f, brand_name: e.target.value }))}
+                          placeholder="e.g. Acme Corp"
+                          className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-medium text-label">Brand Persona</label>
+                        <input
+                          type="text"
+                          value={briefForm.brand_persona}
+                          onChange={(e) => setBriefForm(f => ({ ...f, brand_persona: e.target.value }))}
+                          placeholder="e.g. Expert, friendly, data-driven"
+                          className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-label">Brand Voice Guidelines</label>
+                      <textarea
+                        value={briefForm.brand_guidelines}
+                        onChange={(e) => setBriefForm(f => ({ ...f, brand_guidelines: e.target.value }))}
+                        placeholder="e.g. Always use inclusive language. Avoid jargon. Mention product benefits."
+                        rows={2}
+                        className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40 resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 2 && (
+                <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-heading uppercase tracking-wider flex items-center gap-2">
+                      <ListRestart className="w-3.5 h-3.5 text-blue-500" />
+                      Master Outline Review
+                    </h3>
+                    <Badge variant="secondary" className="text-[9px] bg-blue-500/10 text-blue-500 border-blue-500/20">
+                      AIDA / PAS Framework
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-dim">
+                    The AI has structured the synthesized knowledge and injected your Brand DNA. Review and adjust this master structure before generating the final multi-format content.
+                  </p>
+                  
+                  <textarea
+                    value={outlineEditable}
+                    onChange={(e) => setOutlineEditable(e.target.value)}
+                    className="w-full h-[400px] bg-[#1e1e1e] text-[#d4d4d4] font-mono text-[11px] p-4 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500/50 resize-y"
+                    spellCheck={false}
+                  />
+                  <div className="flex items-center gap-2 text-[10px] text-faint">
+                    <AlertTriangle className="w-3 h-3 text-amber-500" />
+                    Edit the JSON above to tweak section headings, key points, or add specific dataset references.
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Footer */}
+          <div className="shrink-0 px-5 py-3 border-t border-default bg-surface-0 flex items-center justify-between">
+            {wizardStep === 1 ? (
+              <>
+                <p className="text-[10px] text-faint">
+                  {activeJob?.knowledge_source?.content_text
+                    ? `~${Math.round(activeJob.knowledge_source.content_text.length / 4).toLocaleString()} tokens source data`
+                    : "No source data"}
+                </p>
+                <div className="flex space-x-2">
+                  <Button variant="ghost" className="h-8 px-4 text-[11px]" onClick={() => setGeneratePanelOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    className="h-8 px-4 text-[11px] bg-indigo-500 hover:bg-indigo-600 text-white border-0 font-semibold"
+                    onClick={handleGenerateOutline}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Digesting Context...</>
+                    ) : (
+                      <>Next: Generate Outline <Wand2 className="w-3 h-3 ml-1.5" /></>
+                    )}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" className="h-8 px-4 text-[11px]" onClick={() => setWizardStep(1)} disabled={isGenerating}>
+                  Back to Config
+                </Button>
+                <Button
+                  className="h-8 px-4 text-[11px] bg-emerald-500 hover:bg-emerald-600 text-white border-0 font-semibold shadow-sm shadow-emerald-500/20"
+                  onClick={handleGenerateFromOutline}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Crafting Content...</>
+                  ) : (
+                    <><Sparkles className="w-3.5 h-3.5 mr-1.5" /> Produce Marketing Content</>
+                  )}
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

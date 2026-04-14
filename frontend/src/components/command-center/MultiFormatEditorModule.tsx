@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useResearchStore } from "@/store/useResearchStore";
 import {
   AlignLeft,
   LayoutList,
@@ -202,6 +203,7 @@ const platformConfigs: Record<
 };
 
 export default function MultiFormatEditorModule() {
+  const generatedContent = useResearchStore((s) => s.generatedContent);
   const [editorMode, setEditorMode] = useState<EditorMode>("assets");
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>("blog");
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("desktop");
@@ -214,6 +216,31 @@ export default function MultiFormatEditorModule() {
     linkedin: platformConfigs.linkedin.defaultContent,
     blog: platformConfigs.blog.defaultContent,
   });
+  const [aiMeta, setAiMeta] = useState<Record<string, { model: string; tokens: number; time: string }>>({});
+
+  // Track which generated content we've already applied
+  const appliedRef = useRef<Record<string, string>>({});
+
+  // Watch for new AI-generated content from the store
+  useEffect(() => {
+    for (const [platform, entry] of Object.entries(generatedContent)) {
+      const key = `${platform}_${entry.generatedAt}`;
+      if (appliedRef.current[platform] !== key && (platform as Platform) in platformConfigs) {
+        appliedRef.current[platform] = key;
+        setEditorContent((prev) => ({ ...prev, [platform as Platform]: entry.html }));
+        setSelectedPlatform(platform as Platform);
+        setEditorMode("assets");
+        setAiMeta((prev) => ({
+          ...prev,
+          [platform]: {
+            model: entry.modelUsed,
+            tokens: entry.tokenUsage.total,
+            time: new Date(entry.generatedAt).toLocaleTimeString("vi-VN"),
+          },
+        }));
+      }
+    }
+  }, [generatedContent]);
 
   const toggleCollapse = (id: string) => {
     setCollapsedSections((prev) => {
@@ -385,10 +412,34 @@ export default function MultiFormatEditorModule() {
                   })}
                 </div>
 
+                {/* AI Generation Banner */}
+                {aiMeta[selectedPlatform] && (
+                  <div className="shrink-0 px-3 py-1.5 bg-emerald-500/[0.07] border-b border-emerald-500/20 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[10px] text-emerald-500">
+                      <Sparkles className="w-3 h-3" />
+                      <span>AI Generated — {aiMeta[selectedPlatform].model}</span>
+                      <span className="text-emerald-500/60">|</span>
+                      <span>{aiMeta[selectedPlatform].tokens.toLocaleString()} tokens</span>
+                      <span className="text-emerald-500/60">|</span>
+                      <span>{aiMeta[selectedPlatform].time}</span>
+                    </div>
+                    <button
+                      onClick={() => setAiMeta((prev) => {
+                        const next = { ...prev };
+                        delete next[selectedPlatform];
+                        return next;
+                      })}
+                      className="text-[9px] text-emerald-500/60 hover:text-emerald-500 transition-colors"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+
                 {/* TipTap Editor */}
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <TipTapEditor
-                    key={selectedPlatform}
+                    key={`${selectedPlatform}_${appliedRef.current[selectedPlatform] || 'default'}`}
                     content={editorContent[selectedPlatform]}
                     onChange={(html) =>
                       setEditorContent((prev) => ({
