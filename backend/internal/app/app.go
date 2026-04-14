@@ -25,6 +25,7 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 	// 1. Repository
 	userRepo := repository.NewUserRepository(db)
 	crawlRepo := repository.NewCrawlRepository(db)
+	aiProviderRepo := repository.NewAIProviderRepository(db)
 
 	// 2. Service
 	userService := service.NewUserService(userRepo, jwtSecret, distributor)
@@ -33,6 +34,8 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 	// 3. Handlers
 	userHandler := http.NewUserHandler(userService)
 	crawlHandler := http.NewCrawlHandler(crawlService)
+	aiProviderHandler := http.NewAIProviderHandler(aiProviderRepo)
+	contentHandler := http.NewContentHandler(aiProviderRepo, crawlRepo)
 
 	// 4. Router Setup
 	r := chi.NewRouter()
@@ -57,6 +60,12 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 		r.Get("/research/jobs", crawlHandler.ListJobs)
 		r.Get("/research/jobs/{jobID}", crawlHandler.GetJob)
 		r.Delete("/research/jobs/{jobID}", crawlHandler.DeleteJob)
+		
+		r.Post("/teams/{teamID}/ai-providers", aiProviderHandler.SaveConfig)
+		r.Get("/teams/{teamID}/ai-providers", aiProviderHandler.GetConfigs)
+
+		r.Post("/content/generate", contentHandler.GenerateContent)
+		r.Post("/content/outline", contentHandler.GenerateOutline)
 	})
 
 	return &App{

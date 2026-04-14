@@ -11,6 +11,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hibiken/asynq v0.26.0
 	github.com/joho/godotenv v1.5.1
+	github.com/sashabaranov/go-openai v1.41.2
 	golang.org/x/crypto v0.49.0
 	google.golang.org/api v0.275.0
 	gorm.io/driver/postgres v1.6.0

@@ -2,7 +2,7 @@ package main
 
 import (
 	"bityagi/internal/app"
-	"bityagi/internal/domain"
+	// "bityagi/internal/domain"
 	"log"
 	"net/http"
 	"os"
@@ -30,19 +30,8 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	// 2.1 Auto Migrate Models
-	log.Println("Running database migrations...")
-	err = db.AutoMigrate(
-		&domain.User{},
-		&domain.UserCredentials{},
-		&domain.KnowledgeSource{},
-		&domain.CrawlJob{},
-		&domain.CrawlPage{},
-	)
-	if err != nil {
-		log.Fatal("Failed to migrate database:", err)
-	}
-
+	// Database connection initialized successfully
+	// db.AutoMigrate(&domain.AIProviderConfig{})
 	// 3. Environment Configs
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {

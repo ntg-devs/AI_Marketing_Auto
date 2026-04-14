@@ -180,13 +180,16 @@ func (r *crawlRepository) SaveJobResult(ctx context.Context, jobID uuid.UUID, re
 		})
 
 		knowledgeSource := &domain.KnowledgeSource{
-			ID:          knowledgeID,
-			TeamID:      job.TeamID,
-			Title:       sourceTitle,
-			SourceType:  "url_crawl",
-			ContentText: result.ExtractedText,
-			Metadata:    sourceMetadata,
-			IsActive:    true,
+			ID:             knowledgeID,
+			TeamID:         job.TeamID,
+			Title:          sourceTitle,
+			SourceType:     "url_crawl",
+			ContentText:    result.ExtractedText,
+			Metadata:       sourceMetadata,
+			VectorID:       result.VectorID,
+			EmbeddingModel: result.EmbeddingModel,
+			TokenCount:     result.TokenCount,
+			IsActive:       true,
 		}
 		if err := tx.Create(knowledgeSource).Error; err != nil {
 			return err
@@ -280,4 +283,15 @@ func maxInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func (r *crawlRepository) GetKnowledgeSourceByID(ctx context.Context, id uuid.UUID) (*domain.KnowledgeSource, error) {
+	var ks domain.KnowledgeSource
+	if err := r.db.WithContext(ctx).First(&ks, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &ks, nil
 }
