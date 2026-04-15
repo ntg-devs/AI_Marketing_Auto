@@ -32,6 +32,8 @@ func NewClientWithConfig(apiKey, baseURL, modelName, providerName string) *Clien
 			providerName = "gemini"
 		} else if strings.HasPrefix(modelName, "claude") {
 			providerName = "anthropic"
+		} else if strings.HasPrefix(modelName, "qwen") || strings.Contains(strings.ToLower(modelName), "ollama") {
+			providerName = "ollama"
 		} else {
 			providerName = "openai"
 		}
@@ -43,6 +45,16 @@ func NewClientWithConfig(apiKey, baseURL, modelName, providerName string) *Clien
 	} else if providerName == "gemini" {
 		// Gemini's OpenAI-compatible endpoint (REQUIRED, not optional)
 		cfg.BaseURL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+	} else if providerName == "ollama" {
+		// Default Ollama local endpoint
+		cfg.BaseURL = "http://127.0.0.1:11434/v1"
+		// Ollama doesn't strictly need a valid API key, but openai client might complain if empty
+		if apiKey == "" {
+			cfg.EmptyMessagesLimit = 5
+			apiKey = "ollama" // dummy key
+			cfg = openai.DefaultConfig(apiKey)
+			cfg.BaseURL = "http://127.0.0.1:11434/v1"
+		}
 	}
 
 	actualModel := openai.GPT4o

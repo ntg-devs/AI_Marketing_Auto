@@ -110,10 +110,10 @@ export default function SmartEntryModule() {
   const [jobPanelOpen, setJobPanelOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  // Content Generation state
-  const [generatePanelOpen, setGeneratePanelOpen] = useState(false);
+  // Content Generation state — inline within Preview dialog (no extra popup)
+  type PreviewMode = "preview" | "configure" | "outline";
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("preview");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [outlineJSON, setOutlineJSON] = useState("");
   const [outlineEditable, setOutlineEditable] = useState("");
   const [briefForm, setBriefForm] = useState({
@@ -342,7 +342,7 @@ export default function SmartEntryModule() {
     }
   };
 
-  // Step 3+4: Context Injection → Master Outline
+  // Step 3+4: Context Injection â†’ Master Outline
   const handleGenerateOutline = async () => {
     const knowledgeText = activeJob?.knowledge_source?.content_text;
     if (!knowledgeText) {
@@ -358,7 +358,7 @@ export default function SmartEntryModule() {
         knowledge_text: knowledgeText,
         platform: briefForm.platform,
         tone: briefForm.tone,
-        target_audience: briefForm.target_audience || "Người quan tâm đến công nghệ và marketing",
+        target_audience: briefForm.target_audience || "NgÆ°á»i quan tÃ¢m Ä‘áº¿n cÃ´ng nghá»‡ vÃ  marketing",
         additional_instructions: briefForm.additional_instructions,
         language: briefForm.language,
         brand_name: briefForm.brand_name,
@@ -369,7 +369,7 @@ export default function SmartEntryModule() {
       const result = await researchApi.generateOutline(payload);
       setOutlineJSON(result.outline_json);
       setOutlineEditable(result.outline_json);
-      setWizardStep(2);
+      setPreviewMode("outline");
       gooeyToast.success("Outline generated! Review and edit before generating content.");
     } catch (error: any) {
       gooeyToast.error(error?.message || "Failed to generate outline");
@@ -391,7 +391,7 @@ export default function SmartEntryModule() {
         knowledge_text: knowledgeText,
         platform: briefForm.platform,
         tone: briefForm.tone,
-        target_audience: briefForm.target_audience || "Người quan tâm đến công nghệ và marketing",
+        target_audience: briefForm.target_audience || "NgÆ°á»i quan tÃ¢m Ä‘áº¿n cÃ´ng nghá»‡ vÃ  marketing",
         content_length: briefForm.content_length,
         additional_instructions: briefForm.additional_instructions,
         language: briefForm.language,
@@ -412,9 +412,8 @@ export default function SmartEntryModule() {
       });
 
       gooeyToast.success(`Content generated for ${briefForm.platform}! Check the Editor panel.`);
-      setGeneratePanelOpen(false);
+      setPreviewMode("preview");
       setPreviewOpen(false);
-      setWizardStep(1);
       setOutlineJSON("");
       setOutlineEditable("");
     } catch (error: any) {
@@ -425,10 +424,9 @@ export default function SmartEntryModule() {
   };
 
   const handleOpenWizard = () => {
-    setWizardStep(1);
     setOutlineJSON("");
     setOutlineEditable("");
-    setGeneratePanelOpen(true);
+    setPreviewMode("configure");
   };
 
   return (
@@ -850,80 +848,272 @@ export default function SmartEntryModule() {
             <div className="flex-1 flex flex-col min-w-0 bg-surface-0 relative overflow-hidden">
               {activePreviewItem ? (
                 <>
-                  {/* Workspace Toolbar */}
+                  {/* Workspace Toolbar — mode-aware */}
                   <div className="shrink-0 border-b border-default bg-surface-1 px-4 md:px-5 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-w-0">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {previewMode !== "preview" && (
+                        <button
+                          onClick={() => { if (!isGenerating) setPreviewMode("preview"); }}
+                          className="shrink-0 p-1 rounded hover:bg-surface-hover text-dim hover:text-body transition-colors"
+                          title="Back to preview"
+                        >
+                          <ChevronDown className="w-4 h-4 rotate-90" />
+                        </button>
+                      )}
                       <h2 className="text-sm font-semibold text-heading truncate">
-                        {activePreviewItem.title}
+                        {previewMode === "preview" && activePreviewItem.title}
+                        {previewMode === "configure" && "AI Content Pipeline — Configure Brief"}
+                        {previewMode === "outline" && "AI Content Pipeline — Master Outline"}
                       </h2>
-                      <Badge variant="secondary" className="text-[10px] bg-surface-active h-5 border-default whitespace-nowrap text-dim shrink-0">
-                        ~{Math.round(activePreviewItem.content.length / 4)} tokens
-                      </Badge>
+                      {previewMode === "preview" && (
+                        <Badge variant="secondary" className="text-[10px] bg-surface-active h-5 border-default whitespace-nowrap text-dim shrink-0">
+                          ~{Math.round(activePreviewItem.content.length / 4)} tokens
+                        </Badge>
+                      )}
+                      {previewMode !== "preview" && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${previewMode === "configure" ? 'bg-indigo-500 text-white ring-2 ring-indigo-500/30' : 'bg-emerald-500 text-white'}`}>1</span>
+                          <span className="w-3 h-px bg-default"></span>
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${previewMode === "outline" ? 'bg-emerald-500 text-white ring-2 ring-emerald-500/30' : 'bg-surface-active text-dim'}`}>2</span>
+                        </div>
+                      )}
                     </div>
                     
-                    <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar max-w-full">
-                       <Button
-                         variant="outline"
-                         size="sm"
-                         className="h-7 text-[11px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20 font-semibold"
-                         onClick={() => handleOpenWizard()}
-                         disabled={!activeJob?.knowledge_source?.content_text}
-                       >
-                         <Wand2 className="w-3 h-3 mr-1.5" />
-                         Generate Content
-                       </Button>
-                       <Button variant="outline" size="sm" className="h-7 text-[11px] bg-surface-0 text-primary border-primary/20 hover:bg-primary/10">
-                         <Sparkles className="w-3 h-3 mr-1.5" />
-                         AI Summarize
-                       </Button>
-                       <div className="w-px h-4 bg-default mx-1" />
-                       <Button variant="ghost" size="sm" className="h-7 text-[11px] text-dim hover:text-body">
-                         <Save className="w-3.5 h-3.5 mr-1" />
-                         Save to KB
-                       </Button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {previewMode === "preview" && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-[11px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20 font-semibold"
+                            onClick={() => handleOpenWizard()}
+                            disabled={!activeJob?.knowledge_source?.content_text}
+                          >
+                            <Wand2 className="w-3 h-3 mr-1.5" />
+                            Generate Content
+                          </Button>
+                          <Button variant="outline" size="sm" className="h-7 text-[11px] bg-surface-0 text-primary border-primary/20 hover:bg-primary/10">
+                            <Sparkles className="w-3 h-3 mr-1.5" />
+                            AI Summarize
+                          </Button>
+                          <div className="w-px h-4 bg-default mx-1" />
+                          <Button variant="ghost" size="sm" className="h-7 text-[11px] text-dim hover:text-body">
+                            <Save className="w-3.5 h-3.5 mr-1" />
+                            Save to KB
+                          </Button>
+                        </>
+                      )}
+                      {previewMode === "configure" && (
+                        <Button
+                          size="sm"
+                          className="h-7 text-[11px] bg-indigo-500 hover:bg-indigo-600 text-white border-0 font-semibold"
+                          onClick={handleGenerateOutline}
+                          disabled={isGenerating}
+                        >
+                          {isGenerating ? (
+                            <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Digesting Context...</>
+                          ) : (
+                            <><Wand2 className="w-3 h-3 mr-1.5" /> Generate Outline</>
+                          )}
+                        </Button>
+                      )}
+                      {previewMode === "outline" && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-[11px]"
+                            onClick={() => setPreviewMode("configure")}
+                            disabled={isGenerating}
+                          >
+                            Back
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="h-7 text-[11px] bg-emerald-500 hover:bg-emerald-600 text-white border-0 font-semibold shadow-sm shadow-emerald-500/20"
+                            onClick={handleGenerateFromOutline}
+                            disabled={isGenerating}
+                          >
+                            {isGenerating ? (
+                              <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Crafting Content...</>
+                            ) : (
+                              <><Sparkles className="w-3 h-3 mr-1.5" /> Produce Content</>
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Content Area */}
-                  <div className="flex-1 flex flex-col p-4 md:p-6 w-full min-w-0 min-h-0 overflow-hidden bg-surface-0">
-                    <div className="max-w-4xl w-full mx-auto flex-1 flex flex-col min-h-0">
-                      
-                      <div className="shrink-0 mb-4 md:mb-5 pb-4 md:pb-5 border-b border-default/50 space-y-2 md:space-y-3 min-w-0">
-                        <h1 className="text-xl md:text-2xl font-bold text-heading leading-tight tracking-tight break-words">
-                          {activePreviewItem.title}
-                        </h1>
-                        {activePreviewItem.url && (
-                          <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-[11px] text-dim min-w-0">
-                            <a 
-                              href={activePreviewItem.url} 
-                              target="_blank" 
-                              rel="noreferrer"
-                              className="inline-flex items-center text-primary/80 hover:text-primary transition-colors min-w-0 max-w-full"
-                            >
-                              <Link2 className="w-3 h-3 mr-1 shrink-0" />
-                              <span className="truncate break-all">{activePreviewItem.url}</span>
-                            </a>
-                            <span className="flex items-center">
-                              <BookOpen className="w-3 h-3 mr-1 opacity-50 shrink-0" />
-                              {activePreviewItem.content.split(/\\s+/).length} words
-                            </span>
-                            <span className="flex items-center">
-                              <Clock className="w-3 h-3 mr-1 opacity-50 shrink-0" />
-                              {Math.max(1, Math.ceil(activePreviewItem.content.split(/\\s+/).length / 250))} min read
-                            </span>
+                  {/* Content Area — mode-aware */}
+                  <div className="flex-1 flex flex-col w-full min-w-0 min-h-0 overflow-hidden bg-surface-0">
+                    {/* === PREVIEW MODE === */}
+                    {previewMode === "preview" && (
+                      <div className="flex-1 flex flex-col p-4 md:p-6 min-h-0 overflow-hidden">
+                        <div className="max-w-4xl w-full mx-auto flex-1 flex flex-col min-h-0">
+                          <div className="shrink-0 mb-4 md:mb-5 pb-4 md:pb-5 border-b border-default/50 space-y-2 md:space-y-3 min-w-0">
+                            <h1 className="text-xl md:text-2xl font-bold text-heading leading-tight tracking-tight break-words">
+                              {activePreviewItem.title}
+                            </h1>
+                            {activePreviewItem.url && (
+                              <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-[11px] text-dim min-w-0">
+                                <a href={activePreviewItem.url} target="_blank" rel="noreferrer" className="inline-flex items-center text-primary/80 hover:text-primary transition-colors min-w-0 max-w-full">
+                                  <Link2 className="w-3 h-3 mr-1 shrink-0" />
+                                  <span className="truncate break-all">{activePreviewItem.url}</span>
+                                </a>
+                                <span className="flex items-center">
+                                  <BookOpen className="w-3 h-3 mr-1 opacity-50 shrink-0" />
+                                  {activePreviewItem.content.split(/\\s+/).length} words
+                                </span>
+                                <span className="flex items-center">
+                                  <Clock className="w-3 h-3 mr-1 opacity-50 shrink-0" />
+                                  {Math.max(1, Math.ceil(activePreviewItem.content.split(/\\s+/).length / 250))} min read
+                                </span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex-1 bg-surface-1/40 rounded-xl border border-default/40 shadow-sm flex flex-col min-h-0 overflow-hidden relative">
-                        <ScrollArea className="flex-1 w-full h-full relative">
-                          <div className="p-5 md:p-7 absolute inset-0 text-left overflow-auto">
-                            <FormattedText text={activePreviewItem.content} />
+                          <div className="flex-1 bg-surface-1/40 rounded-xl border border-default/40 shadow-sm flex flex-col min-h-0 overflow-hidden relative">
+                            <ScrollArea className="flex-1 w-full h-full relative">
+                              <div className="p-5 md:p-7 absolute inset-0 text-left overflow-auto">
+                                <FormattedText text={activePreviewItem.content} />
+                              </div>
+                            </ScrollArea>
                           </div>
-                        </ScrollArea>
+                        </div>
                       </div>
+                    )}
 
-                    </div>
+                    {/* === CONFIGURE MODE (Brief + Brand DNA) === */}
+                    {previewMode === "configure" && (
+                      <div className="flex-1 overflow-y-auto">
+                        <div className="max-w-xl mx-auto p-6 space-y-6">
+                          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-surface-1 border border-default/50">
+                            <Database className="w-4 h-4 text-primary shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-medium text-heading truncate">{activePreviewItem.title}</p>
+                              <p className="text-[10px] text-faint">~{Math.round((activeJob?.knowledge_source?.content_text?.length || 0) / 4).toLocaleString()} tokens source data</p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <h3 className="text-xs font-semibold text-heading uppercase tracking-wider flex items-center gap-2">
+                              <PenLine className="w-3.5 h-3.5 text-primary" />
+                              Content Brief
+                            </h3>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-medium text-label">Platform</label>
+                              <div className="flex gap-2">
+                                {([
+                                  { value: "blog", label: "Blog", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#F59E0B" d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/><path fill="#FFF" d="M16 14H8v-2h8v2zm0-4H8V8h8v2z"/></svg> }, 
+                                  { value: "facebook", label: "Facebook", icon: <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0"><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill="#1877F2" d="M15 8a7 7 0 00-7-7 7 7 0 00-1.094 13.915v-4.892H5.13V8h1.777V6.458c0-1.754 1.045-2.724 2.644-2.724.766 0 1.567.137 1.567.137v1.723h-.883c-.87 0-1.14 1.093V8h1.941l-.31 2.023H9.094v4.892A7.001 7.001 0 0015 8z"></path><path fill="#ffffff" d="M10.725 10.023L11.035 8H9.094V6.687c0-.553.27-1.093 1.14-1.093h.883V3.87s-.801-.137-1.567-.137c-1.6 0-2.644.97-2.644 2.724V8H5.13v2.023h1.777v4.892a7.037 7.037 0 002.188 0v-4.892h1.63z"></path></g></svg> }, 
+                                  { value: "linkedin", label: "LinkedIn", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9H12.76v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> }
+                                ]).map((p) => (
+                                  <button key={p.value} onClick={() => setBriefForm((f) => ({ ...f, platform: p.value }))}
+                                    className={`flex-1 px-3 py-2 rounded-lg text-[11px] font-medium border flex items-center justify-center gap-1.5 transition-all ${briefForm.platform === p.value ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500" : "bg-surface-hover border-default text-dim hover:text-body"}`}>
+                                    {p.icon}
+                                    {p.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-medium text-label">Tone of Voice</label>
+                              <div className="grid grid-cols-2 gap-2">
+                                {([
+                                  { value: "professional", label: "Professional", icon: <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"><path fill="#10B981" d="M20 6h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM10 4h4v2h-4V4z"/></svg> }, 
+                                  { value: "casual", label: "Casual", icon: <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"><path fill="#F59E0B" d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg> }, 
+                                  { value: "storyteller", label: "Storyteller", icon: <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"><path fill="#6366f1" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg> }, 
+                                  { value: "data-driven", label: "Data-Driven", icon: <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"><path fill="#3b82f6" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg> }
+                                ]).map((t) => (
+                                  <button key={t.value} onClick={() => setBriefForm((f) => ({ ...f, tone: t.value }))}
+                                    className={`px-3 py-2 rounded-lg text-[11px] font-medium border flex items-center justify-center gap-1.5 transition-all ${briefForm.tone === t.value ? "bg-primary/15 border-primary/30 text-primary" : "bg-surface-hover border-default text-dim hover:text-body"}`}>
+                                    {t.icon}
+                                    {t.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-medium text-label">Content Length</label>
+                                <select value={briefForm.content_length} onChange={(e) => setBriefForm(f => ({ ...f, content_length: e.target.value }))} className="w-full bg-surface-hover text-xs text-body px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40">
+                                  <option value="short">Short (~200 words)</option>
+                                  <option value="medium">Medium (~500 words)</option>
+                                  <option value="long">Long (~1000 words)</option>
+                                </select>
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-medium text-label">Language</label>
+                                <select value={briefForm.language} onChange={(e) => setBriefForm(f => ({ ...f, language: e.target.value }))} className="w-full bg-surface-hover text-xs text-body px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40">
+                                  <option value="vi">🇻🇳 Tiếng Việt</option>
+                                  <option value="en">🇺🇸 English</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-medium text-label">Target Audience <span className="text-faint">(optional)</span></label>
+                              <input type="text" value={briefForm.target_audience} onChange={(e) => setBriefForm((f) => ({ ...f, target_audience: e.target.value }))} placeholder="e.g. Marketers, startup founders..." className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-medium text-label">Additional Instructions <span className="text-faint">(optional)</span></label>
+                              <textarea value={briefForm.additional_instructions} onChange={(e) => setBriefForm((f) => ({ ...f, additional_instructions: e.target.value }))} placeholder="e.g. Focus on product benefits, add CTA at end..." rows={2} className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40 resize-none" />
+                            </div>
+                          </div>
+
+                          <div className="space-y-4 pt-4 border-t border-default/50">
+                            <h3 className="text-xs font-semibold text-heading uppercase tracking-wider flex items-center gap-2">
+                              <Dna className="w-3.5 h-3.5 text-indigo-500" />
+                              Context Injection (Brand DNA)
+                            </h3>
+                            <p className="text-[10px] text-dim leading-relaxed">Inject brand identity so the AI writes in your brand&apos;s voice. Leave blank to skip.</p>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-medium text-label">Brand Name</label>
+                                <input type="text" value={briefForm.brand_name} onChange={(e) => setBriefForm(f => ({ ...f, brand_name: e.target.value }))} placeholder="e.g. Acme Corp" className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40" />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-medium text-label">Brand Persona</label>
+                                <input type="text" value={briefForm.brand_persona} onChange={(e) => setBriefForm(f => ({ ...f, brand_persona: e.target.value }))} placeholder="e.g. Expert, data-driven" className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40" />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-medium text-label">Brand Voice Guidelines</label>
+                              <textarea value={briefForm.brand_guidelines} onChange={(e) => setBriefForm(f => ({ ...f, brand_guidelines: e.target.value }))} placeholder="e.g. Always use inclusive language. Avoid jargon." rows={2} className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40 resize-none" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* === OUTLINE REVIEW MODE === */}
+                    {previewMode === "outline" && (
+                      <div className="flex-1 overflow-y-auto">
+                        <div className="max-w-2xl mx-auto p-6 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-sm font-semibold text-heading flex items-center gap-2">
+                                <ListRestart className="w-4 h-4 text-blue-500" />
+                                Master Outline
+                              </h3>
+                              <p className="text-[10px] text-dim mt-1">Review and adjust. The AI will follow this outline precisely.</p>
+                            </div>
+                            <Badge variant="secondary" className="text-[9px] bg-blue-500/10 text-blue-500 border-blue-500/20 shrink-0">
+                              AIDA / PAS Framework
+                            </Badge>
+                          </div>
+                          <textarea
+                            value={outlineEditable}
+                            onChange={(e) => setOutlineEditable(e.target.value)}
+                            className="w-full h-[500px] bg-[#1a1a2e] text-[#e0e0e0] font-mono text-[11px] p-4 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500/40 resize-y border border-default/30"
+                            spellCheck={false}
+                          />
+                          <div className="flex items-center gap-2 text-[10px] text-faint">
+                            <AlertTriangle className="w-3 h-3 text-amber-500" />
+                            Edit the JSON to tweak headings, key points, or data references before generating.
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
@@ -938,252 +1128,9 @@ export default function SmartEntryModule() {
         </DialogContent>
       </Dialog>
 
-      {/* Multi-step Generate Wizard */}
-      <Dialog open={generatePanelOpen} onOpenChange={(open) => {
-        if (!isGenerating) {
-          setGeneratePanelOpen(open);
-        }
-      }}>
-        <DialogContent className="!max-w-xl bg-surface-1 border-default p-0 flex flex-col max-h-[85vh] overflow-hidden">
-          <DialogHeader className="shrink-0 px-5 py-4 border-b border-default bg-surface-0 flex-row items-center justify-between">
-            <div>
-              <DialogTitle className="text-sm font-medium text-heading flex items-center gap-2">
-                <Wand2 className="w-4 h-4 text-emerald-500" />
-                AI Content Pipeline
-              </DialogTitle>
-              {activeJob?.knowledge_source?.title && (
-                <p className="text-[11px] text-faint mt-1 truncate max-w-sm">
-                  Source: {activeJob.knowledge_source.title}
-                </p>
-              )}
-            </div>
-            {/* Step indicator */}
-            <div className="flex items-center gap-2">
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${wizardStep >= 1 ? 'bg-emerald-500 text-white' : 'bg-surface-active text-dim'}`}>1</span>
-              <span className="w-4 h-px bg-default"></span>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${wizardStep >= 2 ? 'bg-emerald-500 text-white' : 'bg-surface-active text-dim'}`}>2</span>
-            </div>
-          </DialogHeader>
 
-          <ScrollArea className="flex-1">
-            <div className="p-5 space-y-6">
-              {wizardStep === 1 && (
-                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                  {/* --- BRIEF SETUP --- */}
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-semibold text-heading uppercase tracking-wider">1. Content Brief</h3>
-                    
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-medium text-label">Platform</label>
-                      <div className="flex gap-2">
-                        {[
-                          { value: "blog", label: "📝 Blog" },
-                          { value: "facebook", label: "📘 Facebook" },
-                          { value: "linkedin", label: "💼 LinkedIn" },
-                        ].map((p) => (
-                          <button
-                            key={p.value}
-                            onClick={() => setBriefForm((f) => ({ ...f, platform: p.value }))}
-                            className={`flex-1 px-3 py-2 rounded-lg text-[11px] font-medium border transition-all ${
-                              briefForm.platform === p.value
-                                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500"
-                                : "bg-surface-hover border-default text-dim hover:text-body"
-                            }`}
-                          >
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-medium text-label">Tone of Voice</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { value: "professional", label: "🏢 Professional" },
-                          { value: "casual", label: "😊 Casual" },
-                          { value: "storyteller", label: "📖 Storyteller" },
-                          { value: "data-driven", label: "📊 Data-Driven" },
-                        ].map((t) => (
-                          <button
-                            key={t.value}
-                            onClick={() => setBriefForm((f) => ({ ...f, tone: t.value }))}
-                            className={`px-3 py-2 rounded-lg text-[11px] font-medium border transition-all ${
-                              briefForm.tone === t.value
-                                ? "bg-primary/15 border-primary/30 text-primary"
-                                : "bg-surface-hover border-default text-dim hover:text-body"
-                            }`}
-                          >
-                            {t.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-medium text-label">Content Length</label>
-                        <select 
-                          value={briefForm.content_length}
-                          onChange={(e) => setBriefForm(f => ({ ...f, content_length: e.target.value }))}
-                          className="w-full bg-surface-hover text-xs text-body px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
-                        >
-                          <option value="short">Short (~200 words)</option>
-                          <option value="medium">Medium (~500 words)</option>
-                          <option value="long">Long (~1000 words)</option>
-                        </select>
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-medium text-label">Language</label>
-                        <select 
-                          value={briefForm.language}
-                          onChange={(e) => setBriefForm(f => ({ ...f, language: e.target.value }))}
-                          className="w-full bg-surface-hover text-xs text-body px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
-                        >
-                          <option value="vi">🇻🇳 Tiếng Việt</option>
-                          <option value="en">🇺🇸 English</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-medium text-label">
-                        Target Audience <span className="text-faint">(optional)</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={briefForm.target_audience}
-                        onChange={(e) => setBriefForm((f) => ({ ...f, target_audience: e.target.value }))}
-                        placeholder="e.g. Marketers, startup founders..."
-                        className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
-                      />
-                    </div>
-                  </div>
-
-                  {/* --- BRAND DNA (Context Injection) --- */}
-                  <div className="space-y-4 pt-4 border-t border-default/50">
-                    <h3 className="text-xs font-semibold text-heading uppercase tracking-wider flex items-center gap-2">
-                      <Dna className="w-3.5 h-3.5 text-indigo-500" />
-                      2. Context Injection (Brand DNA)
-                    </h3>
-                    <p className="text-[11px] text-dim">
-                      Inject brand identity into the synthesized knowledge so the AI writes like your brand.
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-medium text-label">Brand Name</label>
-                        <input
-                          type="text"
-                          value={briefForm.brand_name}
-                          onChange={(e) => setBriefForm(f => ({ ...f, brand_name: e.target.value }))}
-                          placeholder="e.g. Acme Corp"
-                          className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-medium text-label">Brand Persona</label>
-                        <input
-                          type="text"
-                          value={briefForm.brand_persona}
-                          onChange={(e) => setBriefForm(f => ({ ...f, brand_persona: e.target.value }))}
-                          placeholder="e.g. Expert, friendly, data-driven"
-                          className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-medium text-label">Brand Voice Guidelines</label>
-                      <textarea
-                        value={briefForm.brand_guidelines}
-                        onChange={(e) => setBriefForm(f => ({ ...f, brand_guidelines: e.target.value }))}
-                        placeholder="e.g. Always use inclusive language. Avoid jargon. Mention product benefits."
-                        rows={2}
-                        className="w-full bg-surface-hover text-xs text-body placeholder:text-faint px-3 py-2 rounded-lg border border-default outline-none focus:border-primary/40 resize-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {wizardStep === 2 && (
-                <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-heading uppercase tracking-wider flex items-center gap-2">
-                      <ListRestart className="w-3.5 h-3.5 text-blue-500" />
-                      Master Outline Review
-                    </h3>
-                    <Badge variant="secondary" className="text-[9px] bg-blue-500/10 text-blue-500 border-blue-500/20">
-                      AIDA / PAS Framework
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] text-dim">
-                    The AI has structured the synthesized knowledge and injected your Brand DNA. Review and adjust this master structure before generating the final multi-format content.
-                  </p>
-                  
-                  <textarea
-                    value={outlineEditable}
-                    onChange={(e) => setOutlineEditable(e.target.value)}
-                    className="w-full h-[400px] bg-[#1e1e1e] text-[#d4d4d4] font-mono text-[11px] p-4 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500/50 resize-y"
-                    spellCheck={false}
-                  />
-                  <div className="flex items-center gap-2 text-[10px] text-faint">
-                    <AlertTriangle className="w-3 h-3 text-amber-500" />
-                    Edit the JSON above to tweak section headings, key points, or add specific dataset references.
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          {/* Footer */}
-          <div className="shrink-0 px-5 py-3 border-t border-default bg-surface-0 flex items-center justify-between">
-            {wizardStep === 1 ? (
-              <>
-                <p className="text-[10px] text-faint">
-                  {activeJob?.knowledge_source?.content_text
-                    ? `~${Math.round(activeJob.knowledge_source.content_text.length / 4).toLocaleString()} tokens source data`
-                    : "No source data"}
-                </p>
-                <div className="flex space-x-2">
-                  <Button variant="ghost" className="h-8 px-4 text-[11px]" onClick={() => setGeneratePanelOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    className="h-8 px-4 text-[11px] bg-indigo-500 hover:bg-indigo-600 text-white border-0 font-semibold"
-                    onClick={handleGenerateOutline}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? (
-                      <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Digesting Context...</>
-                    ) : (
-                      <>Next: Generate Outline <Wand2 className="w-3 h-3 ml-1.5" /></>
-                    )}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" className="h-8 px-4 text-[11px]" onClick={() => setWizardStep(1)} disabled={isGenerating}>
-                  Back to Config
-                </Button>
-                <Button
-                  className="h-8 px-4 text-[11px] bg-emerald-500 hover:bg-emerald-600 text-white border-0 font-semibold shadow-sm shadow-emerald-500/20"
-                  onClick={handleGenerateFromOutline}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Crafting Content...</>
-                  ) : (
-                    <><Sparkles className="w-3.5 h-3.5 mr-1.5" /> Produce Marketing Content</>
-                  )}
-                </Button>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

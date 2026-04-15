@@ -25,106 +25,13 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { gooeyToast } from "goey-toast";
-import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
+import { aiProviderApi } from "@/api/aiProvider";
 
 const DEFAULT_TEAM_ID = "123e4567-e89b-12d3-a456-426614174000";
 const TEAM_ID_KEY = "research-team-id";
 
-/* ================================================================
-   TYPE DEFINITIONS
-   ================================================================ */
-interface APIConfig {
-  provider_name: string;
-  model_name: string;
-  api_key: string;
-  masked_key: string;
-  base_url: string;
-  is_default: boolean;
-}
-
-interface ModelOption {
-  value: string;
-  label: string;
-  description: string;
-  tier: "free" | "standard" | "premium";
-}
-
-interface ProviderMeta {
-  id: string;
-  label: string;
-  icon: string;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  glowColor: string;
-  keyPlaceholder: string;
-  defaultBaseURL: string;
-  docsUrl: string;
-  models: ModelOption[];
-  defaultModel: string;
-}
-
-/* ================================================================
-   PROVIDER REGISTRY — Nguồn sống duy nhất cho toàn hệ thống
-   ================================================================ */
-const PROVIDERS: ProviderMeta[] = [
-  {
-    id: "openai",
-    label: "OpenAI",
-    icon: "🤖",
-    color: "text-emerald-400",
-    bgColor: "bg-emerald-500/10",
-    borderColor: "border-emerald-500/30",
-    glowColor: "shadow-emerald-500/10",
-    keyPlaceholder: "sk-proj-...",
-    defaultBaseURL: "https://api.openai.com/v1",
-    docsUrl: "https://platform.openai.com/api-keys",
-    defaultModel: "gpt-4o",
-    models: [
-      { value: "gpt-4o-mini", label: "GPT-4o Mini", description: "Nhanh, tiết kiệm", tier: "free" },
-      { value: "gpt-4o", label: "GPT-4o", description: "Đa năng, cân bằng", tier: "standard" },
-      { value: "gpt-4-turbo", label: "GPT-4 Turbo", description: "Mạnh mẽ, phức tạp", tier: "premium" },
-    ],
-  },
-  {
-    id: "gemini",
-    label: "Google Gemini",
-    icon: "💎",
-    color: "text-sky-400",
-    bgColor: "bg-sky-500/10",
-    borderColor: "border-sky-500/30",
-    glowColor: "shadow-sky-500/10",
-    keyPlaceholder: "AIza...",
-    defaultBaseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-    docsUrl: "https://aistudio.google.com/apikey",
-    defaultModel: "gemini-2.5-flash",
-    models: [
-      { value: "gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash-Lite", description: "Tốc độ cao nhất — 15 RPM (Preview)", tier: "free" },
-      { value: "gemini-3-flash-preview", label: "Gemini 3 Flash", description: "Cân bằng tốc độ & thông minh — 10 RPM (Preview)", tier: "standard" },
-      { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Ổn định, hiệu suất cao — 10 RPM", tier: "standard" },
-      { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "Xử lý sáng tạo phức tạp — 5 RPM", tier: "premium" },
-    ],
-  },
-  {
-    id: "anthropic",
-    label: "Anthropic Claude",
-    icon: "🧠",
-    color: "text-amber-400",
-    bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/30",
-    glowColor: "shadow-amber-500/10",
-    keyPlaceholder: "sk-ant-...",
-    defaultBaseURL: "https://api.anthropic.com/v1",
-    docsUrl: "https://console.anthropic.com/account/keys",
-    defaultModel: "claude-3-5-sonnet",
-    models: [
-      { value: "claude-3-haiku", label: "Claude 3 Haiku", description: "Nhanh gọn, tiết kiệm", tier: "free" },
-      { value: "claude-3-5-sonnet", label: "Claude 3.5 Sonnet", description: "Cân bằng & thông minh", tier: "standard" },
-      { value: "claude-3-opus", label: "Claude 3 Opus", description: "Mạnh mẽ nhất", tier: "premium" },
-    ],
-  },
-];
+import { APIConfig, PROVIDERS } from "@/constants/ai-providers";
 
 const tierIcons: Record<string, typeof Zap> = {
   free: Zap,
@@ -178,10 +85,9 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
   useEffect(() => {
     if (!open) return;
     const teamId = resolveTeamId();
-    axios
-      .get(`http://localhost:8080/api/v1/teams/${teamId}/ai-providers`)
-      .then((res) => {
-        const saved = res.data?.data;
+    aiProviderApi
+      .getProviders(teamId)
+      .then((saved) => {
         if (Array.isArray(saved) && saved.length > 0) {
           setProviders((prev) =>
             prev.map((p) => {
@@ -223,14 +129,12 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
       const payload = providers.map((p) => ({
         provider_name: p.provider_name,
         model_name: p.model_name,
-        api_key: p.api_key, // Empty string = backend will skip updating the key
+        // Send dummy key for ollama if empty to ensure row creation in DB 
+        api_key: (p.provider_name === "ollama" && !p.api_key && !p.masked_key) ? "ollama" : p.api_key,
         base_url: p.base_url,
         is_default: p.is_default,
       }));
-      await axios.post(
-        `http://localhost:8080/api/v1/teams/${teamId}/ai-providers`,
-        { configs: payload }
-      );
+      await aiProviderApi.saveProviders(teamId, { configs: payload });
       setSaveSuccess(true);
       gooeyToast.success("AI Configuration Saved Successfully!");
       setTimeout(() => {
@@ -245,16 +149,43 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
     }
   };
 
-  const setAsDefault = () => {
+  const setAsDefault = async () => {
+    // 1. Cập nhật state UI nhanh (Optimistic UI)
     setProviders((prev) =>
       prev.map((p) => ({
         ...p,
         is_default: p.provider_name === activeProvider,
       }))
     );
+
+    // 2. Chạy luồng lưu thẳng lên DB
+    setIsLoading(true);
+    setSaveSuccess(false);
+    try {
+      const teamId = resolveTeamId();
+      const payload = providers.map((p) => ({
+        provider_name: p.provider_name,
+        model_name: p.model_name,
+        // Send dummy key for ollama if empty to ensure row creation in DB
+        api_key: (p.provider_name === "ollama" && !p.api_key && !p.masked_key) ? "ollama" : p.api_key,
+        base_url: p.base_url,
+        is_default: p.provider_name === activeProvider,
+      }));
+      await aiProviderApi.saveProviders(teamId, { configs: payload });
+      setSaveSuccess(true);
+      gooeyToast.success("Set as default engine successfully!");
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (error) {
+      console.error(error);
+      gooeyToast.error("Failed to set default engine.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isConnected = (providerName: string) => {
+    // Ollama chạy local nên không bắt buộc apiKey 
+    if (providerName === "ollama") return true;
     const cfg = providers.find((p) => p.provider_name === providerName);
     // Connected if user typed a new key OR server returned a masked key (meaning key exists in DB)
     return cfg && (cfg.api_key.length > 5 || cfg.masked_key.length > 0);
@@ -264,7 +195,7 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[620px] max-h-[80vh] flex flex-col bg-backdrop/95 border-default/40 backdrop-blur-xl p-0 overflow-hidden shadow-2xl rounded-xl">
+      <DialogContent className="sm:max-w-[960px] max-h-[85vh] flex flex-col bg-backdrop/95 border-default/40 backdrop-blur-xl p-0 overflow-hidden shadow-2xl rounded-xl">
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-default/20 bg-gradient-to-r from-surface-1/80 to-surface-base shrink-0">
           <DialogTitle className="flex items-center gap-2.5 text-default text-base font-semibold">
@@ -279,206 +210,215 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
           </p>
         </DialogHeader>
 
-        {/* Provider Tabs — with connection status */}
-        <div className="flex px-4 py-3 border-b border-default/10 gap-2 bg-surface-base shrink-0">
-          {PROVIDERS.map((p) => {
-            const connected = isConnected(p.id);
-            const isDefault = defaultProviderName === p.id;
-            const isActive = activeProvider === p.id;
+        {/* Split View Container */}
+        <div className="flex flex-1 overflow-hidden min-h-[420px]">
+          {/* Sidebar — Provider Tabs */}
+          <div className="w-[35%] border-r border-default/10 bg-surface-1/20 py-3 px-2.5 space-y-1 overflow-y-auto shrink-0 flex flex-col items-stretch">
+            {PROVIDERS.map((p) => {
+              const connected = isConnected(p.id);
+              const isDefault = defaultProviderName === p.id;
+              const isActive = activeProvider === p.id;
 
-            return (
-              <button
-                key={p.id}
-                onClick={() => {
-                  setActiveProvider(p.id);
-                  setShowKey(false);
-                }}
-                className={`relative flex-1 px-3 py-2 rounded-lg text-[12px] font-medium transition-all flex flex-col items-center gap-1 ${
-                  isActive
-                    ? `${p.bgColor} ${p.color} ring-1 ${p.borderColor}`
-                    : "hover:bg-surface-1 text-dim"
-                }`}
-              >
-                <span className="text-base">{p.icon}</span>
-                <span>{p.label}</span>
-                <div className="flex items-center gap-1 mt-0.5">
-                  {connected ? (
-                    <span className="flex items-center gap-0.5 text-[9px] text-emerald-500">
-                      <CircleDot className="w-2.5 h-2.5" /> Connected
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-0.5 text-[9px] text-faint">
-                      <AlertTriangle className="w-2.5 h-2.5" /> No Key
-                    </span>
-                  )}
-                  {isDefault && (
-                    <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1 rounded font-bold">
-                      DEFAULT
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Config Form */}
-        <div className="p-5 space-y-4 bg-surface-base flex-1 overflow-y-auto">
-          {/* API Key */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-medium text-dim uppercase tracking-wider flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5" />
-                Secret API Key
-              </label>
-              <a
-                href={providerMeta.docsUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                Get API Key →
-              </a>
-            </div>
-            <div className="relative">
-              <input
-                type={showKey ? "text" : "password"}
-                placeholder={
-                  currentConfig.masked_key
-                    ? `Saved: ${currentConfig.masked_key}`
-                    : providerMeta.keyPlaceholder
-                }
-                value={currentConfig.api_key}
-                onChange={(e) => updateConfig("api_key", e.target.value)}
-                className="w-full bg-surface-1/50 border border-default/30 rounded-md px-3 py-2.5 pr-10 text-sm text-default placeholder:text-faint focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono"
-              />
-              <button
-                type="button"
-                onClick={() => setShowKey(!showKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-dim hover:text-default transition-colors"
-              >
-                {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {currentConfig.masked_key && !currentConfig.api_key && (
-              <p className="text-[10px] text-emerald-500 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" /> Key saved securely — leave blank to keep current key
-              </p>
-            )}
-            {currentConfig.api_key.length > 5 && (
-              <p className="text-[10px] text-amber-500 flex items-center gap-1">
-                <KeyRound className="w-3 h-3" /> New key entered — will replace existing key on save
-              </p>
-            )}
-          </div>
-
-          {/* Model Selection — Card-style */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-dim uppercase tracking-wider flex items-center gap-1.5">
-              <Bot className="w-3.5 h-3.5" />
-              Model Selection
-            </label>
-            <div className="grid gap-1.5">
-              {providerMeta.models.map((m) => {
-                const TierIcon = tierIcons[m.tier];
-                const isSelected = currentConfig.model_name === m.value;
-                return (
-                  <button
-                    key={m.value}
-                    type="button"
-                    onClick={() => updateConfig("model_name", m.value)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-all ${
-                      isSelected
-                        ? `${providerMeta.bgColor} ${providerMeta.borderColor} ring-1 ${providerMeta.borderColor}`
-                        : "border-default/20 hover:border-default/40 hover:bg-surface-1/30"
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                      isSelected ? providerMeta.bgColor : "bg-surface-1/50"
-                    }`}>
-                      {isSelected ? (
-                        <Check className={`w-3 h-3 ${providerMeta.color}`} />
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setActiveProvider(p.id);
+                    setShowKey(false);
+                  }}
+                  className={`relative w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
+                    isActive
+                      ? `${p.bgColor} ring-1 ${p.borderColor} shadow-sm`
+                      : "hover:bg-surface-1/60"
+                  }`}
+                >
+                  <span className="text-2xl shrink-0">{p.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[13px] font-semibold truncate ${isActive ? p.color : "text-body"}`}>
+                      {p.label}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5 max-w-full flex-wrap">
+                      {connected ? (
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-500 font-medium whitespace-nowrap">
+                          <CircleDot className="w-2.5 h-2.5" /> Connected
+                        </span>
                       ) : (
-                        <CircleDot className="w-3 h-3 text-faint" />
+                        <span className="flex items-center gap-1 text-[10px] text-faint font-medium whitespace-nowrap">
+                          <AlertTriangle className="w-2.5 h-2.5" /> No Key
+                        </span>
+                      )}
+                      {isDefault && (
+                        <span className="text-[9px] bg-emerald-500/15 text-emerald-500 px-1.5 py-[1px] rounded-sm font-bold uppercase tracking-wider whitespace-nowrap">
+                          Default
+                        </span>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-medium ${isSelected ? "text-default" : "text-body"}`}>
-                        {m.label}
-                      </p>
-                      <p className="text-[10px] text-dim">{m.description}</p>
-                    </div>
-                    <TierIcon className={`w-3.5 h-3.5 shrink-0 ${tierColors[m.tier]}`} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Main Form Content */}
+          <div className="w-[65%] flex flex-col bg-surface-base">
+            <div className="flex-1 p-5 space-y-5 overflow-y-auto">
+              {/* API Key */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-medium text-dim uppercase tracking-wider flex items-center gap-1.5">
+                    <KeyRound className="w-3.5 h-3.5" />
+                    Secret API Key
+                  </label>
+                  <a
+                    href={providerMeta.docsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    Get API Key →
+                  </a>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showKey ? "text" : "password"}
+                    placeholder={
+                      currentConfig.masked_key
+                        ? `Saved: ${currentConfig.masked_key}`
+                        : providerMeta.keyPlaceholder
+                    }
+                    value={currentConfig.api_key}
+                    onChange={(e) => updateConfig("api_key", e.target.value)}
+                    className="w-full bg-surface-1/50 border border-default/30 rounded-md px-3 py-2.5 pr-10 text-sm text-default placeholder:text-faint/60 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKey(!showKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dim hover:text-default transition-colors p-1"
+                  >
+                    {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Base URL — Advanced */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-dim uppercase tracking-wider flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5" />
-              Endpoint URL
-              <span className="text-[9px] text-faint font-normal normal-case">(auto-configured)</span>
-            </label>
-            <input
-              type="text"
-              placeholder={providerMeta.defaultBaseURL}
-              value={currentConfig.base_url}
-              onChange={(e) => updateConfig("base_url", e.target.value)}
-              className="w-full bg-surface-1/50 border border-default/30 rounded-md px-3 py-2 text-sm text-default placeholder:text-faint/50 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono text-[11px]"
-            />
-            <p className="text-[10px] text-faint">
-              Để trống sẽ sử dụng endpoint mặc định của {providerMeta.label}. Chỉ thay đổi nếu dùng proxy hoặc self-hosted.
-            </p>
-          </div>
-
-          {/* Action Bar */}
-          <div className="flex items-center justify-between pt-3 mt-2 border-t border-default/15 sticky bottom-0 bg-surface-base p-1">
-            {!currentConfig.is_default ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={setAsDefault}
-                className="text-xs text-dim hover:text-emerald-500 h-8 gap-1.5"
-                disabled={!isConnected(activeProvider)}
-              >
-                <CircleDot className="w-3.5 h-3.5" />
-                Set as Default Engine
-              </Button>
-            ) : (
-              <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium px-2">
-                <Check className="w-4 h-4" /> Default Engine
+                </div>
+                {currentConfig.masked_key && !currentConfig.api_key && (
+                  <p className="text-[10px] text-emerald-500 flex items-center gap-1.5 mt-1">
+                    <ShieldCheck className="w-3 h-3" /> Key saved securely (leave blank to keep)
+                  </p>
+                )}
+                {currentConfig.api_key.length > 5 && (
+                  <p className="text-[10px] text-amber-500 flex items-center gap-1.5 mt-1">
+                    <KeyRound className="w-3 h-3" /> New key entered — will replace on save
+                  </p>
+                )}
               </div>
-            )}
 
-            <Button
-              onClick={handleSave}
-              disabled={isLoading || saveSuccess}
-              className={`h-9 text-xs font-semibold px-6 transition-all ${
-                saveSuccess
-                  ? "bg-emerald-600 hover:bg-emerald-600 text-white"
-                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
-              }`}
-            >
-              {saveSuccess ? (
-                <>
-                  <Check className="w-3.5 h-3.5 mr-1.5" />
-                  Saved!
-                </>
-              ) : isLoading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                  Saving...
-                </>
+              {/* Model Selection */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-medium text-dim uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                  <Bot className="w-3.5 h-3.5" />
+                  Model Selection
+                </label>
+                <div className="grid gap-1.5">
+                  {providerMeta.models.map((m) => {
+                    const TierIcon = tierIcons[m.tier];
+                    const isSelected = currentConfig.model_name === m.value;
+                    return (
+                      <button
+                        key={m.value}
+                        type="button"
+                        onClick={() => updateConfig("model_name", m.value)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all ${
+                          isSelected
+                            ? `${providerMeta.bgColor} ${providerMeta.borderColor} ring-1 ${providerMeta.borderColor}`
+                            : "border-default/20 hover:border-default/40 hover:bg-surface-1/30"
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${
+                          isSelected ? providerMeta.bgColor : "bg-surface-1/50"
+                        }`}>
+                          {isSelected ? (
+                            <Check className={`w-2.5 h-2.5 ${providerMeta.color}`} />
+                          ) : (
+                            <CircleDot className="w-2.5 h-2.5 text-faint" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-[12.5px] font-medium ${isSelected ? "text-default" : "text-body"}`}>
+                            {m.label}
+                          </p>
+                          <p className="text-[10px] text-dim truncate">{m.description}</p>
+                        </div>
+                        <TierIcon className={`w-3.5 h-3.5 shrink-0 ml-2 ${tierColors[m.tier]}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Base URL */}
+              <div className="space-y-1.5 pt-2 border-t border-default/10">
+                <label className="text-[11px] font-medium text-dim uppercase tracking-wider flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" />
+                  Endpoint URL
+                  <span className="text-[9px] text-faint font-normal normal-case ml-1">(Advanced)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder={providerMeta.defaultBaseURL}
+                  value={currentConfig.base_url}
+                  onChange={(e) => updateConfig("base_url", e.target.value)}
+                  className="w-full bg-surface-1/50 border border-default/20 rounded-md px-3 py-2 text-default placeholder:text-faint/50 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono text-[11px]"
+                />
+                <p className="text-[10px] text-dim mt-1.5">
+                  Để trống để dùng endpoint mặc định. Chỉ cần cấu hình URL nếu bạn self-host hoặc chạy qua Reverse Proxy.
+                </p>
+              </div>
+            </div>
+            
+            {/* Action Bar */}
+            <div className="flex items-center justify-between px-5 py-4 border-t border-default/15 bg-surface-base shrink-0">
+              {!currentConfig.is_default ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={setAsDefault}
+                  className="text-xs text-dim hover:text-emerald-500 h-8 gap-1.5"
+                  disabled={!isConnected(activeProvider)}
+                >
+                  <CircleDot className="w-3.5 h-3.5" />
+                  Set as Default Engine
+                </Button>
               ) : (
-                <>
-                  <Save className="w-3.5 h-3.5 mr-1.5" />
-                  Save Configuration
-                </>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium px-2">
+                  <Check className="w-4 h-4" /> Default Engine
+                </div>
               )}
-            </Button>
+
+              <Button
+                onClick={handleSave}
+                disabled={isLoading || saveSuccess}
+                className={`h-9 text-xs font-semibold px-6 transition-all ${
+                  saveSuccess
+                    ? "bg-emerald-600 hover:bg-emerald-600 text-white"
+                    : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                }`}
+              >
+                {saveSuccess ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 mr-1.5" />
+                    Saved!
+                  </>
+                ) : isLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5 mr-1.5" />
+                    Save Configuration
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

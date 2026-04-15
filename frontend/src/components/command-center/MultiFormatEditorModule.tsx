@@ -242,6 +242,25 @@ export default function MultiFormatEditorModule() {
     }
   }, [generatedContent]);
 
+  const [outline, setOutline] = useState<OutlineItem[]>(mockOutline);
+
+  const handleUpdateOutline = (id: string, text: string, isChild = false, parentId?: string) => {
+    setOutline(prev => prev.map(section => {
+      if (!isChild && section.id === id) {
+        return { ...section, text };
+      }
+      if (isChild && section.id === parentId) {
+        return {
+          ...section,
+          children: section.children.map(child => 
+            child.id === id ? { ...child, text } : child
+          )
+        };
+      }
+      return section;
+    }));
+  };
+
   const toggleCollapse = (id: string) => {
     setCollapsedSections((prev) => {
       const next = new Set(prev);
@@ -342,42 +361,56 @@ export default function MultiFormatEditorModule() {
               /* Master Outline View */
               <div className="flex-1 overflow-y-auto scrollbar-custom">
                 <div className="p-4 space-y-0.5">
-                  {mockOutline.map((section, idx) => {
+                  {outline.map((section, idx) => {
                     const isCollapsed = collapsedSections.has(section.id);
                     return (
                       <div key={section.id} className="group">
                         <div
-                          className="flex items-start gap-1.5 py-2 px-2 rounded-lg hover:bg-surface-hover transition-colors cursor-pointer"
-                          onClick={() => toggleCollapse(section.id)}
+                          className="flex items-start gap-1.5 py-2 px-2 rounded-lg hover:bg-surface-hover transition-colors"
                         >
-                          <button className="mt-0.5 shrink-0 text-faint hover:text-body">
+                          <button 
+                            className="mt-1 shrink-0 text-faint hover:text-body"
+                            onClick={() => toggleCollapse(section.id)}
+                          >
                             {isCollapsed ? (
                               <ChevronRight className="w-3.5 h-3.5" />
                             ) : (
                               <ChevronDown className="w-3.5 h-3.5" />
                             )}
                           </button>
-                          <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-ghost opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
-                          <span className="text-[10px] text-primary/60 font-mono mt-0.5 shrink-0 w-4">
+                          <GripVertical className="w-3 h-3 mt-1.5 shrink-0 text-ghost opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+                          <span className="text-[10px] text-primary/60 font-mono mt-1.5 shrink-0 w-4">
                             {idx + 1}.
                           </span>
-                          <p className="text-[13px] text-heading font-medium leading-relaxed">
-                            {section.text}
-                          </p>
+                          <input
+                            value={section.text}
+                            onChange={(e) => handleUpdateOutline(section.id, e.target.value)}
+                            className="flex-1 bg-transparent text-[13px] text-heading font-medium leading-relaxed outline-none focus:bg-surface-active rounded px-1 -ml-1 border-none focus:ring-0"
+                            placeholder="Heading title..."
+                          />
                         </div>
                         {!isCollapsed &&
                           section.children.map((child, cIdx) => (
                             <div
                               key={child.id}
-                              className="flex items-start gap-1.5 py-1.5 px-2 pl-12 rounded-lg hover:bg-surface-hover transition-colors cursor-pointer group/child"
+                              className="flex items-start gap-1.5 py-1.5 px-2 pl-12 rounded-lg hover:bg-surface-hover transition-colors group/child"
                             >
-                              <GripVertical className="w-3 h-3 mt-0.5 shrink-0 text-ghost opacity-0 group-hover/child:opacity-100 transition-opacity cursor-grab" />
-                              <span className="text-[10px] text-faint font-mono mt-0.5 shrink-0">
+                              <GripVertical className="w-3 h-3 mt-1 shrink-0 text-ghost opacity-0 group-hover/child:opacity-100 transition-opacity cursor-grab" />
+                              <span className="text-[10px] text-faint font-mono mt-1 shrink-0">
                                 {idx + 1}.{cIdx + 1}
                               </span>
-                              <p className="text-xs text-label leading-relaxed">
-                                {child.text}
-                              </p>
+                              <textarea
+                                value={child.text}
+                                rows={1}
+                                onChange={(e) => handleUpdateOutline(child.id, e.target.value, true, section.id)}
+                                onInput={(e) => {
+                                  const target = e.target as HTMLTextAreaElement;
+                                  target.style.height = 'auto';
+                                  target.style.height = target.scrollHeight + 'px';
+                                }}
+                                className="flex-1 bg-transparent text-xs text-label leading-relaxed outline-none focus:bg-surface-active rounded px-1 -ml-1 border-none focus:ring-0 resize-none overflow-hidden"
+                                placeholder="Detail point..."
+                              />
                             </div>
                           ))}
                       </div>
