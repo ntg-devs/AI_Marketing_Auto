@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useResearchStore } from "@/store/useResearchStore";
+import { useUserPreferencesStore } from "@/store/useUserPreferencesStore";
 import type {
   CrawlJob,
   CrawlJobDetailResponse,
@@ -98,6 +99,12 @@ export default function SmartEntryModule() {
   const deleteJob = useResearchStore((state) => state.deleteJob);
   const isLoadingJobs = useResearchStore((state) => state.isLoadingJobs);
   const setGeneratedContent = useResearchStore((state) => state.setGeneratedContent);
+  const setMasterOutline = useResearchStore((state) => state.setMasterOutline);
+
+  // User Preferences — persist content brief settings across sessions
+  const userPrefs = useUserPreferencesStore((s) => s.preferences);
+  const updatePreferences = useUserPreferencesStore((s) => s.updatePreferences);
+  const savePreferences = useUserPreferencesStore((s) => s.savePreferences);
 
   const [inputMode, setInputMode] = useState<InputMode>("link");
   const [inputValue, setInputValue] = useState("");
@@ -109,6 +116,7 @@ export default function SmartEntryModule() {
   const [selectedVoice] = useState(voiceProfiles[0]);
   const [jobPanelOpen, setJobPanelOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Content Generation state — inline within Preview dialog (no extra popup)
   type PreviewMode = "preview" | "configure" | "outline";
@@ -117,16 +125,46 @@ export default function SmartEntryModule() {
   const [outlineJSON, setOutlineJSON] = useState("");
   const [outlineEditable, setOutlineEditable] = useState("");
   const [briefForm, setBriefForm] = useState({
-    platform: "blog",
-    tone: "professional",
-    target_audience: "",
-    content_length: "medium",
+    platform: userPrefs?.default_platform || "blog",
+    tone: userPrefs?.default_tone || "professional",
+    target_audience: userPrefs?.default_target_audience || "",
+    content_length: userPrefs?.default_content_length || "medium",
     additional_instructions: "",
-    language: "vi",
+    language: userPrefs?.default_language || "vi",
     brand_name: "",
     brand_persona: "",
     brand_guidelines: "",
   });
+
+  // Sync briefForm when preferences are loaded from server (only once)
+  const [prefsApplied, setPrefsApplied] = useState(false);
+  useEffect(() => {
+    if (userPrefs && !prefsApplied) {
+      setBriefForm((prev) => ({
+        ...prev,
+        platform: userPrefs.default_platform || prev.platform,
+        tone: userPrefs.default_tone || prev.tone,
+        target_audience: userPrefs.default_target_audience || prev.target_audience,
+        content_length: userPrefs.default_content_length || prev.content_length,
+        language: userPrefs.default_language || prev.language,
+      }));
+      setPrefsApplied(true);
+    }
+  }, [userPrefs, prefsApplied]);
+
+  // Save preferences back to server when user completes content generation
+  const persistBriefToPreferences = useCallback(() => {
+    if (!user?.id) return;
+    updatePreferences({
+      default_tone: briefForm.tone,
+      default_language: briefForm.language,
+      default_content_length: briefForm.content_length,
+      default_target_audience: briefForm.target_audience,
+      default_platform: briefForm.platform,
+    });
+    // Fire-and-forget save to server
+    savePreferences(user.id).catch(() => {});
+  }, [user?.id, user?.team_id, briefForm, updatePreferences, savePreferences]);
 
   const modes: { key: InputMode; icon: typeof Link2; label: string }[] = [
     { key: "link", icon: Link2, label: "Link" },
@@ -327,9 +365,23 @@ export default function SmartEntryModule() {
 
   const handleRefreshActiveJob = async () => {
     if (!activeJobId) {
+      // If no active job but panel is open, refresh recent list anyway
+      setIsRefreshing(true);
+      await fetchRecentJobs(resolveTeamId());
+      setIsRefreshing(false);
       return;
     }
-    await loadJobDetail(activeJobId, true);
+    
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        loadJobDetail(activeJobId, true),
+        fetchRecentJobs(resolveTeamId())
+      ]);
+      gooeyToast.success("Data refreshed");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleDeleteJob = async (e: React.MouseEvent, jobId: string) => {
@@ -356,10 +408,10 @@ export default function SmartEntryModule() {
         team_id: resolveTeamId(),
         knowledge_source_id: activeJob?.knowledge_source?.id,
         knowledge_text: knowledgeText,
-        platform: briefForm.platform,
+        platform: 'blog', // Use blog for the most comprehensive outline — will be adapted per-platform during content generation
         tone: briefForm.tone,
-        target_audience: briefForm.target_audience || "NgÆ°á»i quan tÃ¢m Ä‘áº¿n cÃ´ng nghá»‡ vÃ  marketing",
-        additional_instructions: briefForm.additional_instructions,
+        target_audience: briefForm.target_audience || "Người quan tâm đến công nghệ và marketing",
+        additional_instructions: briefForm.additional_instructions ? `${briefForm.additional_instructions}\n\nNote: This outline will be used to generate content for Facebook, LinkedIn, and Blog simultaneously.` : 'This outline will be used to generate content for Facebook, LinkedIn, and Blog simultaneously.',
         language: briefForm.language,
         brand_name: briefForm.brand_name,
         brand_persona: briefForm.brand_persona,
@@ -369,6 +421,28 @@ export default function SmartEntryModule() {
       const result = await researchApi.generateOutline(payload);
       setOutlineJSON(result.outline_json);
       setOutlineEditable(result.outline_json);
+      
+      // Sync to shared store for editor
+      try {
+        const parsed = JSON.parse(result.outline_json);
+        if (Array.isArray(parsed)) {
+          // Flatten/Transform to matching OutlineItem format if needed
+          const transformed = parsed.map((item: any, idx: number) => ({
+            id: `sec-${idx}`,
+            level: 1,
+            text: item.section || item.title || "Untitled Section",
+            children: (item.points || []).map((p: string, pIdx: number) => ({
+              id: `sec-${idx}-p-${pIdx}`,
+              level: 2,
+              text: p
+            }))
+          }));
+          setMasterOutline(transformed);
+        }
+      } catch (e) {
+        console.error("Failed to parse outline JSON", e);
+      }
+
       setPreviewMode("outline");
       gooeyToast.success("Outline generated! Review and edit before generating content.");
     } catch (error: any) {
@@ -378,48 +452,91 @@ export default function SmartEntryModule() {
     }
   };
 
-  // Step 5: Generate content from approved outline
+  // Step 5: Generate content for ALL platforms from approved outline
+  const ALL_PLATFORMS = ['blog', 'linkedin', 'facebook'] as const;
+  const [generatingPlatformIdx, setGeneratingPlatformIdx] = useState(-1);
+
+  // Platform-specific content length mapping for optimal output
+  const getPlatformContentLength = (platform: string, userChoice: string): string => {
+    // Facebook posts should always be shorter, LinkedIn medium, Blog respects user choice
+    switch (platform) {
+      case 'facebook': return 'short';
+      case 'linkedin': return userChoice === 'long' ? 'medium' : userChoice;
+      case 'blog': return userChoice;
+      default: return userChoice;
+    }
+  };
+
+  // Platform-specific additional instructions for optimization
+  const getPlatformInstructions = (platform: string, userInstructions: string): string => {
+    const platformHints: Record<string, string> = {
+      facebook: 'Optimize for Facebook: Use hook in first 2 lines, add emojis strategically, keep paragraphs very short (2-3 sentences), end with hashtags (3-5). Format for mobile-first reading.',
+      linkedin: 'Optimize for LinkedIn: Lead with a bold insight or stat, use professional but conversational tone, add line breaks between paragraphs, include data points, end with an engaging question.',
+      blog: 'Optimize for Blog/SEO: Use proper H1/H2/H3 hierarchy, include introduction and conclusion sections, use bullet points for key takeaways, add blockquotes for emphasis.',
+    };
+    const hint = platformHints[platform] || '';
+    return userInstructions ? `${hint}\n\nUser instructions: ${userInstructions}` : hint;
+  };
+
   const handleGenerateFromOutline = async () => {
     const knowledgeText = activeJob?.knowledge_source?.content_text;
     if (!knowledgeText) return;
 
     setIsGenerating(true);
+    let successCount = 0;
+    const totalPlatforms = ALL_PLATFORMS.length;
+
     try {
-      const payload: GenerateContentRequest = {
-        team_id: resolveTeamId(),
-        knowledge_source_id: activeJob?.knowledge_source?.id,
-        knowledge_text: knowledgeText,
-        platform: briefForm.platform,
-        tone: briefForm.tone,
-        target_audience: briefForm.target_audience || "NgÆ°á»i quan tÃ¢m Ä‘áº¿n cÃ´ng nghá»‡ vÃ  marketing",
-        content_length: briefForm.content_length,
-        additional_instructions: briefForm.additional_instructions,
-        language: briefForm.language,
-        brand_name: briefForm.brand_name,
-        brand_persona: briefForm.brand_persona,
-        brand_guidelines: briefForm.brand_guidelines,
-        outline: outlineEditable,
-      };
+      for (let i = 0; i < ALL_PLATFORMS.length; i++) {
+        const platform = ALL_PLATFORMS[i];
+        setGeneratingPlatformIdx(i);
 
-      const result = await researchApi.generateContent(payload);
+        try {
+          const payload: GenerateContentRequest = {
+            team_id: resolveTeamId(),
+            knowledge_source_id: activeJob?.knowledge_source?.id,
+            knowledge_text: knowledgeText,
+            platform,
+            tone: briefForm.tone,
+            target_audience: briefForm.target_audience || "Người quan tâm đến công nghệ và marketing",
+            content_length: getPlatformContentLength(platform, briefForm.content_length),
+            additional_instructions: getPlatformInstructions(platform, briefForm.additional_instructions),
+            language: briefForm.language,
+            brand_name: briefForm.brand_name,
+            brand_persona: briefForm.brand_persona,
+            brand_guidelines: briefForm.brand_guidelines,
+            outline: outlineEditable,
+          };
 
-      setGeneratedContent(briefForm.platform, {
-        platform: briefForm.platform,
-        html: result.content_html,
-        modelUsed: result.model_used,
-        tokenUsage: result.token_usage,
-        generatedAt: new Date().toISOString(),
-      });
+          const result = await researchApi.generateContent(payload);
 
-      gooeyToast.success(`Content generated for ${briefForm.platform}! Check the Editor panel.`);
-      setPreviewMode("preview");
-      setPreviewOpen(false);
-      setOutlineJSON("");
-      setOutlineEditable("");
-    } catch (error: any) {
-      gooeyToast.error(error?.message || "Failed to generate content");
+          setGeneratedContent(platform, {
+            platform,
+            html: result.content_html,
+            modelUsed: result.model_used,
+            tokenUsage: result.token_usage,
+            generatedAt: new Date().toISOString(),
+          });
+          successCount++;
+        } catch (error: any) {
+          console.error(`Failed to generate for ${platform}:`, error);
+          gooeyToast.error(`⚠️ ${platform} generation failed: ${error?.message || 'Unknown error'}`);
+        }
+      }
+
+      if (successCount > 0) {
+        gooeyToast.success(`✅ Generated content for ${successCount}/${totalPlatforms} platforms! Check the Editor panel.`);
+        persistBriefToPreferences(); // Save brief settings for next session
+        setPreviewMode("preview");
+        setPreviewOpen(false);
+        setOutlineJSON("");
+        setOutlineEditable("");
+      } else {
+        gooeyToast.error('All platform generations failed.');
+      }
     } finally {
       setIsGenerating(false);
+      setGeneratingPlatformIdx(-1);
     }
   };
 
@@ -708,7 +825,7 @@ export default function SmartEntryModule() {
                     onClick={handleRefreshActiveJob}
                   >
                     <ListRestart
-                      className={`w-3 h-3 mr-1 ${isPolling ? "animate-spin" : ""}`}
+                      className={`w-3 h-3 mr-1 ${(isPolling || isRefreshing) ? "animate-spin" : ""}`}
                     />
                     Refresh
                   </Button>
@@ -930,14 +1047,14 @@ export default function SmartEntryModule() {
                           </Button>
                           <Button
                             size="sm"
-                            className="h-7 text-[11px] bg-emerald-500 hover:bg-emerald-600 text-white border-0 font-semibold shadow-sm shadow-emerald-500/20"
+                            className="h-7 text-[11px] bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white border-0 font-semibold shadow-sm shadow-emerald-500/20"
                             onClick={handleGenerateFromOutline}
                             disabled={isGenerating}
                           >
                             {isGenerating ? (
-                              <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Crafting Content...</>
+                              <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> {generatingPlatformIdx >= 0 ? `Generating ${ALL_PLATFORMS[generatingPlatformIdx]} (${generatingPlatformIdx + 1}/${ALL_PLATFORMS.length})...` : 'Preparing...'}</>
                             ) : (
-                              <><Sparkles className="w-3 h-3 mr-1.5" /> Produce Content</>
+                              <><Sparkles className="w-3 h-3 mr-1.5" /> Produce All Platforms</>
                             )}
                           </Button>
                         </div>
@@ -1001,19 +1118,31 @@ export default function SmartEntryModule() {
                               Content Brief
                             </h3>
                             <div className="space-y-1.5">
-                              <label className="text-[11px] font-medium text-label">Platform</label>
-                              <div className="flex gap-2">
-                                {([
-                                  { value: "blog", label: "Blog", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#F59E0B" d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/><path fill="#FFF" d="M16 14H8v-2h8v2zm0-4H8V8h8v2z"/></svg> }, 
-                                  { value: "facebook", label: "Facebook", icon: <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0"><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill="#1877F2" d="M15 8a7 7 0 00-7-7 7 7 0 00-1.094 13.915v-4.892H5.13V8h1.777V6.458c0-1.754 1.045-2.724 2.644-2.724.766 0 1.567.137 1.567.137v1.723h-.883c-.87 0-1.14 1.093V8h1.941l-.31 2.023H9.094v4.892A7.001 7.001 0 0015 8z"></path><path fill="#ffffff" d="M10.725 10.023L11.035 8H9.094V6.687c0-.553.27-1.093 1.14-1.093h.883V3.87s-.801-.137-1.567-.137c-1.6 0-2.644.97-2.644 2.724V8H5.13v2.023h1.777v4.892a7.037 7.037 0 002.188 0v-4.892h1.63z"></path></g></svg> }, 
-                                  { value: "linkedin", label: "LinkedIn", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9H12.76v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> }
-                                ]).map((p) => (
-                                  <button key={p.value} onClick={() => setBriefForm((f) => ({ ...f, platform: p.value }))}
-                                    className={`flex-1 px-3 py-2 rounded-lg text-[11px] font-medium border flex items-center justify-center gap-1.5 transition-all ${briefForm.platform === p.value ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500" : "bg-surface-hover border-default text-dim hover:text-body"}`}>
-                                    {p.icon}
-                                    {p.label}
-                                  </button>
-                                ))}
+                              <label className="text-[11px] font-medium text-label">Target Platforms</label>
+                              <div className="rounded-lg bg-gradient-to-r from-emerald-500/[0.07] to-blue-500/[0.07] border border-emerald-500/20 p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span className="text-[11px] font-medium text-emerald-400">Multi-Platform Generation</span>
+                                </div>
+                                <p className="text-[10px] text-dim leading-relaxed mb-2.5">
+                                  Content will be generated and optimized for all 3 platforms simultaneously. 
+                                  Each version is tailored to the platform&apos;s best practices.
+                                </p>
+                                <div className="flex gap-2">
+                                  {([
+                                    { label: "Blog", hint: "SEO-optimized article", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#F59E0B" d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/><path fill="#FFF" d="M16 14H8v-2h8v2zm0-4H8V8h8v2z"/></svg>, color: "text-amber-400" },
+                                    { label: "Facebook", hint: "Engaging post", icon: <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0"><g><path fill="#1877F2" d="M15 8a7 7 0 00-7-7 7 7 0 00-1.094 13.915v-4.892H5.13V8h1.777V6.458c0-1.754 1.045-2.724 2.644-2.724.766 0 1.567.137 1.567.137v1.723h-.883c-.87 0-1.14 1.093V8h1.941l-.31 2.023H9.094v4.892A7.001 7.001 0 0015 8z"></path><path fill="#ffffff" d="M10.725 10.023L11.035 8H9.094V6.687c0-.553.27-1.093 1.14-1.093h.883V3.87s-.801-.137-1.567-.137c-1.6 0-2.644.97-2.644 2.724V8H5.13v2.023h1.777v4.892a7.037 7.037 0 002.188 0v-4.892h1.63z"></path></g></svg>, color: "text-blue-400" },
+                                    { label: "LinkedIn", hint: "Professional article", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9H12.76v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>, color: "text-sky-400" },
+                                  ]).map((p) => (
+                                    <div key={p.label} className="flex-1 px-2.5 py-2 rounded-lg bg-surface-hover/60 border border-default/50 flex flex-col items-center gap-1">
+                                      <div className="flex items-center gap-1.5">
+                                        {p.icon}
+                                        <span className={`text-[10px] font-semibold ${p.color}`}>{p.label}</span>
+                                      </div>
+                                      <span className="text-[9px] text-faint">{p.hint}</span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                             <div className="space-y-1.5">

@@ -31,7 +31,11 @@ func main() {
 	}
 
 	// Database connection initialized successfully
-	// db.AutoMigrate(&domain.AIProviderConfig{})
+	// GORM AutoMigrate will safely create new tables AND add missing columns to existing tables
+	// db.AutoMigrate(
+	// 	&domain.UserPreferences{},
+	// 	&domain.Team{}, // This will automatically add brand_persona to the existing teams table
+	// )
 	// 3. Environment Configs
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {

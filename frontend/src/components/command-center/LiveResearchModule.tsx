@@ -154,7 +154,7 @@ export default function LiveResearchModule() {
       {/* Feed Content */}
       <ScrollArea className="flex-1 relative">
         {isLoading && (
-          <div className="absolute inset-0 z-10 flex flex-col justify-center items-center bg-surface/50 backdrop-blur-sm">
+          <div className="absolute inset-0 z-10 flex flex-col justify-center items-center bg-surface/50 backdrop-blur-sm break-all">
             <RefreshCw className="w-5 h-5 text-primary animate-spin mb-2" />
             <p className="text-[10px] text-primary font-medium tracking-wide">Syncing Global Data...</p>
           </div>
@@ -166,7 +166,7 @@ export default function LiveResearchModule() {
               return (
                 <div
                   key={insight.id}
-                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group cursor-pointer"
+                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group cursor-pointer break-words"
                 >
                   <div className="flex items-start justify-between mb-1">
                     <div className="flex items-center gap-1.5">
@@ -198,7 +198,7 @@ export default function LiveResearchModule() {
             })}
 
           {activeTab === 'sources' && (
-            <div className="space-y-2">
+            <div className="space-y-2 break-words">
               <div className="flex items-center gap-1.5 px-1 mb-1">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
                 <span className="text-[10px] text-emerald-500 font-medium">
@@ -208,11 +208,11 @@ export default function LiveResearchModule() {
               {displayedSources.map((source) => (
                 <div
                   key={source.id}
-                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group"
+                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group break-words"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-heading font-medium truncate">
+                      <p className="text-[11px] text-heading font-medium truncate break-words">
                         {source.title}
                       </p>
                       <div className="flex items-center gap-1 mt-1">

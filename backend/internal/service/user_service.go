@@ -139,6 +139,10 @@ func (s *userService) VerifyEmailOTP(ctx context.Context, req *domain.VerifyOTPR
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
+	// Ensure team
+	tid, _ := s.ensureUserTeam(ctx, user)
+	user.TeamID = tid
+
 	return &domain.AuthResponse{
 		User:  user,
 		Token: token,
@@ -172,6 +176,10 @@ func (s *userService) Login(ctx context.Context, req *domain.LoginRequest) (*dom
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
+
+	// Ensure team
+	tid, _ := s.ensureUserTeam(ctx, user)
+	user.TeamID = tid
 
 	return &domain.AuthResponse{
 		User:  user,
@@ -239,6 +247,10 @@ func (s *userService) GoogleLogin(ctx context.Context, req *domain.GoogleLoginRe
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
+	// Ensure team
+	tid, _ := s.ensureUserTeam(ctx, user)
+	user.TeamID = tid
+
 	return &domain.AuthResponse{
 		User:  user,
 		Token: token,
@@ -262,4 +274,36 @@ func (s *userService) fetchGoogleUserInfo(accessToken string) (map[string]interf
 	}
 
 	return result, nil
+}
+
+// ensureUserTeam checks if user has a team, if not creates a personal one.
+func (s *userService) ensureUserTeam(ctx context.Context, user *domain.User) (uuid.UUID, error) {
+	teams, err := s.repo.GetTeamsByUserID(ctx, user.ID)
+	if err == nil && len(teams) > 0 {
+		return teams[0].ID, nil
+	}
+
+	// Create new personal team
+	team := &domain.Team{
+		ID:        uuid.New(),
+		Name:      fmt.Sprintf("%s's Workspace", user.FullName),
+		CreatedBy: user.ID,
+	}
+
+	if err := s.repo.CreateTeam(ctx, team); err != nil {
+		return uuid.Nil, err
+	}
+
+	// Add user as owner
+	member := &domain.TeamMember{
+		TeamID: team.ID,
+		UserID: user.ID,
+		Role:   "owner",
+	}
+
+	if err := s.repo.AddTeamMember(ctx, member); err != nil {
+		return team.ID, err // Team created but membership failed? Should be atomic ideally.
+	}
+
+	return team.ID, nil
 }

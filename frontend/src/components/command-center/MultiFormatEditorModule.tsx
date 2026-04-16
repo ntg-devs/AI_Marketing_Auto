@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useResearchStore } from "@/store/useResearchStore";
+import { useSchedulerStore } from "@/store/useSchedulerStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   AlignLeft,
   LayoutList,
@@ -13,9 +15,25 @@ import {
   GripVertical,
   ChevronRight,
   ChevronDown,
+  Loader2,
+  Clock,
+  Send,
+  CalendarDays,
+  Zap,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { researchApi } from "@/api/research";
+import { gooeyToast } from "goey-toast";
+import { format, isBefore, addHours } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 import {
   ResizableHandle,
@@ -202,9 +220,331 @@ const platformConfigs: Record<
   },
 };
 
+/* ─── Time options ──────────────────────────────────────────────── */
+const timeOptions = [
+  '06:00', '07:00', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+  '11:00', '12:00', '13:00', '14:00', '14:30', '15:00', '16:00', '17:00',
+  '18:00', '19:00', '20:00', '21:00',
+];
+
+/* ─── Schedule Action Bar ──────────────────────────────────────── */
+
+interface ScheduleActionBarProps {
+  selectedPlatform: Platform;
+  editorContent: Record<Platform, string>;
+  platformConfigs: typeof platformConfigs;
+  generatedContent: Record<string, any>;
+}
+
+function ScheduleActionBar({ selectedPlatform, editorContent, platformConfigs: configs, generatedContent }: ScheduleActionBarProps) {
+  const user = useAuthStore((s) => s.user);
+  const activeJob = useResearchStore((s) => s.activeJob);
+  const { createSchedule, optimalSlots } = useSchedulerStore();
+  const [showScheduler, setShowScheduler] = useState(false);
+  const [scheduleMode, setScheduleMode] = useState<'single' | 'all'>('single');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedTime, setSelectedTime] = useState('09:00');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Per-platform time overrides for "schedule all" mode
+  const [perPlatformTimes, setPerPlatformTimes] = useState<Record<Platform, string>>({
+    facebook: '14:00',
+    linkedin: '09:00',
+    blog: '10:00',
+  });
+
+  // Get platforms that have content
+  const platformsWithContent = useMemo(() => {
+    return (Object.keys(configs) as Platform[]).filter((p) => {
+      const content = editorContent[p]?.trim();
+      return content && content !== '' && content !== '<p></p>';
+    });
+  }, [editorContent, configs]);
+
+  // AI recommended time for current platform
+  const aiSlot = useMemo(() => {
+    const dayOfWeek = selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1;
+    return optimalSlots
+      .filter((s) => s.platform === selectedPlatform && s.day_of_week === dayOfWeek)
+      .sort((a, b) => b.score - a.score)[0];
+  }, [selectedDate, selectedPlatform, optimalSlots]);
+
+  const handleScheduleSingle = async () => {
+    const content = editorContent[selectedPlatform];
+    if (!content?.trim() || content === '<p></p>') {
+      gooeyToast.error('Nội dung trống, không thể lên lịch');
+      return;
+    }
+
+    const scheduledAt = new Date(selectedDate);
+    const [h, m] = selectedTime.split(':').map(Number);
+    scheduledAt.setHours(h, m, 0, 0);
+
+    if (isBefore(scheduledAt, new Date())) {
+      gooeyToast.error('Thời gian phải nằm trong tương lai');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const cfg = configs[selectedPlatform];
+      await createSchedule({
+        teamId: user?.team_id || activeJob?.job?.team_id || '123e4567-e89b-12d3-a456-426614174000',
+        userId: user?.id || '123e4567-e89b-12d3-a456-426614174000',
+        platform: selectedPlatform,
+        title: `${cfg.title}: ${new Date().toLocaleDateString('vi-VN')}`,
+        contentHtml: content,
+        scheduledAt: scheduledAt.toISOString(),
+      });
+      gooeyToast.success(`✅ Đã lên lịch ${cfg.title} lúc ${format(scheduledAt, 'HH:mm dd/MM', { locale: vi })}`);
+      setShowScheduler(false);
+    } catch (error: any) {
+      gooeyToast.error(error?.message || 'Lên lịch thất bại');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleScheduleAll = async () => {
+    if (platformsWithContent.length === 0) {
+      gooeyToast.error('Chưa có nội dung nào để lên lịch');
+      return;
+    }
+
+    setIsSubmitting(true);
+    let successCount = 0;
+
+    try {
+      for (const platform of platformsWithContent) {
+        const content = editorContent[platform];
+        const scheduledAt = new Date(selectedDate);
+        const [h, m] = perPlatformTimes[platform].split(':').map(Number);
+        scheduledAt.setHours(h, m, 0, 0);
+
+        if (isBefore(scheduledAt, new Date())) continue;
+
+        try {
+          const cfg = configs[platform];
+          await createSchedule({
+            teamId: user?.team_id || activeJob?.job?.team_id || '00000000-0000-0000-0000-000000000000',
+            userId: user?.id || '00000000-0000-0000-0000-000000000000',
+            platform,
+            title: `${cfg.title}: ${new Date().toLocaleDateString('vi-VN')}`,
+            contentHtml: content,
+            scheduledAt: scheduledAt.toISOString(),
+          });
+          successCount++;
+        } catch {
+          // Continue with next platform
+        }
+      }
+
+      if (successCount > 0) {
+        gooeyToast.success(`✅ Đã lên lịch ${successCount}/${platformsWithContent.length} nền tảng`);
+        setShowScheduler(false);
+      } else {
+        gooeyToast.error('Không thể lên lịch cho bất kỳ nền tảng nào');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const currentContent = editorContent[selectedPlatform]?.trim();
+  const hasCurrentContent = currentContent && currentContent !== '<p></p>';
+
+  if (!hasCurrentContent && platformsWithContent.length === 0) return null;
+
+  return (
+    <div className="shrink-0 border-t border-default bg-surface-1/50">
+      {!showScheduler ? (
+        /* Collapsed Bar */
+        <div className="px-3 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-3.5 h-3.5 text-primary/70" />
+            <span className="text-[10px] text-dim">
+              {platformsWithContent.length} nội dung sẵn sàng đăng
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {hasCurrentContent && (
+              <Button
+                size="sm"
+                onClick={() => { setScheduleMode('single'); setShowScheduler(true); }}
+                className="h-6 px-2 text-[9px] bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20"
+              >
+                <Clock className="w-2.5 h-2.5 mr-1" />
+                Lên lịch {configs[selectedPlatform].title}
+              </Button>
+            )}
+            {platformsWithContent.length > 1 && (
+              <Button
+                size="sm"
+                onClick={() => { setScheduleMode('all'); setShowScheduler(true); }}
+                className="h-6 px-2 text-[9px] bg-gradient-to-r from-primary/15 to-purple-500/15 hover:from-primary/25 hover:to-purple-500/25 text-primary border border-primary/20"
+              >
+                <Send className="w-2.5 h-2.5 mr-1" />
+                Lên lịch tất cả ({platformsWithContent.length})
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Expanded Schedule Form */
+        <div className="px-3 py-2.5 space-y-2.5">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[11px] font-semibold text-heading">
+                {scheduleMode === 'single'
+                  ? `Lên lịch ${configs[selectedPlatform].title}`
+                  : `Lên lịch ${platformsWithContent.length} nền tảng`}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              {/* Toggle mode */}
+              <button
+                onClick={() => setScheduleMode(scheduleMode === 'single' ? 'all' : 'single')}
+                className="text-[9px] text-dim hover:text-primary px-1.5 py-0.5 rounded hover:bg-surface-hover transition-colors"
+              >
+                {scheduleMode === 'single' ? 'Lên lịch tất cả' : 'Chỉ 1 nền tảng'}
+              </button>
+              <button
+                onClick={() => setShowScheduler(false)}
+                className="text-[9px] text-dim hover:text-heading px-1 py-0.5"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {scheduleMode === 'single' ? (
+            /* Single Platform Schedule */
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <label className="text-[8px] text-faint uppercase tracking-wider block mb-0.5">Ngày</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="w-full text-left bg-surface-hover border border-default rounded px-2 py-1 text-[10px] text-body hover:border-strong transition-colors">
+                      {format(selectedDate, 'dd/MM/yyyy (EEE)', { locale: vi })}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-surface-1 border-default" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(d) => d && setSelectedDate(d)}
+                      disabled={(date) => isBefore(date, new Date())}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="w-24">
+                <div className="flex items-center justify-between mb-0.5">
+                  <label className="text-[8px] text-faint uppercase tracking-wider">Giờ</label>
+                </div>
+                <select
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className="w-full bg-surface-2 border border-default rounded px-2 py-1 text-[10px] text-body outline-none focus:border-primary/40 [color-scheme:dark]"
+                >
+                  {timeOptions.map((t) => (
+                    <option key={t} value={t} className="bg-surface-2">{t}</option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                size="sm"
+                disabled={isSubmitting}
+                onClick={handleScheduleSingle}
+                className="h-7 px-3 text-[10px] bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                {isSubmitting ? '...' : 'Lên lịch'}
+              </Button>
+            </div>
+          ) : (
+            /* All Platforms Schedule */
+            <div className="space-y-2">
+              {/* Date picker (shared) */}
+              <div className="flex items-center gap-2">
+                <label className="text-[9px] text-dim w-12 shrink-0">Chọn ngày:</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-left bg-surface-hover border border-default rounded px-2 py-1 text-[10px] text-body hover:border-strong transition-colors">
+                      {format(selectedDate, 'dd/MM/yyyy (EEE)', { locale: vi })}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-surface-1 border-default" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(d) => d && setSelectedDate(d)}
+                      disabled={(date) => isBefore(date, new Date())}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Per-platform time */}
+              <div className="space-y-1">
+                {platformsWithContent.map((p) => {
+                  const cfg = configs[p];
+                  const dayOfWeek = selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1;
+                  const platformAiSlot = optimalSlots
+                    .filter((s) => s.platform === p && s.day_of_week === dayOfWeek)
+                    .sort((a, b) => b.score - a.score)[0];
+
+                  return (
+                    <div key={p} className="flex items-center gap-2 py-1 px-2 rounded bg-surface-hover/50">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span className={`text-[10px] font-medium w-20 shrink-0 ${cfg.color}`}>
+                        {cfg.title}
+                      </span>
+                      <select
+                        value={perPlatformTimes[p]}
+                        onChange={(e) => setPerPlatformTimes((prev) => ({ ...prev, [p]: e.target.value }))}
+                        className="flex-1 bg-surface-2 border border-default rounded px-1.5 py-0.5 text-[10px] text-body outline-none [color-scheme:dark]"
+                      >
+                        {timeOptions.map((t) => (
+                          <option key={t} value={t} className="bg-surface-2">{t}</option>
+                        ))}
+                      </select>
+
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Button
+                size="sm"
+                disabled={isSubmitting}
+                onClick={handleScheduleAll}
+                className="w-full h-7 text-[10px] bg-gradient-to-r from-primary to-purple-500 text-white hover:from-primary/90 hover:to-purple-500/90"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <Send className="w-3 h-3 mr-1" />
+                )}
+                {isSubmitting ? 'Đang lên lịch...' : `Lên lịch ${platformsWithContent.length} nền tảng`}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MultiFormatEditorModule() {
   const generatedContent = useResearchStore((s) => s.generatedContent);
+  const activeJob = useResearchStore((s) => s.activeJob);
+  const setGeneratedContent = useResearchStore((s) => s.setGeneratedContent);
+
   const [editorMode, setEditorMode] = useState<EditorMode>("assets");
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>("blog");
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("desktop");
   const [showPreview, setShowPreview] = useState(false);
@@ -242,10 +582,21 @@ export default function MultiFormatEditorModule() {
     }
   }, [generatedContent]);
 
-  const [outline, setOutline] = useState<OutlineItem[]>(mockOutline);
+  const masterOutline = useResearchStore((s) => s.masterOutline);
+  const setMasterOutline = useResearchStore((s) => s.setMasterOutline);
+  const [outline, setOutline] = useState<OutlineItem[]>([]);
+
+  // Sync with store
+  useEffect(() => {
+    if (masterOutline && masterOutline.length > 0) {
+      setOutline(masterOutline);
+    } else {
+      setOutline(mockOutline);
+    }
+  }, [masterOutline]);
 
   const handleUpdateOutline = (id: string, text: string, isChild = false, parentId?: string) => {
-    setOutline(prev => prev.map(section => {
+    const newOutline = outline.map(section => {
       if (!isChild && section.id === id) {
         return { ...section, text };
       }
@@ -258,7 +609,133 @@ export default function MultiFormatEditorModule() {
         };
       }
       return section;
-    }));
+    });
+    setOutline(newOutline);
+    setMasterOutline(newOutline); // Sync to store
+  };
+
+  const ALL_PLATFORMS: Platform[] = ['facebook', 'linkedin', 'blog'];
+  const [rewritingAllPlatforms, setRewritingAllPlatforms] = useState(false);
+  const [rewritingPlatformIdx, setRewritingPlatformIdx] = useState(-1);
+
+  // Platform-specific optimization for rewrite
+  const getRewriteContentLength = (platform: Platform): string => {
+    switch (platform) {
+      case 'facebook': return 'short';
+      case 'linkedin': return 'medium';
+      case 'blog': return 'long';
+    }
+  };
+
+  const getRewriteInstructions = (platform: Platform): string => {
+    const hints: Record<Platform, string> = {
+      facebook: 'Optimize for Facebook: Hook in first 2 lines, strategic emojis, very short paragraphs, CTA at end, 3-5 hashtags. Mobile-first format.',
+      linkedin: 'Optimize for LinkedIn: Bold insight/stat opener, professional conversational tone, line breaks between paragraphs, data-driven, end with engaging question.',
+      blog: 'Optimize for Blog/SEO: Proper H1/H2/H3 hierarchy, introduction & conclusion, bullet points for takeaways, blockquotes for emphasis, SEO-friendly headings.',
+    };
+    return hints[platform];
+  };
+
+  const handleAIRewrite = async () => {
+    if (!activeJob?.knowledge_source?.content_text) {
+      gooeyToast.error("No context source data available to rewrite.");
+      return;
+    }
+
+    setIsRegenerating(true);
+    try {
+      // Stringify the structured outline for the backend
+      const outlineStr = JSON.stringify(outline.map(s => ({
+        section: s.text,
+        points: s.children.map(c => c.text)
+      })));
+
+      const result = await researchApi.generateContent({
+        team_id: activeJob.job.team_id,
+        knowledge_source_id: activeJob.knowledge_source.id,
+        knowledge_text: activeJob.knowledge_source.content_text,
+        platform: selectedPlatform,
+        outline: outlineStr, // Pass the edited outline
+        target_audience: "Ng\u01b0\u1eddi quan t\u00e2m \u0111\u1ebfn c\u00f4ng ngh\u1ec7 v\u00e0 marketing",
+        content_length: getRewriteContentLength(selectedPlatform),
+        additional_instructions: getRewriteInstructions(selectedPlatform),
+        tone: "professional",
+        language: "vi",
+      });
+
+      setGeneratedContent(selectedPlatform, {
+        platform: selectedPlatform,
+        html: result.content_html,
+        modelUsed: result.model_used,
+        tokenUsage: result.token_usage,
+        generatedAt: new Date().toISOString(),
+      });
+
+      gooeyToast.success(`Updated ${selectedPlatform} content based on your new outline!`);
+      setEditorMode("assets");
+    } catch (error: any) {
+      gooeyToast.error(error?.message || "Rewrite failed");
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const handleAIRewriteAll = async () => {
+    if (!activeJob?.knowledge_source?.content_text) {
+      gooeyToast.error("No context source data available to rewrite.");
+      return;
+    }
+
+    setRewritingAllPlatforms(true);
+    let successCount = 0;
+
+    try {
+      const outlineStr = JSON.stringify(outline.map(s => ({
+        section: s.text,
+        points: s.children.map(c => c.text)
+      })));
+
+      for (let i = 0; i < ALL_PLATFORMS.length; i++) {
+        const platform = ALL_PLATFORMS[i];
+        setRewritingPlatformIdx(i);
+
+        try {
+          const result = await researchApi.generateContent({
+            team_id: activeJob.job.team_id,
+            knowledge_source_id: activeJob.knowledge_source.id,
+            knowledge_text: activeJob.knowledge_source.content_text,
+            platform,
+            outline: outlineStr,
+            target_audience: "Ng\u01b0\u1eddi quan t\u00e2m \u0111\u1ebfn c\u00f4ng ngh\u1ec7 v\u00e0 marketing",
+            content_length: getRewriteContentLength(platform),
+            additional_instructions: getRewriteInstructions(platform),
+            tone: "professional",
+            language: "vi",
+          });
+
+          setGeneratedContent(platform, {
+            platform,
+            html: result.content_html,
+            modelUsed: result.model_used,
+            tokenUsage: result.token_usage,
+            generatedAt: new Date().toISOString(),
+          });
+          successCount++;
+        } catch (error: any) {
+          console.error(`Rewrite failed for ${platform}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        gooeyToast.success(`\u2705 Rewrote ${successCount}/${ALL_PLATFORMS.length} platforms!`);
+        setEditorMode("assets");
+      } else {
+        gooeyToast.error('All platform rewrites failed.');
+      }
+    } finally {
+      setRewritingAllPlatforms(false);
+      setRewritingPlatformIdx(-1);
+    }
   };
 
   const toggleCollapse = (id: string) => {
@@ -324,10 +801,28 @@ export default function MultiFormatEditorModule() {
             )}
             <Button
               size="sm"
+              disabled={isRegenerating || rewritingAllPlatforms}
+              onClick={handleAIRewrite}
               className="h-6 px-2.5 text-[10px] bg-primary/15 hover:bg-primary/25 text-primary border-0"
             >
-              <Sparkles className="w-3 h-3 mr-1" />
+              {isRegenerating ? (
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              ) : (
+                <Sparkles className="w-3 h-3 mr-1" />
+              )}
               AI Rewrite
+            </Button>
+            <Button
+              size="sm"
+              disabled={isRegenerating || rewritingAllPlatforms}
+              onClick={handleAIRewriteAll}
+              className="h-6 px-2.5 text-[10px] bg-gradient-to-r from-primary/15 to-purple-500/15 hover:from-primary/25 hover:to-purple-500/25 text-primary border-0"
+            >
+              {rewritingAllPlatforms ? (
+                <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> {rewritingPlatformIdx >= 0 ? `${ALL_PLATFORMS[rewritingPlatformIdx]} (${rewritingPlatformIdx + 1}/3)` : '...'}</>
+              ) : (
+                <><Send className="w-3 h-3 mr-1" /> Rewrite All</>
+              )}
             </Button>
             <Button
               size="sm"
@@ -484,6 +979,14 @@ export default function MultiFormatEditorModule() {
                     className="scrollbar-custom"
                   />
                 </div>
+
+                {/* ═══ Schedule Action Bar ═══ */}
+                <ScheduleActionBar
+                  selectedPlatform={selectedPlatform}
+                  editorContent={editorContent}
+                  platformConfigs={platformConfigs}
+                  generatedContent={generatedContent}
+                />
               </div>
             )}
           </ResizablePanel>
