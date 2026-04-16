@@ -375,34 +375,42 @@ Infuse the brand identity naturally throughout the content.`,
 			defaultStr(brief.BrandGuidelines, ""))
 	}
 
-	// Outline section
+	// Outline section - Dynamic framework injection
 	outlineSection := ""
 	if brief.Outline != "" {
 		outlineSection = fmt.Sprintf(`
-=== APPROVED OUTLINE (MUST FOLLOW) ===
-You MUST follow this approved content structure exactly. Write the full content for each section:
+=== MANDATORY CONTENT FRAMEWORK (OUTLINE) ===
+Your content MUST follow the structural sequence below. Treat each Level 1 item as a major section (H2) and Level 2 items as sub-topics (H3). 
+If the outline is provided in JSON format, parse it and use its hierarchy as your skeleton.
+DO NOT skip any sections specified here.
+
+FRAMEWORK DATA:
 %s`, brief.Outline)
 	}
 
-	systemPrompt := fmt.Sprintf(`You are an expert Marketing Content Creator AI. Craft compelling, publish-ready content for the "%s" platform.
+	systemPrompt := fmt.Sprintf(`You are an expert Marketing Content Creator AI. Your goal is to craft high-converting, platform-optimized content.
 %s
-=== PLATFORM GUIDELINES ===
 %s
 
-=== TONE & VOICE ===
-%s
-%s
-=== REQUIREMENTS ===
-- Target audience: %s
-- Word count target: %s words
-- Language: %s
-- Output format: Return ONLY valid HTML tags (h1, h2, h3, p, ul, ol, li, strong, em, blockquote). No markdown. No wrapper div.
-- Do NOT include any explanation, commentary, or meta-text. Only the content itself.
+=== OPERATIONAL REQUIREMENTS ===
+1. PLATFORM GUIDELINES: %s
+2. TONE & VOICE: %s
+3. TARGET AUDIENCE: %s
+4. SEO & WORD COUNT: Target ~%s words.
+5. LANGUAGE: %s
+
+=== STRICT OUTPUT FORMAT ===
+- Use ONLY standard HTML tags: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, <blockquote>.
+- NO Markdown formatting. NO wrapper <div>. 
+- NO opening/closing commentary or metadata. Just the article content.
+- Ensure the HTML is semantically correct and follows the logical structure of the FRAMEWORK provided.
+- Every section in the OUTLINE MUST be turned into content.
 
 === ADDITIONAL INSTRUCTIONS ===
 %s`,
-		brief.Platform, brandSection, platformGuide, toneGuide, outlineSection,
-		brief.TargetAudience, wordTarget, lang,
+		brandSection, outlineSection, platformGuide, toneGuide, 
+		defaultStr(brief.TargetAudience, "General audience"),
+		wordTarget, lang,
 		defaultStr(brief.AdditionalInstructions, "None"))
 
 	userPrompt := fmt.Sprintf("Based on the following research knowledge, create the content:\n\n%s", knowledgeText)

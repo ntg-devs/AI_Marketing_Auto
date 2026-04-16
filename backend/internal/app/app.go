@@ -26,16 +26,21 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 	userRepo := repository.NewUserRepository(db)
 	crawlRepo := repository.NewCrawlRepository(db)
 	aiProviderRepo := repository.NewAIProviderRepository(db)
+	scheduleRepo := repository.NewScheduleRepository(db)
+	userPrefsRepo := repository.NewUserPreferencesRepository(db)
 
 	// 2. Service
 	userService := service.NewUserService(userRepo, jwtSecret, distributor)
 	crawlService := service.NewCrawlService(crawlRepo, distributor)
+	scheduleService := service.NewScheduleService(scheduleRepo)
 
 	// 3. Handlers
 	userHandler := http.NewUserHandler(userService)
 	crawlHandler := http.NewCrawlHandler(crawlService)
 	aiProviderHandler := http.NewAIProviderHandler(aiProviderRepo)
 	contentHandler := http.NewContentHandler(aiProviderRepo, crawlRepo)
+	scheduleHandler := http.NewScheduleHandler(scheduleService)
+	userPrefsHandler := http.NewUserPreferencesHandler(userPrefsRepo)
 
 	// 4. Router Setup
 	r := chi.NewRouter()
@@ -66,6 +71,18 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 
 		r.Post("/content/generate", contentHandler.GenerateContent)
 		r.Post("/content/outline", contentHandler.GenerateOutline)
+
+		// Schedule & Publishing
+		r.Post("/schedules", scheduleHandler.CreateSchedule)
+		r.Get("/schedules", scheduleHandler.ListSchedules)
+		r.Get("/schedules/{scheduleID}", scheduleHandler.GetSchedule)
+		r.Put("/schedules/{scheduleID}", scheduleHandler.UpdateSchedule)
+		r.Delete("/schedules/{scheduleID}", scheduleHandler.DeleteSchedule)
+		r.Post("/schedules/publish-due", scheduleHandler.PublishDue)
+
+		// User Preferences
+		r.Get("/users/{userID}/preferences", userPrefsHandler.GetPreferences)
+		r.Put("/users/{userID}/preferences", userPrefsHandler.SavePreferences)
 	})
 
 	return &App{

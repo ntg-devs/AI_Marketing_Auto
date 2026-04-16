@@ -20,12 +20,14 @@ interface ResearchState {
   
   // Content Generation
   generatedContent: Record<string, GeneratedContentEntry>; // keyed by platform
+  masterOutline: any[]; // The structured outline
   
   setActiveJobId: (jobId: string) => void;
   setActiveJob: (detail: CrawlJobDetailResponse | null) => void;
   setPolling: (value: boolean) => void;
   setGeneratedContent: (platform: string, entry: GeneratedContentEntry) => void;
   clearGeneratedContent: () => void;
+  setMasterOutline: (outline: any[]) => void;
   
   fetchRecentJobs: (teamId: string) => Promise<void>;
   deleteJob: (jobId: string) => Promise<void>;
@@ -40,6 +42,7 @@ export const useResearchStore = create<ResearchState>()(
       isPolling: false,
       isLoadingJobs: false,
       generatedContent: {},
+      masterOutline: [],
 
       setActiveJobId: (jobId) => set({ activeJobId: jobId }),
 
@@ -59,6 +62,8 @@ export const useResearchStore = create<ResearchState>()(
       },
 
       clearGeneratedContent: () => set({ generatedContent: {} }),
+
+      setMasterOutline: (outline) => set({ masterOutline: outline }),
 
       fetchRecentJobs: async (teamId: string) => {
         set({ isLoadingJobs: true });

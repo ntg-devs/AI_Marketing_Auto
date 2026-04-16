@@ -13,11 +13,28 @@ type User struct {
 	FullName        string    `json:"full_name"`
 	AvatarURL       string    `json:"avatar_url"`
 	Role            string    `json:"role" gorm:"default:user"`
+	TeamID          uuid.UUID `json:"team_id,omitempty" gorm:"-"` // Added for API response
 	IsActive        bool      `json:"is_active" gorm:"default:true"`
 	Provider        string    `json:"provider" gorm:"default:credentials"`
 	EmailVerifiedAt *time.Time    `json:"email_verified_at"`
 	CreatedAt       time.Time     `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt       time.Time     `json:"updated_at" gorm:"autoUpdateTime"`
+}
+
+type Team struct {
+	ID              uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Name            string    `json:"name" gorm:"not null"`
+	BrandGuidelines string    `json:"brand_guidelines" gorm:"type:text"`
+	BrandPersona    string    `json:"brand_persona" gorm:"type:text"`
+	CreatedBy       uuid.UUID `json:"created_by" gorm:"type:uuid;not null"`
+	CreatedAt       time.Time `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt       time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+}
+
+type TeamMember struct {
+	TeamID uuid.UUID `gorm:"primaryKey;type:uuid"`
+	UserID uuid.UUID `gorm:"primaryKey;type:uuid"`
+	Role   string    `gorm:"default:'owner'"`
 }
 
 type UserCredentials struct {
@@ -64,6 +81,11 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
 	GetCredentials(ctx context.Context, userID uuid.UUID) (*UserCredentials, error)
+
+	// Team operations
+	CreateTeam(ctx context.Context, team *Team) error
+	AddTeamMember(ctx context.Context, member *TeamMember) error
+	GetTeamsByUserID(ctx context.Context, userID uuid.UUID) ([]Team, error)
 }
 
 type UserService interface {

@@ -68,3 +68,20 @@ func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 func (r *userRepository) UpdateCredentials(ctx context.Context, creds *domain.UserCredentials) error {
 	return r.db.WithContext(ctx).Save(creds).Error
 }
+
+func (r *userRepository) CreateTeam(ctx context.Context, team *domain.Team) error {
+	return r.db.WithContext(ctx).Create(team).Error
+}
+
+func (r *userRepository) AddTeamMember(ctx context.Context, member *domain.TeamMember) error {
+	return r.db.WithContext(ctx).Create(member).Error
+}
+
+func (r *userRepository) GetTeamsByUserID(ctx context.Context, userID uuid.UUID) ([]domain.Team, error) {
+	var teams []domain.Team
+	err := r.db.WithContext(ctx).
+		Joins("JOIN team_members ON team_members.team_id = teams.id").
+		Where("team_members.user_id = ?", userID).
+		Find(&teams).Error
+	return teams, err
+}

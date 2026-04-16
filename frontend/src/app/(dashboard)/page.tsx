@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import SmartEntryModule from '@/components/command-center/SmartEntryModule';
-import LiveResearchModule from '@/components/command-center/LiveResearchModule';
-import MultiFormatEditorModule from '@/components/command-center/MultiFormatEditorModule';
-import SmartSchedulerModule from '@/components/command-center/SmartSchedulerModule';
-import FeedbackLoopModule from '@/components/command-center/FeedbackLoopModule';
+import SmartEntryModule from "@/components/command-center/SmartEntryModule";
+import LiveResearchModule from "@/components/command-center/LiveResearchModule";
+import MultiFormatEditorModule from "@/components/command-center/MultiFormatEditorModule";
+import SmartSchedulerModule from "@/components/command-center/SmartSchedulerModule";
+import FeedbackLoopModule from "@/components/command-center/FeedbackLoopModule";
 
 export default function CommandCenterPage() {
   return (
@@ -26,8 +26,8 @@ export default function CommandCenterPage() {
             <SmartEntryModule />
           </ResizablePanel>
 
-          <ResizableHandle 
-            withHandle 
+          <ResizableHandle
+            withHandle
             className="bg-surface-hover w-px hover:bg-primary/30 transition-all"
           />
 
@@ -40,17 +40,21 @@ export default function CommandCenterPage() {
             <LiveResearchModule />
           </ResizablePanel>
 
-          <ResizableHandle 
-            withHandle 
+          <ResizableHandle
+            withHandle
             className="bg-surface-hover w-px hover:bg-primary/30 transition-all"
           />
 
-          <ResizablePanel defaultSize="50%" minSize="30%" className="min-w-0 overflow-hidden bg-surface-0">
+          <ResizablePanel
+            defaultSize="50%"
+            minSize="30%"
+            className="min-w-0 overflow-hidden bg-surface-0"
+          >
             <MultiFormatEditorModule />
           </ResizablePanel>
 
-          <ResizableHandle 
-            withHandle 
+          <ResizableHandle
+            withHandle
             className="bg-surface-hover w-px hover:bg-primary/30 transition-all"
           />
 
