@@ -192,10 +192,42 @@ func (h *scheduleHandler) ListSocialAccounts(w http.ResponseWriter, r *http.Requ
 
 // POST /api/v1/social-accounts
 func (h *scheduleHandler) SaveSocialAccount(w http.ResponseWriter, r *http.Request) {
-	var acc domain.SocialAccount
-	if err := json.NewDecoder(r.Body).Decode(&acc); err != nil {
+	// Use a dedicated DTO because domain.SocialAccount.AccessToken has json:"-"
+	var req struct {
+		TeamID      string `json:"team_id"`
+		UserID      string `json:"user_id"`
+		Platform    string `json:"platform"`
+		ProfileName string `json:"profile_name"`
+		AccessToken string `json:"access_token"`
+		PageID      string `json:"page_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
+	}
+
+	teamID, err := uuid.Parse(req.TeamID)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid team_id")
+		return
+	}
+
+	var userID *uuid.UUID
+	if req.UserID != "" {
+		uid, err := uuid.Parse(req.UserID)
+		if err == nil {
+			userID = &uid
+		}
+	}
+
+	acc := domain.SocialAccount{
+		TeamID:      teamID,
+		UserID:      userID,
+		Platform:    req.Platform,
+		ProfileName: req.ProfileName,
+		AccessToken: req.AccessToken,
+		PageID:      req.PageID,
+		IsActive:    true,
 	}
 
 	if err := h.service.SaveSocialAccount(r.Context(), &acc); err != nil {

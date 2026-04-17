@@ -172,7 +172,14 @@ export const schedulerApi = {
     return response as unknown as SocialAccountAPI[];
   },
 
-  async saveSocialAccount(data: any): Promise<SocialAccountAPI> {
+  async saveSocialAccount(data: {
+    team_id: string;
+    user_id?: string;
+    platform: string;
+    profile_name: string;
+    access_token: string;
+    page_id?: string;
+  }): Promise<SocialAccountAPI> {
     const response = await apiClient.post<SocialAccountAPI>('/api/v1/social-accounts', data);
     return response as unknown as SocialAccountAPI;
   },

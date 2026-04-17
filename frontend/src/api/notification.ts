@@ -35,4 +35,24 @@ export const notificationApi = {
       params: { team_id: teamId },
     });
   },
+
+  getHealthStats: async (): Promise<HealthStats> => {
+    const res = await apiClient.get<HealthStats>('/api/v1/teams/health');
+    return res as unknown as HealthStats;
+  },
 };
+
+export interface HealthStats {
+  services: {
+    id: string;
+    name: string;
+    status: 'healthy' | 'degraded' | 'down';
+    latency: string;
+    uptime: string;
+    lastCheck: string;
+  }[];
+  usage: {
+    total_tokens: number;
+    cost: number;
+  };
+}

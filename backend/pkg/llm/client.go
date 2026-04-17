@@ -660,19 +660,18 @@ FRAMEWORK DATA:
 - NHỊP ĐIỆU VĂN BẢN: Câu văn phải có sự thay đổi về độ dài để tạo sự lôi cuốn, tránh viết các câu dài liên tiếp gây mệt mỏi.
 - NGÔN NGỮ CHUYÊN GIA: Nói tiếng nói của ngành nhưng vẫn đủ dễ hiểu để thu phục đối tượng khách hàng mục tiêu. Tránh các từ sáo rỗng như "đột phá", "vượt trội" mà không có dẫn chứng.
 
-=== ĐỊNH DẠNG ĐẦU RA NGHIÊM NGẶT (PHẢI TUÂN THỦ) ===
-- BẮT BUỘC CHỈ sử dụng các thẻ HTML tiêu chuẩn: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, blockquote, br, hr.
-- TUYỆT ĐỐI KHÔNG sử dụng ký hiệu Markdown như **văn bản**, # Tiêu đề, [link](url), hay các dấu gạch đầu dòng Markdown (- hay *). Thay vào đó, hãy dùng <strong>văn bản</strong>, <h2>Tiêu đề</h2>, và <ul><li>...</li></ul>.
-- KHÔNG bao quanh toàn bộ bài viết bằng thẻ <div>.
-- Giữ các đoạn văn cực kỳ ngắn gọn, dễ thở (tối đa 1-2 câu mỗi đoạn).
-- Sử dụng in đậm (<strong>) một cách chiến lược cho các từ khóa quan trọng và emoji biểu cảm một cách tinh tế.
-- Đảm bảo HTML đúng ngữ nghĩa (semantic HTML) và tuân theo cấu trúc DÀN Ý đã đề ra.
-- KHÔNG có lời chào hỏi hay kết luận ngoài lề của AI. Chỉ xuất ra nội dung HTML của bài viết.
-- Văn bản phải sạch, chuyên nghiệp, ready-to-publish ngay lập tức.
+=== ĐỊNH DẠNG ĐẦU RA NGHIÊM NGẶT (RẤT QUAN TRỌNG) ===
+- BẮT BUỘC CHỈ sử dụng HTML tags. TUYỆT ĐỐI KHÔNG dùng ký hiệu Markdown (#, **, [link], -, *).
+- MỖI ĐOẠN VĂN phải được bọc trong thẻ <p>...</p>. 
+- GIỮA CÁC ĐOẠN VĂN (giữa các thẻ </p> và <p>) phải có ít nhất 1 dòng trống (\n\n) để tạo không gian thở.
+- Sử dụng <h2>, <h3> cho các tiêu đề phần để phân tách nội dung rõ ràng.
+- Sử dụng <ul><li>...</li></ul> cho các danh sách liệt kê để tăng tính chuyên nghiệp.
+- Nội dung phải được trình bày sạch sẽ như một bài báo chuyên nghiệp trên blog.
+- TUYỆT ĐỐI KHÔNG viết dính liền thành một khối văn bản.
 
 [YÊU CẦU CỤ THỂ]: %s
-[VÍ DỤ SAI]: **Đây là một lỗi**
-[VÍ DỤ ĐÚNG]: <strong>Đây là sự chuyên nghiệp</strong>`,
+[VÍ DỤ SAI]: **Headline** \n Dữ liệu dính liền...
+[VÍ DỤ ĐÚNG]: <h2>Headline</h2> \n <p>Đoạn văn thứ nhất.</p> \n \n <p>Đoạn văn thứ hai.</p>`,
 		brandLayer, visualLayer, outlineSection, platformGuide, toneGuide, 
 		defaultStr(brief.TargetAudience, "General audience"),
 		wordTarget, lang, imageInstruction,
@@ -722,6 +721,17 @@ FRAMEWORK DATA:
 			log.Printf("[LLM Client] 🖼️ Image prepended (no HTML marker found)")
 		}
 	}
+
+	// ═══════════════════════════════════════════════════
+	// POST-PROCESSING: Fix common AI formatting errors
+	// ═══════════════════════════════════════════════════
+	// 1. Convert any leaked Markdown bold to HTML strong
+	contentHTML = strings.ReplaceAll(contentHTML, "**", "<strong>")
+	// 2. Ensure paragraphs have double newlines for the editor to breathe
+	contentHTML = strings.ReplaceAll(contentHTML, "</p><p>", "</p>\n\n<p>")
+	contentHTML = strings.ReplaceAll(contentHTML, "</h2><p>", "</h2>\n\n<p>")
+	contentHTML = strings.ReplaceAll(contentHTML, "</h3><p>", "</h3>\n\n<p>")
+	contentHTML = strings.ReplaceAll(contentHTML, "</h1><p>", "</h1>\n\n<p>")
 
 	result := &ContentResult{
 		ContentHTML: contentHTML,

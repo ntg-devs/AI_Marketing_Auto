@@ -32,6 +32,7 @@ import {
   Eye,
 } from "lucide-react";
 import { gooeyToast } from "goey-toast";
+import { useTranslation } from "@/lib/i18n";
 import { researchApi, type GenerateContentRequest, type GenerateOutlineRequest, type AutoSuggestResponse } from "@/api/research";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -72,6 +73,7 @@ import {
 
 export default function SmartEntryModule() {
   const { user } = useAuthStore();
+  const { t } = useTranslation();
   const recentJobs = useResearchStore((state) => state.recentJobs);
   const activeJobId = useResearchStore((state) => state.activeJobId);
   const activeJob = useResearchStore((state) => state.activeJob);
@@ -629,12 +631,12 @@ export default function SmartEntryModule() {
         } catch (error: any) {
           if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') throw error;
           console.error(`Failed to generate for ${platform}:`, error);
-          gooeyToast.error(`⚠️ ${platform} generation failed: ${error?.message || 'Unknown error'}`);
+          gooeyToast.error(`${platform} generation failed: ${error?.message || 'Unknown error'}`);
         }
       }
 
       if (successCount > 0) {
-        gooeyToast.success(`✅ Generated content for ${successCount}/${totalPlatforms} platforms! Check the Editor panel.`);
+        gooeyToast.success(`Generated content for ${successCount}/${totalPlatforms} platforms! Check the Editor panel.`);
         persistBriefToPreferences();
         setPreviewMode("preview");
         setPreviewOpen(false);
@@ -655,6 +657,26 @@ export default function SmartEntryModule() {
     }
   };
 
+  const handleSummarize = async () => {
+    const knowledgeText = activeJob?.knowledge_source?.content_text;
+    if (!knowledgeText) return;
+
+    setIsAutoSuggesting(true);
+    try {
+      const result = await researchApi.autoSuggest({
+        knowledge_text: knowledgeText,
+        language: briefForm.language,
+      });
+      setAiSuggestions(result);
+      setSuggestionsApplied(true);
+      gooeyToast.success("AI Analysis completed! Key insights extracted.");
+    } catch (err) {
+      gooeyToast.error("AI Analysis failed");
+    } finally {
+      setIsAutoSuggesting(false);
+    }
+  };
+
   const handleOpenWizard = () => {
     setOutlineJSON("");
     setOutlineEditable("");
@@ -670,9 +692,9 @@ export default function SmartEntryModule() {
         <div className="flex items-center justify-between gap-2">
           <div>
             <h3 className="text-xs font-semibold text-heading/80 uppercase tracking-wider">
-              Smart Entry
+              {t('smart_entry.title')}
             </h3>
-            <p className="text-[10px] text-dim mt-0.5">Input & Context</p>
+            <p className="text-[10px] text-dim mt-0.5">{t('smart_entry.subtitle')}</p>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -682,7 +704,7 @@ export default function SmartEntryModule() {
               onClick={() => setIsAiSettingsOpen(true)}
             >
               <Bot className="w-3.5 h-3.5 mr-1 text-indigo-500" />
-              AI Engines
+              {t('smart_entry.ai_engines')}
             </Button>
             <Button
               variant="ghost"
@@ -691,7 +713,7 @@ export default function SmartEntryModule() {
               onClick={() => setJobPanelOpen(true)}
             >
               <History className="w-3 h-3" />
-              Jobs
+              {t('smart_entry.jobs')}
               {recentJobs.length > 0 && (
                 <Badge className="h-4 min-w-4 px-1 text-[9px] bg-primary/20 text-primary border-0">
                   {recentJobs.length}
@@ -786,7 +808,7 @@ export default function SmartEntryModule() {
                     {isAnalyzing ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
                     ) : (
-                      "Analyze"
+                      t('smart_entry.analyze')
                     )}
                   </Button>
                 </div>
@@ -813,7 +835,7 @@ export default function SmartEntryModule() {
                         {isAnalyzing ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
                         ) : (
-                          <><ImageIcon className="w-3 h-3 mr-1" />Analyze</>
+                          <><ImageIcon className="w-3 h-3 mr-1" />{t('smart_entry.analyze')}</>
                         )}
                       </Button>
                     </div>
@@ -1232,16 +1254,26 @@ export default function SmartEntryModule() {
                             disabled={!activeJob?.knowledge_source?.content_text}
                           >
                             <Wand2 className="w-3 h-3 mr-1.5" />
-                            Generate Content
+                            {t('smart_entry.generate_btn')}
                           </Button>
-                          <Button variant="outline" size="sm" className="h-7 text-[11px] bg-surface-0 text-primary border-primary/20 hover:bg-primary/10">
-                            <Sparkles className="w-3 h-3 mr-1.5" />
-                            AI Summarize
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className={`h-7 text-[11px] border-primary/20 ${aiSuggestions ? 'bg-primary/10 text-primary' : 'bg-surface-0 text-dim'}`}
+                            onClick={handleSummarize}
+                            disabled={isAutoSuggesting || !activeJob?.knowledge_source?.content_text}
+                          >
+                            {isAutoSuggesting ? (
+                              <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3 h-3 mr-1.5 text-primary" />
+                            )}
+                            {t('smart_entry.summarize_btn')}
                           </Button>
                           <div className="w-px h-4 bg-default mx-1" />
                           <Button variant="ghost" size="sm" className="h-7 text-[11px] text-dim hover:text-body">
                             <Save className="w-3.5 h-3.5 mr-1" />
-                            Save to KB
+                            {t('smart_entry.save_kb')}
                           </Button>
                         </>
                       )}
@@ -1327,11 +1359,39 @@ export default function SmartEntryModule() {
                             )}
                           </div>
                           <div className="flex-1 bg-surface-1/40 rounded-xl border border-default/40 shadow-sm flex flex-col min-h-0 overflow-hidden relative">
-                            <ScrollArea className="flex-1 w-full h-full relative">
-                              <div className="p-5 md:p-7 absolute inset-0 text-left overflow-auto">
-                                <FormattedText text={activePreviewItem.content} />
-                              </div>
-                            </ScrollArea>
+                            <div className="flex-1 flex flex-col md:flex-row min-h-0">
+                              <ScrollArea className="flex-1 w-full relative border-r border-default/30">
+                                <div className="p-5 md:p-7 pr-4 text-left overflow-auto">
+                                  <FormattedText text={activePreviewItem.content} />
+                                </div>
+                              </ScrollArea>
+                              {aiSuggestions && activePreviewItem.id === 'ks' && (
+                                <div className="w-full md:w-80 bg-surface-2/50 shrink-0 overflow-y-auto border-t md:border-t-0 p-5 space-y-4">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <BrainCircuit className="w-4 h-4 text-primary" />
+                                    <h3 className="text-xs font-bold text-heading uppercase tracking-wider">{t('smart_entry.key_insights')}</h3>
+                                  </div>
+                                  <div className="space-y-3">
+                                    {aiSuggestions.key_insights.map((insight, idx) => (
+                                      <div key={idx} className="flex gap-2 group">
+                                        <div className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0 group-hover:scale-150 transition-transform" />
+                                        <p className="text-[11px] text-body leading-relaxed">{insight}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="pt-4 border-t border-default/50 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-dim uppercase">Tone Suggestion</span>
+                                      <Badge variant="outline" className="text-[9px] bg-primary/5 text-primary border-primary/20">{aiSuggestions.tone}</Badge>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-dim uppercase">Audience</span>
+                                      <span className="text-[10px] text-label font-medium truncate ml-2">{aiSuggestions.target_audience}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

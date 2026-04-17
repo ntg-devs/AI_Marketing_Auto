@@ -478,19 +478,16 @@ function ScheduleActionBar({ selectedPlatform, editorContent, platformConfigs: c
                   </PopoverContent>
                 </Popover>
               </div>
-              <div className="w-24">
+              <div className="w-32">
                 <div className="flex items-center justify-between mb-0.5">
                   <label className="text-[8px] text-faint uppercase tracking-wider">Giờ</label>
                 </div>
-                <select
+                <input
+                  type="time"
                   value={selectedTime}
                   onChange={(e) => setSelectedTime(e.target.value)}
                   className="w-full bg-surface-2 border border-default rounded px-2 py-1 text-[10px] text-body outline-none focus:border-primary/40 [color-scheme:dark]"
-                >
-                  {timeOptions.map((t) => (
-                    <option key={t} value={t} className="bg-surface-2">{t}</option>
-                  ))}
-                </select>
+                />
               </div>
               <Button
                 size="sm"
@@ -536,15 +533,12 @@ function ScheduleActionBar({ selectedPlatform, editorContent, platformConfigs: c
                           </PopoverContent>
                         </Popover>
 
-                        <select
+                        <input
+                          type="time"
                           value={perPlatformTimes[p]}
                           onChange={(e) => setPerPlatformTimes((prev) => ({ ...prev, [p]: e.target.value }))}
-                          className="w-16 shrink-0 bg-surface-2 border border-default rounded px-1.5 py-1 text-[10px] text-body outline-none [color-scheme:dark]"
-                        >
-                          {timeOptions.map((t) => (
-                            <option key={t} value={t} className="bg-surface-2">{t}</option>
-                          ))}
-                        </select>
+                          className="w-28 shrink-0 bg-surface-2 border border-default rounded px-1.5 py-0.5 text-[10px] text-body outline-none focus:border-primary/40 [color-scheme:dark]"
+                        />
                       </div>
                     </div>
                   );
