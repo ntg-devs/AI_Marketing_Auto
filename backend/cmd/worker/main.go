@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bityagi/internal/domain"
 	"bityagi/internal/repository"
 	"bityagi/internal/task"
 	"bityagi/pkg/crawlerclient"
@@ -35,6 +36,11 @@ func main() {
 	}
 
 	// Database connection initialized successfully
+	db.AutoMigrate(
+		&domain.CrawlJob{},
+		&domain.CrawlPage{},
+		&domain.KnowledgeSource{},
+	)
 	// Initialize Mailer Config
 	mailer := mail.NewSMTPSender(
 		os.Getenv("SMTP_HOST"),

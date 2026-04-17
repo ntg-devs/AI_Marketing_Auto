@@ -10,7 +10,7 @@ interface ApiResponse<T = any> {
 
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-  timeout: 60000, // 60s — AI content generation can take 10-30s depending on model and content length
+  timeout: 300000, // 300s (5 minutes) — Local models like Llama 3.1 can be slow for long generation tasks
   headers: {
     'Content-Type': 'application/json',
   },

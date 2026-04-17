@@ -4,10 +4,15 @@ import (
 	"bityagi/internal/domain"
 	"bityagi/pkg/crawlerclient"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"bityagi/pkg/llm"
 	"bityagi/pkg/mail"
@@ -20,6 +25,7 @@ type TaskProcessor interface {
 	ProcessTaskGenerateContent(ctx context.Context, task *asynq.Task) error
 	ProcessTaskSendWelcomeEmail(ctx context.Context, task *asynq.Task) error
 	ProcessTaskCrawlSourceURL(ctx context.Context, task *asynq.Task) error
+	ProcessTaskAnalyzeImageURL(ctx context.Context, task *asynq.Task) error
 }
 
 type RedisTaskProcessor struct {
@@ -62,6 +68,7 @@ func (p *RedisTaskProcessor) Start() error {
 	mux.HandleFunc(TypeGenerateContent, p.ProcessTaskGenerateContent)
 	mux.HandleFunc(TypeSendWelcomeEmail, p.ProcessTaskSendWelcomeEmail)
 	mux.HandleFunc(TypeCrawlSourceURL, p.ProcessTaskCrawlSourceURL)
+	mux.HandleFunc(TypeAnalyzeImageURL, p.ProcessTaskAnalyzeImageURL)
 
 	return p.server.Run(mux)
 }
@@ -185,12 +192,32 @@ func (p *RedisTaskProcessor) ProcessTaskCrawlSourceURL(ctx context.Context, t *a
 			if err != nil {
 				log.Printf("Worker: [LLM Pipeline] ❌ EXTRACTION FAILED for %s. Error: %v", payload.URL, err)
 			} else {
+				// Combined context support: Prepend image analysis if available
+				if payload.ImageURL != "" {
+					log.Printf("Worker: [Combined Pipeline] Injecting vision analysis for %s...", payload.ImageURL)
+					imageSummary, _, imageMeta, err := p.analyzeImageInternal(ctx, payload.ImageURL)
+					if err == nil {
+						optimizedContext = fmt.Sprintf("### VISION ANALYSIS (REFERENCE IMAGE)\n%s\n\n### WEB CONTENT ANALYSIS\n%s", imageSummary, optimizedContext)
+						
+						// Store vision metadata in result metadata for frontend access
+						if result.Metadata == nil {
+							result.Metadata = make(map[string]interface{})
+						}
+						result.Metadata["image_analysis"] = imageMeta
+						result.Metadata["source_image_url"] = payload.ImageURL
+						
+						log.Printf("Worker: [Combined Pipeline] ✅ Successfully merged vision and web contexts")
+					} else {
+						log.Printf("Worker: [Combined Pipeline] ⚠️ Vision analysis failed (skipping merge): %v", err)
+					}
+				}
+
 				result.ExtractedText = optimizedContext
 				log.Printf("Worker: [LLM Pipeline] ✅ EXTRACTION SUCCESSFUL! Extracted %d characters of optimized context.", len(optimizedContext))
 				// Print the AI extracted content for debugging
 				preview := optimizedContext
-				if len(preview) > 2000 {
-					preview = preview[:2000] + "\n... [TRUNCATED]"
+				if len(preview) > 1000 {
+					preview = preview[:1000] + "\n... [TRUNCATED]"
 				}
 				log.Printf("Worker: [LLM Pipeline] === AI EXTRACTED CONTENT ===\n%s\n=== END OF CONTENT ===", preview)
 
@@ -225,6 +252,20 @@ func (p *RedisTaskProcessor) ProcessTaskCrawlSourceURL(ctx context.Context, t *a
 			if err != nil {
 				log.Printf("Worker: [LLM Pipeline-Fallback] ❌ EXTRACTION FAILED for %s. Error: %v", payload.URL, err)
 			} else {
+				// Combined context support: Prepend image analysis if available
+				if payload.ImageURL != "" {
+					imageSummary, _, imageMeta, err := p.analyzeImageInternal(ctx, payload.ImageURL)
+					if err == nil {
+						optimizedContext = fmt.Sprintf("### VISION ANALYSIS (REFERENCE IMAGE)\n%s\n\n### WEB CONTENT ANALYSIS\n%s", imageSummary, optimizedContext)
+						
+						// Store vision metadata in result metadata
+						if result.Metadata == nil {
+							result.Metadata = make(map[string]interface{})
+						}
+						result.Metadata["image_analysis"] = imageMeta
+						result.Metadata["source_image_url"] = payload.ImageURL
+					}
+				}
 				result.ExtractedText = optimizedContext
 				log.Printf("Worker: [LLM Pipeline-Fallback] ✅ EXTRACTION SUCCESSFUL! Extracted %d characters.", len(optimizedContext))
 			}
@@ -240,4 +281,191 @@ func (p *RedisTaskProcessor) ProcessTaskCrawlSourceURL(ctx context.Context, t *a
 
 	log.Printf("Worker: Completed crawl job %s for %s\n", payload.JobID, payload.URL)
 	return nil
+}
+
+// ProcessTaskAnalyzeImageURL handles image URL analysis using local Ollama LLaVA model.
+// Pipeline: Download Image → Base64 Encode → LLaVA Analysis → Save to Knowledge Base
+// ProcessTaskAnalyzeImageURL handles standalone image URL analysis.
+func (p *RedisTaskProcessor) ProcessTaskAnalyzeImageURL(ctx context.Context, t *asynq.Task) error {
+	if p.crawlRepo == nil {
+		return fmt.Errorf("crawl repository is not configured")
+	}
+
+	var payload AnalyzeImageURLPayload
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("could not decode payload: %w", err)
+	}
+
+	log.Printf("Worker: [Image Pipeline] Starting standalone analysis for job %s — URL: %s", payload.JobID, payload.ImageURL)
+
+	if err := p.crawlRepo.MarkJobRunning(ctx, payload.JobID); err != nil {
+		return fmt.Errorf("could not mark job as running: %w", err)
+	}
+
+	enhancedContext, _, metadata, err := p.analyzeImageInternal(ctx, payload.ImageURL)
+	if err != nil {
+		_ = p.crawlRepo.MarkJobFailed(ctx, payload.JobID, err.Error())
+		return err
+	}
+
+	result := &domain.CrawlExtractionResult{
+		FinalURL:      payload.ImageURL,
+		StrategyUsed:  domain.CrawlStrategyImage,
+		ProviderUsed:  "ollama/llava",
+		HTTPStatus:    200,
+		Title:         fmt.Sprintf("Image Analysis: %s", metadata.Theme),
+		Description:   metadata.Description,
+		ContentType:   "image/jpeg", // approximate
+		ExtractedText: enhancedContext,
+		Markdown:      metadata.Description,
+		Metadata: map[string]interface{}{
+			"image_analysis": metadata,
+			"source_type":    "image_analysis",
+			"image_url":      payload.ImageURL,
+		},
+	}
+
+	if err := p.crawlRepo.SaveJobResult(ctx, payload.JobID, result); err != nil {
+		_ = p.crawlRepo.MarkJobFailed(ctx, payload.JobID, err.Error())
+		return fmt.Errorf("could not save standalone image analysis result: %w", err)
+	}
+
+	log.Printf("Worker: [Image Pipeline] Standalone job %s completed", payload.JobID)
+	return nil
+}
+
+// analyzeImageInternal performs the core vision analysis logic, shared by standalone and combined tasks.
+func (p *RedisTaskProcessor) analyzeImageInternal(ctx context.Context, imageURL string) (enhancedContext string, knowledgeText string, metadata domain.ImageAnalysisResult, err error) {
+	log.Printf("Worker: [Vision Helper] Analyzing %s...", imageURL)
+
+	// 1. Download image
+	imageData, mimeType, err := downloadImage(imageURL)
+	if err != nil {
+		return "", "", domain.ImageAnalysisResult{}, fmt.Errorf("failed to download image: %v", err)
+	}
+
+	// 2. Encode to base64
+	imageBase64 := base64.StdEncoding.EncodeToString(imageData)
+
+	// 3. Connection Setup
+	ollamaBaseURL := os.Getenv("OLLAMA_BASE_URL")
+	if ollamaBaseURL == "" {
+		ollamaBaseURL = "http://127.0.0.1:11434/v1"
+	}
+
+	// 4. LLaVA Analysis
+	visionClient := llm.NewOllamaVisionClient(ollamaBaseURL)
+	analysisJSON, err := visionClient.AnalyzeImage(ctx, imageBase64, mimeType)
+	if err != nil {
+		return "", "", domain.ImageAnalysisResult{}, fmt.Errorf("LLaVA analysis failed: %v", err)
+	}
+
+	// 5. Parse JSON
+	var analysisResult domain.ImageAnalysisResult
+	if err := json.Unmarshal([]byte(analysisJSON), &analysisResult); err != nil {
+		analysisResult = domain.ImageAnalysisResult{
+			Description: analysisJSON,
+			Theme:       "Unknown",
+		}
+	}
+	analysisResult.ImageURL = imageURL
+
+	// 6. Format as Knowledge
+	knowledgeText = llm.FormatImageAnalysisAsKnowledge(analysisJSON, imageURL)
+
+	// 7. Text Enhancement (Qwen)
+	ollamaTextModel := os.Getenv("OLLAMA_TEXT_MODEL")
+	if ollamaTextModel == "" {
+		ollamaTextModel = "qwen2.5:3b"
+	}
+	textClient := llm.NewOllamaTextClient(ollamaBaseURL, ollamaTextModel)
+	enhancedContext, err = textClient.SummarizeAndExtract(ctx, knowledgeText, llm.ExtractionContext{
+		Persona: "Chuyên gia marketing và sáng tạo nội dung từ hình ảnh",
+	})
+	if err != nil {
+		log.Printf("Worker: [Vision Helper] ⚠️ Secondary enhancement failed: %v", err)
+		enhancedContext = knowledgeText
+	}
+
+	return enhancedContext, knowledgeText, analysisResult, nil
+}
+
+// downloadImage fetches an image from URL or decodes a base64 data URI
+func downloadImage(imageURL string) ([]byte, string, error) {
+	// Handle Base64 Data URI directly
+	if strings.HasPrefix(imageURL, "data:image/") {
+		parts := strings.SplitN(imageURL, ",", 2)
+		if len(parts) != 2 {
+			return nil, "", fmt.Errorf("invalid data URI format")
+		}
+		
+		metaParts := strings.Split(parts[0], ";")
+		mimeType := strings.TrimPrefix(metaParts[0], "data:")
+		
+		isBase64 := false
+		for _, p := range metaParts {
+			if p == "base64" {
+				isBase64 = true
+				break
+			}
+		}
+		
+		if !isBase64 {
+			return nil, "", fmt.Errorf("only base64 encoded data URIs are supported")
+		}
+		
+		data, err := base64.StdEncoding.DecodeString(parts[1])
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to decode base64 image data: %w", err)
+		}
+		
+		return data, mimeType, nil
+	}
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Get(imageURL)
+	if err != nil {
+		return nil, "", fmt.Errorf("HTTP GET failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	// Detect MIME type from Content-Type header
+	contentType := resp.Header.Get("Content-Type")
+	mimeType := "image/jpeg" // default
+	if contentType != "" {
+		parts := strings.SplitN(contentType, ";", 2)
+		mimeType = strings.TrimSpace(parts[0])
+	}
+
+	// Validate it's an image
+	if !strings.HasPrefix(mimeType, "image/") {
+		return nil, "", fmt.Errorf("URL does not point to an image (Content-Type: %s)", contentType)
+	}
+
+	// Read with 10MB limit
+	maxSize := int64(10 * 1024 * 1024)
+	limitedReader := io.LimitReader(resp.Body, maxSize+1)
+	data, err := io.ReadAll(limitedReader)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read image body: %w", err)
+	}
+	if int64(len(data)) > maxSize {
+		return nil, "", fmt.Errorf("image too large (max 10MB, got %d bytes)", len(data))
+	}
+
+	return data, mimeType, nil
+}
+
+func truncateStr(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
 }

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	neturl "net/url"
 	"strings"
 
@@ -32,6 +33,13 @@ func (s *crawlService) StartURLResearch(ctx context.Context, req *domain.StartUR
 	}
 
 	strategy := normalizeStrategy(req.Strategy)
+
+	// Auto-detect image URLs when strategy is "auto" or explicitly "image"
+	if strategy == domain.CrawlStrategyAuto && isImageURL(normalizedURL) {
+		strategy = domain.CrawlStrategyImage
+		log.Printf("[CrawlService] Auto-detected image URL: %s → strategy: image", normalizedURL)
+	}
+
 	maxPages := req.MaxPages
 	if maxPages <= 0 {
 		maxPages = 1
@@ -46,6 +54,7 @@ func (s *crawlService) StartURLResearch(ctx context.Context, req *domain.StartUR
 		UserID:        req.UserID,
 		BriefID:       req.BriefID,
 		SourceURL:     strings.TrimSpace(req.URL),
+		SourceImageURL: strings.TrimSpace(req.ImageURL),
 		NormalizedURL: normalizedURL,
 		Status:        domain.CrawlJobStatusPending,
 		Strategy:      strategy,
@@ -53,6 +62,7 @@ func (s *crawlService) StartURLResearch(ctx context.Context, req *domain.StartUR
 			"max_pages":    maxPages,
 			"use_stealth":  req.UseStealth,
 			"proxy_region": req.ProxyRegion,
+			"image_url":    req.ImageURL,
 		},
 	}
 
@@ -60,30 +70,54 @@ func (s *crawlService) StartURLResearch(ctx context.Context, req *domain.StartUR
 		return nil, err
 	}
 
-	payload := &task.CrawlSourceURLPayload{
-		JobID:       job.ID,
-		URL:         normalizedURL,
-		Strategy:    strategy,
-		MaxPages:    maxPages,
-		UseStealth:  req.UseStealth,
-		ProxyRegion: req.ProxyRegion,
-	}
+	// Route to appropriate task based on strategy
+	queueName := "default"
+	if strategy == domain.CrawlStrategyImage {
+		// ─── Image Analysis Pipeline (Local Ollama LLaVA) ───
+		imagePayload := &task.AnalyzeImageURLPayload{
+			JobID:    job.ID,
+			ImageURL: normalizedURL,
+			TeamID:   req.TeamID,
+		}
 
-	opts := []asynq.Option{
-		asynq.Queue("default"),
-		asynq.MaxRetry(3),
-	}
+		opts := []asynq.Option{
+			asynq.Queue("default"),
+			asynq.MaxRetry(2),
+		}
 
-	if err := s.distributor.DistributeTaskCrawlSourceURL(ctx, payload, opts...); err != nil {
-		_ = s.repo.MarkJobFailed(ctx, job.ID, fmt.Sprintf("failed to enqueue crawl task: %v", err))
-		return nil, err
+		log.Printf("[CrawlService] Dispatching image analysis task for job %s", job.ID)
+		if err := s.distributor.DistributeTaskAnalyzeImageURL(ctx, imagePayload, opts...); err != nil {
+			_ = s.repo.MarkJobFailed(ctx, job.ID, fmt.Sprintf("failed to enqueue image analysis task: %v", err))
+			return nil, err
+		}
+	} else {
+		// ─── Standard Crawl Pipeline (Playwright + External LLM) ───
+		crawlPayload := &task.CrawlSourceURLPayload{
+			JobID:       job.ID,
+			URL:         normalizedURL,
+			ImageURL:    job.SourceImageURL,
+			Strategy:    strategy,
+			MaxPages:    maxPages,
+			UseStealth:  req.UseStealth,
+			ProxyRegion: req.ProxyRegion,
+		}
+
+		opts := []asynq.Option{
+			asynq.Queue("default"),
+			asynq.MaxRetry(3),
+		}
+
+		if err := s.distributor.DistributeTaskCrawlSourceURL(ctx, crawlPayload, opts...); err != nil {
+			_ = s.repo.MarkJobFailed(ctx, job.ID, fmt.Sprintf("failed to enqueue crawl task: %v", err))
+			return nil, err
+		}
 	}
 
 	return &domain.StartURLResearchResponse{
 		JobID:    job.ID,
 		Status:   job.Status,
 		Strategy: strategy,
-		Queue:    "default",
+		Queue:    queueName,
 	}, nil
 }
 
@@ -134,7 +168,37 @@ func normalizeStrategy(strategy string) string {
 		return domain.CrawlStrategyBrowser
 	case domain.CrawlStrategyBrowserless:
 		return domain.CrawlStrategyBrowserless
+	case domain.CrawlStrategyImage:
+		return domain.CrawlStrategyImage
 	default:
 		return domain.CrawlStrategyAuto
 	}
 }
+
+// isImageURL checks if a URL points to an image based on file extension.
+// This covers the most common image formats used in marketing and web content.
+func isImageURL(rawURL string) bool {
+	lower := strings.ToLower(rawURL)
+
+	// Remove query string and fragment for extension check
+	if idx := strings.Index(lower, "?"); idx != -1 {
+		lower = lower[:idx]
+	}
+	if idx := strings.Index(lower, "#"); idx != -1 {
+		lower = lower[:idx]
+	}
+
+	imageExtensions := []string{
+		".jpg", ".jpeg", ".png", ".gif", ".webp",
+		".bmp", ".svg", ".tiff", ".tif", ".avif",
+	}
+
+	for _, ext := range imageExtensions {
+		if strings.HasSuffix(lower, ext) {
+			return true
+		}
+	}
+
+	return false
+}
+

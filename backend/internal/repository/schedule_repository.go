@@ -162,6 +162,20 @@ func (r *scheduleRepository) GetSocialAccountByPlatform(ctx context.Context, tea
 	return &account, nil
 }
 
+func (r *scheduleRepository) ListSocialAccountsByTeam(ctx context.Context, teamID uuid.UUID) ([]domain.SocialAccount, error) {
+	var accounts []domain.SocialAccount
+	err := r.db.WithContext(ctx).Where("team_id = ?", teamID).Find(&accounts).Error
+	return accounts, err
+}
+
+func (r *scheduleRepository) UpsertSocialAccount(ctx context.Context, account *domain.SocialAccount) error {
+	return r.db.WithContext(ctx).Save(account).Error
+}
+
+func (r *scheduleRepository) DeleteSocialAccount(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&domain.SocialAccount{}, "id = ?", id).Error
+}
+
 // EnsureSocialAccount finds or creates a placeholder social account for a givem team+platform.
 // In production, this would require real OAuth tokens. For now, creates a placeholder to unblock scheduling.
 func (r *scheduleRepository) EnsureSocialAccount(ctx context.Context, teamID uuid.UUID, platform string) (*domain.SocialAccount, error) {

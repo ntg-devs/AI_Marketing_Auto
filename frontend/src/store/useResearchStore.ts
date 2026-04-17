@@ -96,6 +96,8 @@ export const useResearchStore = create<ResearchState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         activeJobId: state.activeJobId,
+        generatedContent: state.generatedContent,
+        masterOutline: state.masterOutline,
       }),
     },
   ),

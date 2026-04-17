@@ -161,4 +161,23 @@ export const schedulerApi = {
     const response = await apiClient.post<{ published_count: number }>('/api/v1/schedules/publish-due');
     return response as unknown as { published_count: number };
   },
+
+  /**
+   * Social Account Management
+   */
+  async listSocialAccounts(teamId: string): Promise<SocialAccountAPI[]> {
+    const response = await apiClient.get<SocialAccountAPI[]>('/api/v1/social-accounts', {
+      params: { team_id: teamId },
+    });
+    return response as unknown as SocialAccountAPI[];
+  },
+
+  async saveSocialAccount(data: any): Promise<SocialAccountAPI> {
+    const response = await apiClient.post<SocialAccountAPI>('/api/v1/social-accounts', data);
+    return response as unknown as SocialAccountAPI;
+  },
+
+  async deleteSocialAccount(id: string): Promise<void> {
+    await apiClient.delete(`/api/v1/social-accounts/${id}`);
+  },
 };

@@ -35,6 +35,9 @@ func (h *contentHandler) GenerateContent(w http.ResponseWriter, r *http.Request)
 		BrandPersona           string `json:"brand_persona"`
 		BrandGuidelines        string `json:"brand_guidelines"`
 		Outline                string `json:"outline"`
+		ImageURL               string `json:"image_url"`
+		ImageEmotion           string `json:"image_emotion"`
+		ImageContext            string `json:"image_context"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -98,8 +101,8 @@ func (h *contentHandler) GenerateContent(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	log.Printf("[Content Handler] Generating %s content using %s/%s for team %s",
-		req.Platform, config.ProviderName, config.ModelName, req.TeamID)
+	log.Printf("[Content Handler] Generating %s content using %s/%s for team %s (image: %v)",
+		req.Platform, config.ProviderName, config.ModelName, req.TeamID, req.ImageURL != "")
 
 	// Create LLM client and generate content
 	aiClient := llm.NewClientWithConfig(config.APIKey, config.BaseURL, config.ModelName, config.ProviderName)
@@ -115,6 +118,9 @@ func (h *contentHandler) GenerateContent(w http.ResponseWriter, r *http.Request)
 		BrandPersona:           req.BrandPersona,
 		BrandGuidelines:        req.BrandGuidelines,
 		Outline:                req.Outline,
+		ImageURL:               req.ImageURL,
+		ImageEmotion:           req.ImageEmotion,
+		ImageContext:            req.ImageContext,
 	}
 
 	result, err := aiClient.GenerateMarketingContent(r.Context(), knowledgeText, brief)
@@ -128,6 +134,71 @@ func (h *contentHandler) GenerateContent(w http.ResponseWriter, r *http.Request)
 		len(result.ContentHTML), result.TokenUsage.Total)
 
 	response.JSON(w, http.StatusOK, result, "Content generated successfully")
+}
+
+// AutoSuggest uses local Ollama Qwen 2.5:3b to analyze crawled data and return smart suggestions.
+// Step 2: AI-Powered Auto-Configuration — bridge between crawl results and content brief.
+func (h *contentHandler) AutoSuggest(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		KnowledgeText     string `json:"knowledge_text"`
+		KnowledgeSourceID string `json:"knowledge_source_id"`
+		Language          string `json:"language"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Load knowledge text from DB if needed
+	knowledgeText := req.KnowledgeText
+	if knowledgeText == "" && req.KnowledgeSourceID != "" {
+		ksID, err := uuid.Parse(req.KnowledgeSourceID)
+		if err == nil {
+			ks, err := h.crawlRepo.GetKnowledgeSourceByID(r.Context(), ksID)
+			if err == nil && ks != nil {
+				knowledgeText = ks.ContentText
+			}
+		}
+	}
+	if knowledgeText == "" {
+		response.Error(w, http.StatusBadRequest, "no knowledge content available for analysis")
+		return
+	}
+
+	if req.Language == "" {
+		req.Language = "vi"
+	}
+
+	// Truncate for local model performance
+	if len(knowledgeText) > 4000 {
+		knowledgeText = knowledgeText[:4000]
+	}
+
+	log.Printf("[Content Handler] Running Auto-Suggest analysis via Qwen 2.5:3b (%d chars input)", len(knowledgeText))
+
+	// Use local Ollama Qwen for auto-suggest (free, fast, no API key needed)
+	qwenClient := llm.NewOllamaTextClient("", "")
+	suggestions, err := qwenClient.AutoSuggestFromContent(r.Context(), knowledgeText, req.Language)
+	if err != nil {
+		log.Printf("[Content Handler] ⚠️ Auto-suggest failed: %v", err)
+		// Return default suggestions instead of error (graceful degradation)
+		response.JSON(w, http.StatusOK, map[string]interface{}{
+			"tone":                 "professional",
+			"target_audience":      "",
+			"framework_suggestion": "standard",
+			"key_insights":         []string{},
+			"content_type":         "article",
+			"ai_suggested":         false,
+			"error":                err.Error(),
+		}, "Auto-suggest fallback (Qwen unavailable)")
+		return
+	}
+
+	log.Printf("[Content Handler] ✅ Auto-suggest completed: tone=%s, framework=%s, %d insights",
+		suggestions.Tone, suggestions.Framework, len(suggestions.KeyInsights))
+
+	response.JSON(w, http.StatusOK, suggestions, "Auto-suggest completed")
 }
 
 // GenerateOutline handles Step 3+4: Context Injection → Master Outline

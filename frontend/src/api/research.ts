@@ -42,6 +42,9 @@ export interface GenerateContentRequest {
   brand_persona?: string;
   brand_guidelines?: string;
   outline?: string;
+  image_url?: string;
+  image_emotion?: string;
+  image_context?: string;
 }
 
 export interface GenerateContentResponse {
@@ -80,6 +83,22 @@ export interface GenerateOutlineResponse {
   };
 }
 
+export interface AutoSuggestRequest {
+  knowledge_text?: string;
+  knowledge_source_id?: string;
+  language?: string;
+}
+
+export interface AutoSuggestResponse {
+  tone: string;
+  target_audience: string;
+  framework_suggestion: string;
+  key_insights: string[];
+  content_type: string;
+  ai_suggested: boolean;
+  error?: string;
+}
+
 export const researchApi = {
   async startURLResearch(data: StartResearchRequest): Promise<StartResearchResponse> {
     const response = await apiClient.post<StartResearchResponse>('/api/v1/research/url', data);
@@ -102,14 +121,19 @@ export const researchApi = {
     await apiClient.delete(`/api/v1/research/jobs/${jobId}`);
   },
 
-  async generateContent(data: GenerateContentRequest): Promise<GenerateContentResponse> {
-    const response = await apiClient.post<GenerateContentResponse>('/api/v1/content/generate', data);
+  async generateContent(data: GenerateContentRequest, signal?: AbortSignal): Promise<GenerateContentResponse> {
+    const response = await apiClient.post<GenerateContentResponse>('/api/v1/content/generate', data, { signal });
     return response as unknown as GenerateContentResponse;
   },
 
-  async generateOutline(data: GenerateOutlineRequest): Promise<GenerateOutlineResponse> {
-    const response = await apiClient.post<GenerateOutlineResponse>('/api/v1/content/outline', data);
+  async generateOutline(data: GenerateOutlineRequest, signal?: AbortSignal): Promise<GenerateOutlineResponse> {
+    const response = await apiClient.post<GenerateOutlineResponse>('/api/v1/content/outline', data, { signal });
     return response as unknown as GenerateOutlineResponse;
+  },
+
+  async autoSuggest(data: AutoSuggestRequest): Promise<AutoSuggestResponse> {
+    const response = await apiClient.post<AutoSuggestResponse>('/api/v1/content/auto-suggest', data);
+    return response as unknown as AutoSuggestResponse;
   },
 
   /**

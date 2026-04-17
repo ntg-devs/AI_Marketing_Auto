@@ -22,6 +22,11 @@ type TaskDistributor interface {
 		payload *CrawlSourceURLPayload,
 		opts ...asynq.Option,
 	) error
+	DistributeTaskAnalyzeImageURL(
+		ctx context.Context,
+		payload *AnalyzeImageURLPayload,
+		opts ...asynq.Option,
+	) error
 }
 
 type RedisTaskDistributor struct {
@@ -79,3 +84,19 @@ func (d *RedisTaskDistributor) DistributeTaskCrawlSourceURL(
 	_, err = d.client.EnqueueContext(ctx, task)
 	return err
 }
+
+func (d *RedisTaskDistributor) DistributeTaskAnalyzeImageURL(
+	ctx context.Context,
+	payload *AnalyzeImageURLPayload,
+	opts ...asynq.Option,
+) error {
+	jsonPayload, err := MarshalPayload(payload)
+	if err != nil {
+		return err
+	}
+
+	task := asynq.NewTask(TypeAnalyzeImageURL, jsonPayload, opts...)
+	_, err = d.client.EnqueueContext(ctx, task)
+	return err
+}
+
