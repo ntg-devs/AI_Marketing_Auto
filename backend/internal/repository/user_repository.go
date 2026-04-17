@@ -85,3 +85,24 @@ func (r *userRepository) GetTeamsByUserID(ctx context.Context, userID uuid.UUID)
 		Find(&teams).Error
 	return teams, err
 }
+
+func (r *userRepository) UpdateTeam(ctx context.Context, team *domain.Team) error {
+	return r.db.WithContext(ctx).Save(team).Error
+}
+
+func (r *userRepository) GetTeamByID(ctx context.Context, id uuid.UUID) (*domain.Team, error) {
+	var team domain.Team
+	if err := r.db.WithContext(ctx).First(&team, id).Error; err != nil {
+		return nil, err
+	}
+	return &team, nil
+}
+
+func (r *userRepository) GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]domain.User, error) {
+	var users []domain.User
+	err := r.db.WithContext(ctx).
+		Joins("JOIN team_members ON team_members.user_id = users.id").
+		Where("team_members.team_id = ?", teamID).
+		Find(&users).Error
+	return users, err
+}

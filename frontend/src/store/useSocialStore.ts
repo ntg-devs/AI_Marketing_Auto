@@ -1,12 +1,21 @@
 import { create } from 'zustand';
 import { schedulerApi, SocialAccountAPI } from '@/api/scheduler';
 
+interface SaveAccountData {
+  team_id: string;
+  user_id?: string;
+  platform: string;
+  profile_name: string;
+  access_token: string;
+  page_id?: string;
+}
+
 interface SocialState {
   accounts: SocialAccountAPI[];
   isLoading: boolean;
   
   fetchAccounts: (teamId: string) => Promise<void>;
-  saveAccount: (data: Partial<SocialAccountAPI>) => Promise<void>;
+  saveAccount: (data: SaveAccountData) => Promise<void>;
   deleteAccount: (id: string, teamId: string) => Promise<void>;
 }
 

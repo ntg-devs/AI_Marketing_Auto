@@ -2,6 +2,7 @@ package service
 
 import (
 	"bityagi/internal/domain"
+	"bityagi/pkg/publisher"
 	"context"
 	"fmt"
 	"log"
@@ -189,7 +190,8 @@ func (s *scheduleService) DeleteSchedule(ctx context.Context, id uuid.UUID) erro
 	return s.repo.DeleteSchedule(ctx, id)
 }
 
-// PublishDueSchedules finds all schedules that are past their scheduled_at and marks them as processing.
+// PublishDueSchedules finds all schedules past their scheduled_at and publishes them
+// to the respective social platforms using real API calls.
 func (s *scheduleService) PublishDueSchedules(ctx context.Context) (int, error) {
 	due, err := s.repo.GetDueSchedules(ctx, time.Now())
 	if err != nil {
@@ -198,7 +200,7 @@ func (s *scheduleService) PublishDueSchedules(ctx context.Context) (int, error) 
 
 	published := 0
 	for _, schedule := range due {
-		// Mark as processing first
+		// 1. Mark as processing
 		err := s.repo.UpdateSchedule(ctx, schedule.ID, map[string]interface{}{
 			"status": domain.ScheduleStatusProcessing,
 		})
@@ -207,20 +209,87 @@ func (s *scheduleService) PublishDueSchedules(ctx context.Context) (int, error) 
 			continue
 		}
 
-		// TODO: Actually publish to the social platform via their API
-		// For now, simulate successful publish
-		err = s.repo.MarkSchedulePublished(ctx, schedule.ID, "sim_"+schedule.ID.String()[:8], "")
+		// 2. Load the SocialAccount to get credentials
+		account := schedule.SocialAccount
+		if account == nil {
+			account, err = s.repo.GetSocialAccountByID(ctx, schedule.SocialAccountID)
+			if err != nil {
+				errMsg := fmt.Sprintf("Social account not found: %v", err)
+				log.Printf("[Schedule Service] ⚠️ %s (schedule: %s)", errMsg, schedule.ID)
+				_ = s.repo.MarkScheduleFailed(ctx, schedule.ID, errMsg)
+				continue
+			}
+		}
+
+		// 3. Load post content
+		post := schedule.Post
+		if post == nil {
+			post, err = s.repo.GetPostByID(ctx, schedule.PostID)
+			if err != nil {
+				errMsg := fmt.Sprintf("Post not found: %v", err)
+				_ = s.repo.MarkScheduleFailed(ctx, schedule.ID, errMsg)
+				continue
+			}
+		}
+
+		// 4. Get the platform publisher
+		pub, err := publisher.GetPublisher(account.Platform)
 		if err != nil {
-			log.Printf("[Schedule Service] ⚠️ Failed to mark schedule %s as published: %v", schedule.ID, err)
-			_ = s.repo.MarkScheduleFailed(ctx, schedule.ID, err.Error())
+			errMsg := fmt.Sprintf("Unsupported platform '%s': %v", account.Platform, err)
+			_ = s.repo.MarkScheduleFailed(ctx, schedule.ID, errMsg)
 			continue
 		}
 
-		// Update post status too
+		// 5. Execute the publish
+		log.Printf("[Schedule Service] 📤 Publishing schedule %s to %s (post: %s)...",
+			schedule.ID, account.Platform, post.Title)
+
+		result, err := pub.Publish(publisher.PublishOptions{
+			AccessToken: account.AccessToken,
+			PageID:      account.PageID,
+			Title:       post.Title,
+			ContentHTML: post.ContentHTML,
+			ImageURL:    post.FeaturedImageURL,
+		})
+
+		if err != nil {
+			errMsg := fmt.Sprintf("[%s] %v", account.Platform, err)
+			log.Printf("[Schedule Service] ❌ Publish failed for schedule %s: %v", schedule.ID, err)
+			_ = s.repo.MarkScheduleFailed(ctx, schedule.ID, errMsg)
+
+			// Create failure notification
+			teamID := post.TeamID
+			_ = s.notifRepo.Create(ctx, &domain.Notification{
+				TeamID:  teamID,
+				Type:    "error",
+				Title:   "Đăng bài thất bại",
+				Message: fmt.Sprintf("Bài viết '%s' không thể đăng lên %s: %s", post.Title, titleCase(account.Platform), err.Error()),
+			})
+			continue
+		}
+
+		// 6. Mark as published with external references
+		err = s.repo.MarkSchedulePublished(ctx, schedule.ID, result.ExternalPostID, result.ExternalPostURL)
+		if err != nil {
+			log.Printf("[Schedule Service] ⚠️ Published but failed to update DB for schedule %s: %v", schedule.ID, err)
+			continue
+		}
+
+		// 7. Update post status
 		_ = s.repo.UpdatePostStatus(ctx, schedule.PostID, domain.PostStatusPublished)
 
+		// 8. Create success notification
+		teamID := post.TeamID
+		_ = s.notifRepo.Create(ctx, &domain.Notification{
+			TeamID:  teamID,
+			Type:    "success",
+			Title:   "Đăng bài thành công",
+			Message: fmt.Sprintf("Bài viết '%s' đã được đăng lên %s thành công!", post.Title, titleCase(account.Platform)),
+		})
+
 		published++
-		log.Printf("[Schedule Service] ✅ Published schedule %s (post: %s)", schedule.ID, schedule.PostID)
+		log.Printf("[Schedule Service] ✅ Published schedule %s → %s (external: %s)",
+			schedule.ID, account.Platform, result.ExternalPostID)
 	}
 
 	return published, nil

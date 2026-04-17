@@ -468,17 +468,12 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
                   Giờ
                 </label>
               </div>
-              <select
+              <input
+                type="time"
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
-                className="w-full bg-surface-2 border border-default rounded-md px-2.5 py-1.5 text-[11px] text-heading outline-none focus:border-strong transition-all [color-scheme:dark]"
-              >
-                {timeOptions.map((t) => (
-                  <option key={t} value={t} className="bg-surface-2 text-heading">
-                    {t}
-                  </option>
-                ))}
-              </select>
+                className="w-full bg-surface-2 border border-default rounded-md px-2.5 py-1 text-[11px] text-heading outline-none focus:border-strong transition-all [color-scheme:dark]"
+              />
             </div>
           </div>
         </>
@@ -515,7 +510,6 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
                 const cfg = platformConfig[p];
                 const hasContent = !!generatedContent[p];
                 const isEnabled = perPlatformEnabled[p];
-                const pAiSlot = getAiSlot(p, selectedDate);
 
                 return (
                   <div
@@ -572,35 +566,16 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
                       </Badge>
                     )}
 
-                    {/* Time picker (Premium Dropdown) */}
-                    <div className="ml-auto shrink-0">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            disabled={!isEnabled}
-                            className="h-6 w-20 px-1.5 py-0.5 text-[10px] bg-surface-2 border-default hover:bg-surface-active font-normal flex justify-between items-center [color-scheme:dark]"
-                          >
-                            {perPlatformTimes[p]}
-                            <Clock className="w-2 h-2 opacity-50 ml-1" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-24 max-h-48 overflow-y-auto bg-surface-2 border-default">
-                          {timeOptions.map((t) => (
-                            <DropdownMenuItem
-                              key={t}
-                              onClick={() => setPerPlatformTimes(prev => ({ ...prev, [p]: t }))}
-                              className={`text-[10px] flex justify-between items-center ${perPlatformTimes[p] === t ? 'bg-primary/10 text-primary font-medium' : ''}`}
-                            >
-                              {t}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    {/* Time picker */}
+                    <div className="ml-auto shrink-0 w-28">
+                      <input
+                        type="time"
+                        value={perPlatformTimes[p]}
+                        disabled={!isEnabled}
+                        onChange={(e) => setPerPlatformTimes(prev => ({ ...prev, [p]: e.target.value }))}
+                        className="w-full h-7 bg-surface-2 border border-default rounded-md px-1.5 py-0.5 text-[10px] text-heading outline-none focus:border-primary/40 disabled:opacity-30 transition-all [color-scheme:dark]"
+                      />
                     </div>
-
-
                   </div>
                 );
               })}
@@ -672,15 +647,13 @@ function JobCard({ job }: { job: ScheduleJob }) {
 
   const [editDate, setEditDate] = useState<Date>(scheduledDate);
   const [editTime, setEditTime] = useState(() => {
-    const t = format(scheduledDate, "HH:mm");
-    return timeOptions.includes(t) ? t : "09:00";
+    return format(scheduledDate, "HH:mm");
   });
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setEditDate(new Date(job.scheduled_at));
-    const t = format(new Date(job.scheduled_at), "HH:mm");
-    if (timeOptions.includes(t)) setEditTime(t);
+    setEditTime(format(new Date(job.scheduled_at), "HH:mm"));
   }, [job.scheduled_at]);
 
   const handleSaveTime = async (e: React.MouseEvent) => {
@@ -833,7 +806,7 @@ function JobCard({ job }: { job: ScheduleJob }) {
         <div className="mt-2 pt-2 border-t border-default flex flex-col gap-2 cursor-default" onClick={(e) => e.stopPropagation()}>
           {job.status === "scheduled" ? (
             <>
-              <div className="flex gap-2">
+              <div className="flex gap-2 text-heading">
                 <Popover>
                   <PopoverTrigger asChild>
                     <button className="flex-1 text-left bg-surface-hover border border-default rounded px-2 py-1.5 text-[10px] text-heading outline-none focus:border-strong transition-all">
@@ -848,17 +821,12 @@ function JobCard({ job }: { job: ScheduleJob }) {
                     />
                   </PopoverContent>
                 </Popover>
-                <select 
-                  value={editTime} 
-                  onChange={e => setEditTime(e.target.value)} 
-                  className="w-20 bg-surface-2 border border-default rounded px-2 py-1.5 text-[10px] text-heading outline-none focus:border-strong transition-all [color-scheme:dark]"
-                >
-                  {timeOptions.map(t => (
-                    <option key={t} value={t} className="bg-surface-2 text-heading">
-                      {t}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  type="time"
+                  value={editTime}
+                  onChange={e => setEditTime(e.target.value)}
+                  className="w-28 bg-surface-2 border border-default rounded px-2 py-1 text-[10px] text-heading outline-none focus:border-strong transition-all [color-scheme:dark]"
+                />
               </div>
               <div className="flex gap-1.5 justify-end mt-1">
                 <Button size="sm" variant="ghost" className="h-6 px-2.5 text-[9px] text-dim hover:text-heading" onClick={(e) => { e.stopPropagation(); setSelectedJobId(null); }}>
@@ -951,6 +919,7 @@ export default function SmartSchedulerModule() {
         failed: 2,
         published: 3,
         cancelled: 4,
+        status: 5,
       };
       const oa = order[a.status] ?? 5;
       const ob = order[b.status] ?? 5;
@@ -960,7 +929,7 @@ export default function SmartSchedulerModule() {
       );
     });
     return result;
-  }, [jobs, filterPlatform]);
+  }, [jobs, filterPlatform, filterDate]);
 
   // Get jobs count for a specific date
   const getJobsCountForDate = useCallback(
@@ -982,7 +951,6 @@ export default function SmartSchedulerModule() {
 
   // Pending count for publish-all button
   const pendingCount = useMemo(() => {
-    const now = new Date();
     return jobs.filter(
       (j) => j.status === "scheduled" && isPast(new Date(j.scheduled_at)),
     ).length;
@@ -1004,7 +972,7 @@ export default function SmartSchedulerModule() {
 
           {/* Stats Pills */}
           {jobs.length > 0 && (
-            <div className="flex gap-1.5 mt-2">
+            <div className="flex gap-1.5">
               <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary">
                 <Timer className="w-2.5 h-2.5" />
                 <span className="text-[8px] font-medium tabular-nums">
@@ -1025,9 +993,6 @@ export default function SmartSchedulerModule() {
                   </span>
                 </div>
               )}
-              <div className="ml-auto flex items-center gap-1 text-[8px] text-dim">
-                Tổng: {stats.total}
-              </div>
             </div>
           )}
         </div>
@@ -1148,7 +1113,11 @@ export default function SmartSchedulerModule() {
             <div className="w-px h-4 bg-default/50 mx-0.5" />
             {(Object.keys(platformConfig) as SchedulePlatform[]).map((p) => {
               const cfg = platformConfig[p];
-              const count = jobs.filter((j) => j.platform === p).length;
+              const count = jobs.filter((j) => {
+                const samePlatform = j.platform === p;
+                if (!filterDate) return samePlatform;
+                return samePlatform && format(new Date(j.scheduled_at), 'yyyy-MM-dd') === filterDate;
+              }).length;
               const isActive = filterPlatform === p;
               return (
                 <button
@@ -1178,9 +1147,16 @@ export default function SmartSchedulerModule() {
 
           {/* ═══ Job Queue ═══ */}
           <div>
-            <h4 className="text-[10px] font-medium text-dim uppercase tracking-wider mb-2 px-0.5 flex items-center gap-1.5">
-              <ListChecks className="w-3 h-3" />
-              Hàng đợi ({filteredJobs.length})
+            <h4 className="text-[10px] font-medium text-dim uppercase tracking-wider mb-2 px-0.5 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <ListChecks className="w-3 h-3" />
+                Hàng đợi ({filteredJobs.length})
+              </div>
+              {filterDate && (
+                <Badge variant="outline" className="text-[8px] bg-primary/10 text-primary border-primary/20 animate-in fade-in slide-in-from-right-1 duration-300">
+                  {format(new Date(filterDate), 'dd/MM')}
+                </Badge>
+              )}
             </h4>
 
             {filteredJobs.length === 0 ? (
@@ -1209,7 +1185,7 @@ export default function SmartSchedulerModule() {
                 try {
                   const count = await publishAllDue();
                   gooeyToast.success(
-                    `✅ Đã xử lý ${count} bài đăng thành công!`,
+                    `Đã xử lý ${count} bài đăng thành công!`,
                   );
                 } catch {
                   gooeyToast.error("Đăng bài thất bại, vui lòng thử lại");

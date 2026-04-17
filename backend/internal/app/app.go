@@ -31,7 +31,7 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 	notificationRepo := repository.NewNotificationRepository(db)
 
 	// 2. Service
-	userService := service.NewUserService(userRepo, jwtSecret, distributor)
+	userService := service.NewUserService(userRepo, db, jwtSecret, distributor)
 	crawlService := service.NewCrawlService(crawlRepo, distributor)
 	scheduleService := service.NewScheduleService(scheduleRepo, notificationRepo)
 
@@ -63,37 +63,49 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 		r.Post("/auth/login", userHandler.Login)
 		r.Post("/auth/verify-otp", userHandler.VerifyOTP)
 		r.Post("/auth/google", userHandler.GoogleLogin)
-		r.Post("/research/url", crawlHandler.SubmitURL)
-		r.Get("/research/jobs", crawlHandler.ListJobs)
-		r.Get("/research/jobs/{jobID}", crawlHandler.GetJob)
-		r.Delete("/research/jobs/{jobID}", crawlHandler.DeleteJob)
-		
-		r.Post("/teams/{teamID}/ai-providers", aiProviderHandler.SaveConfig)
-		r.Get("/teams/{teamID}/ai-providers", aiProviderHandler.GetConfigs)
+		// Protected Routes
+		r.Group(func(r chi.Router) {
+			r.Use(http.AuthMiddleware(jwtSecret, userRepo))
+			
+			// Profile & Account
+			r.Put("/users/profile", userHandler.UpdateProfile)
+			r.Get("/teams/members", userHandler.GetTeamMembers)
+			r.Get("/teams/workspace", userHandler.GetWorkspace)
+			r.Put("/teams/workspace", userHandler.UpdateWorkspace)
+			r.Get("/teams/health", userHandler.GetHealthStats)
 
-		r.Post("/content/generate", contentHandler.GenerateContent)
-		r.Post("/content/outline", contentHandler.GenerateOutline)
-		r.Post("/content/auto-suggest", contentHandler.AutoSuggest)
+			r.Post("/research/url", crawlHandler.SubmitURL)
+			r.Get("/research/jobs", crawlHandler.ListJobs)
+			r.Get("/research/jobs/{jobID}", crawlHandler.GetJob)
+			r.Delete("/research/jobs/{jobID}", crawlHandler.DeleteJob)
+			
+			r.Post("/teams/{teamID}/ai-providers", aiProviderHandler.SaveConfig)
+			r.Get("/teams/{teamID}/ai-providers", aiProviderHandler.GetConfigs)
 
-		// Schedule & Publishing
-		r.Post("/schedules", scheduleHandler.CreateSchedule)
-		r.Get("/schedules", scheduleHandler.ListSchedules)
-		r.Get("/schedules/{scheduleID}", scheduleHandler.GetSchedule)
-		r.Put("/schedules/{scheduleID}", scheduleHandler.UpdateSchedule)
-		r.Delete("/schedules/{scheduleID}", scheduleHandler.DeleteSchedule)
-		r.Post("/schedules/publish-due", scheduleHandler.PublishDue)
-		r.Get("/social-accounts", scheduleHandler.ListSocialAccounts)
-		r.Post("/social-accounts", scheduleHandler.SaveSocialAccount)
-		r.Delete("/social-accounts/{id}", scheduleHandler.DeleteSocialAccount)
+			r.Post("/content/generate", contentHandler.GenerateContent)
+			r.Post("/content/outline", contentHandler.GenerateOutline)
+			r.Post("/content/auto-suggest", contentHandler.AutoSuggest)
 
-		// User Preferences
-		r.Get("/users/{userID}/preferences", userPrefsHandler.GetPreferences)
-		r.Put("/users/{userID}/preferences", userPrefsHandler.SavePreferences)
+			// Schedule & Publishing
+			r.Post("/schedules", scheduleHandler.CreateSchedule)
+			r.Get("/schedules", scheduleHandler.ListSchedules)
+			r.Get("/schedules/{scheduleID}", scheduleHandler.GetSchedule)
+			r.Put("/schedules/{scheduleID}", scheduleHandler.UpdateSchedule)
+			r.Delete("/schedules/{scheduleID}", scheduleHandler.DeleteSchedule)
+			r.Post("/schedules/publish-due", scheduleHandler.PublishDue)
+			r.Get("/social-accounts", scheduleHandler.ListSocialAccounts)
+			r.Post("/social-accounts", scheduleHandler.SaveSocialAccount)
+			r.Delete("/social-accounts/{id}", scheduleHandler.DeleteSocialAccount)
 
-		// Notifications
-		r.Get("/notifications", notificationHandler.List)
-		r.Put("/notifications/{id}/read", notificationHandler.MarkRead)
-		r.Post("/notifications/mark-all-read", notificationHandler.MarkAllRead)
+			// User Preferences
+			r.Get("/users/{userID}/preferences", userPrefsHandler.GetPreferences)
+			r.Put("/users/{userID}/preferences", userPrefsHandler.SavePreferences)
+
+			// Notifications
+			r.Get("/notifications", notificationHandler.List)
+			r.Put("/notifications/{id}/read", notificationHandler.MarkRead)
+			r.Post("/notifications/mark-all-read", notificationHandler.MarkAllRead)
+		})
 	})
 
 	return &App{

@@ -33,7 +33,9 @@ import { useNotificationStore } from '@/store/useNotificationStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi, enUS } from 'date-fns/locale';
+import { Notification, HealthStats } from '@/api/notification';
+import { useTranslation } from '@/lib/i18n';
 
 /* ─── Types ────────────────────────────────────────────────────────── */
 
@@ -49,15 +51,6 @@ interface SystemService {
   lastCheck: string;
 }
 
-interface FeedbackTrigger {
-  id: string;
-  title: string;
-  description: string;
-  triggerDate: string;
-  daysRange: string;
-  status: 'ready' | 'pending' | 'completed';
-  improvement?: string;
-}
 
 /* ─── Mock Data ────────────────────────────────────────────────────── */
 const mockServices: SystemService[] = [
@@ -69,11 +62,6 @@ const mockServices: SystemService[] = [
   { id: '6', name: 'TikTok API', status: 'down', latency: '—', uptime: '95.20%', lastCheck: '2 min ago' },
 ];
 
-const mockFeedbackTriggers: FeedbackTrigger[] = [
-  { id: '1', title: 'Weekly Performance Report', description: 'AI Agent analyzed 7-day engagement across LinkedIn & Facebook', triggerDate: 'Apr 08, 2026', daysRange: '7 days', status: 'completed', improvement: '+12% CTR vs previous cycle' },
-  { id: '2', title: 'Bi-weekly Optimization', description: 'Full content strategy recalibration based on 14-day data', triggerDate: 'Apr 15, 2026', daysRange: '14 days', status: 'pending' },
-  { id: '3', title: 'Content A/B Test Results', description: 'Variant analysis for LinkedIn post formats — carousel vs article', triggerDate: 'Apr 10, 2026', daysRange: '7 days', status: 'ready', improvement: 'Carousel +34% engagement' },
-];
 
 /* ─── Config Maps ──────────────────────────────────────────────────── */
 
@@ -95,31 +83,31 @@ const healthConfig: Record<HealthStatus, { color: string; dotColor: string; labe
   down: { color: 'text-red-500', dotColor: 'bg-red-400', label: 'Down' },
 };
 
-const feedbackStatusConfig: Record<FeedbackTrigger['status'], { color: string; bgColor: string; label: string }> = {
-  completed: { color: 'text-emerald-500', bgColor: 'bg-emerald-500/10 border-emerald-500/15', label: 'Completed' },
-  pending: { color: 'text-gray-400', bgColor: 'bg-surface-hover border-default', label: 'Scheduled' },
-  ready: { color: 'text-primary', bgColor: 'bg-primary/10 border-primary/15', label: 'Ready' },
-};
 
 /* ─── Component ────────────────────────────────────────────────────── */
 
 export default function NotificationCenterPanel() {
-  const { notifications, isLoading, fetchNotifications, markRead, markAllRead } = useNotificationStore();
+  const { notifications, isLoading, healthStats, fetchNotifications, fetchHealthStats, markRead, markAllRead } = useNotificationStore();
   const user = useAuthStore((s) => s.user);
+  const { t, language } = useTranslation();
 
   useEffect(() => {
     if (user?.team_id) {
       fetchNotifications(user.team_id);
+      fetchHealthStats();
     }
-  }, [user?.team_id, fetchNotifications]);
+  }, [user?.team_id, fetchNotifications, fetchHealthStats]);
 
-  const unreadCount = notifications.filter((a) => a.status === 'unread').length;
+  const unreadCount = notifications.filter((a: any) => a.status === 'unread').length;
 
   const handleClearAll = () => {
     if (user?.team_id) {
       markAllRead(user.team_id);
     }
   };
+
+  const services = healthStats?.services || [];
+  const usage = healthStats?.usage || { total_tokens: 0, cost: 0 };
 
   return (
     <div className="flex flex-col h-full">
@@ -138,10 +126,10 @@ export default function NotificationCenterPanel() {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-heading tracking-tight">
-              Notification Center
+              {t('notifications.title')}
             </h2>
             <p className="text-[10px] text-dim mt-0.5">
-              Real-time Operations Status
+              {t('notifications.subtitle')}
             </p>
           </div>
         </div>
@@ -156,21 +144,14 @@ export default function NotificationCenterPanel() {
               className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-300 data-[state=active]:border-transparent text-dim"
             >
               <Activity className="w-3 h-3 mr-1" />
-              Jobs
+              {t('notifications.tabs.jobs')}
             </TabsTrigger>
             <TabsTrigger
               value="health"
               className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-300 data-[state=active]:border-transparent text-dim"
             >
               <Server className="w-3 h-3 mr-1" />
-              Health
-            </TabsTrigger>
-            <TabsTrigger
-              value="feedback"
-              className="flex-1 text-[10px] h-full rounded-md data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-300 data-[state=active]:border-transparent text-dim"
-            >
-              <RotateCcw className="w-3 h-3 mr-1" />
-              Feedback
+              {t('notifications.tabs.health')}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -181,7 +162,7 @@ export default function NotificationCenterPanel() {
             <div className="p-4 space-y-2">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[9px] text-dim">
-                  {notifications.length} notifications
+                  {notifications.length} {t('notifications.count')}
                 </span>
                 <Button
                   variant="ghost"
@@ -189,11 +170,11 @@ export default function NotificationCenterPanel() {
                   onClick={handleClearAll}
                   className="h-5 px-1.5 text-[9px] text-dim hover:text-body hover:bg-surface-hover"
                 >
-                  Mark all as read
+                  {t('notifications.mark_all')}
                 </Button>
               </div>
 
-              {notifications.map((notif) => {
+              {notifications.map((notif: Notification) => {
                 const typeConfig = jobTypeConfig[notif.type as JobAlertType] || jobTypeConfig.crawl;
                 const stConfig = jobStatusConfig[notif.status];
                 const TypeIcon = typeConfig.icon;
@@ -227,7 +208,10 @@ export default function NotificationCenterPanel() {
                         </p>
 
                         <span className="text-[8px] text-faint block mt-1.5">
-                          {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: vi })}
+                          {formatDistanceToNow(new Date(notif.created_at), { 
+                            addSuffix: true, 
+                            locale: language === 'vi' ? vi : enUS 
+                          })}
                         </span>
                       </div>
                     </div>
@@ -246,43 +230,46 @@ export default function NotificationCenterPanel() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
                     <Cpu className="w-3 h-3 text-primary" />
-                    <span className="text-[10px] font-medium text-body">System Overview</span>
+                    <span className="text-[10px] font-medium text-body">{t('notifications.health.usage_title')}</span>
                   </div>
-                  <Badge variant="outline" className="text-[8px] px-1.5 py-0 h-3.5 bg-amber-500/10 border-amber-500/20 text-amber-500">
-                    <AlertTriangle className="w-2 h-2 mr-0.5" />
-                    1 Issue
+                  <Badge variant="outline" className="text-[8px] px-1.5 py-0 h-3.5 bg-primary/10 border-primary/20 text-primary">
+                    <TrendingUp className="w-2 h-2 mr-0.5" />
+                    Real-time
                   </Badge>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['healthy', 'degraded', 'down'] as const).map((status) => {
-                    const count = mockServices.filter((s) => s.status === status).length;
-                    const cfg = healthConfig[status];
-                    return (
-                      <div key={status} className="text-center py-1.5 rounded-md bg-surface-hover">
-                        <span className={`text-sm font-semibold tabular-nums ${cfg.color}`}>{count}</span>
-                        <p className="text-[8px] text-dim mt-0.5">{cfg.label}</p>
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-center py-1.5 rounded-md bg-surface-hover border border-default">
+                    <span className="text-sm font-semibold tabular-nums text-heading">
+                      {(usage.total_tokens / 1000).toFixed(1)}k
+                    </span>
+                    <p className="text-[8px] text-dim mt-0.5">{t('notifications.health.tokens')}</p>
+                  </div>
+                  <div className="text-center py-1.5 rounded-md bg-surface-hover border border-default">
+                    <span className="text-sm font-semibold tabular-nums text-emerald-500">
+                      ${usage.cost.toFixed(4)}
+                    </span>
+                    <p className="text-[8px] text-dim mt-0.5">{t('notifications.health.cost')}</p>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                {mockServices.map((service) => {
-                  const cfg = healthConfig[service.status];
+                <h4 className="text-[9px] font-medium text-dim uppercase tracking-wider px-1">{t('notifications.health.service_status')}</h4>
+                {services.map((service: HealthStats['services'][0]) => {
+                  const cfg = healthConfig[service.status as HealthStatus];
                   return (
                     <div key={service.id} className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotColor} ${service.status === 'degraded' ? 'animate-pulse' : ''}`} />
-                          <span className="text-[11px] font-medium text-heading">{service.name}</span>
+                          <span className="text-[11px] font-medium text-heading truncate max-w-[140px] inline-block">{service.name}</span>
                         </div>
                         <Badge variant="outline" className={`text-[7px] px-1 py-0 h-3 border-default ${cfg.color}`}>{cfg.label}</Badge>
                       </div>
                       <div className="flex items-center gap-3 mt-1.5 text-[9px] text-faint">
-                        <span>Latency: <span className={service.latency === '—' ? 'text-red-500' : 'text-label'}>{service.latency}</span></span>
+                        <span>{t('notifications.health.latency')}: <span className={service.latency === '—' || service.latency === 'N/A' ? 'text-dim' : 'text-label'}>{service.latency}</span></span>
                         <span>•</span>
-                        <span>Uptime: <span className="text-label">{service.uptime}</span></span>
+                        <span>{t('notifications.health.uptime')}: <span className="text-label">{service.uptime}</span></span>
                         <span className="ml-auto">{service.lastCheck}</span>
                       </div>
                     </div>
@@ -293,58 +280,6 @@ export default function NotificationCenterPanel() {
           </ScrollArea>
         </TabsContent>
 
-        {/* ══════════ Tab 3: Feedback Loop Triggers ══════════ */}
-        <TabsContent value="feedback" className="flex-1 min-h-0">
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-3">
-              <div className="rounded-lg border border-primary/15 bg-primary/[0.04] p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-3 h-3 text-primary" />
-                  <span className="text-[10px] font-medium text-primary">AI Optimization Loop</span>
-                </div>
-                <p className="text-[9px] text-dim leading-relaxed">
-                  AI Agent automatically generates optimization reports every{' '}
-                  <span className="text-primary font-medium">7–14 days</span>,
-                  analyzing content performance and recommending strategy adjustments.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                {mockFeedbackTriggers.map((trigger) => {
-                  const stConfig = feedbackStatusConfig[trigger.status];
-                  return (
-                    <div key={trigger.id} className={`rounded-lg border p-3 transition-colors ${stConfig.bgColor}`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-[11px] font-medium text-heading">{trigger.title}</p>
-                        <Badge variant="outline" className={`text-[7px] px-1 py-0 h-3.5 border-default ${stConfig.color}`}>{stConfig.label}</Badge>
-                      </div>
-                      <p className="text-[9px] text-dim leading-relaxed">{trigger.description}</p>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-subtle">
-                        <div className="flex items-center gap-2 text-[9px] text-faint">
-                          <Clock className="w-2.5 h-2.5" />
-                          <span>{trigger.triggerDate}</span>
-                          <span>•</span>
-                          <span>{trigger.daysRange} cycle</span>
-                        </div>
-                        {trigger.status === 'ready' && (
-                          <Button size="sm" className="h-5 px-2 text-[9px] bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20">
-                            View Report
-                          </Button>
-                        )}
-                      </div>
-                      {trigger.improvement && (
-                        <div className="mt-2 flex items-center gap-1.5">
-                          <TrendingUp className="w-2.5 h-2.5 text-emerald-500" />
-                          <span className="text-[9px] text-emerald-500 font-medium">{trigger.improvement}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </ScrollArea>
-        </TabsContent>
       </Tabs>
     </div>
   );

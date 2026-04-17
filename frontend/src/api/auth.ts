@@ -65,4 +65,24 @@ export const authApi = {
     const response = await apiClient.get('/api/v1/auth/me');
     return response.data;
   },
+
+  async updateProfile(data: { full_name?: string; avatar_url?: string }) {
+    const response = await apiClient.put('/api/v1/users/profile', data);
+    return response.data;
+  },
+
+  async getTeamMembers(): Promise<any[]> {
+    const response = await apiClient.get('/api/v1/teams/members');
+    return (response as any).data;
+  },
+
+  async getWorkspace(): Promise<any> {
+    const response = await apiClient.get('/api/v1/teams/workspace');
+    return (response as any).data;
+  },
+
+  async updateWorkspace(data: { name?: string; brand_guidelines?: string; brand_persona?: string }) {
+    const response = await apiClient.put('/api/v1/teams/workspace', data);
+    return response.data;
+  },
 };

@@ -84,8 +84,11 @@ type UserRepository interface {
 
 	// Team operations
 	CreateTeam(ctx context.Context, team *Team) error
+	UpdateTeam(ctx context.Context, team *Team) error
+	GetTeamByID(ctx context.Context, id uuid.UUID) (*Team, error)
 	AddTeamMember(ctx context.Context, member *TeamMember) error
 	GetTeamsByUserID(ctx context.Context, userID uuid.UUID) ([]Team, error)
+	GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]User, error)
 }
 
 type UserService interface {
@@ -93,4 +96,36 @@ type UserService interface {
 	VerifyEmailOTP(ctx context.Context, req *VerifyOTPRequest) (*AuthResponse, error)
 	Login(ctx context.Context, req *LoginRequest) (*AuthResponse, error)
 	GoogleLogin(ctx context.Context, req *GoogleLoginRequest) (*AuthResponse, error)
+	
+	// Account & Workspace
+	UpdateProfile(ctx context.Context, userID uuid.UUID, updates map[string]interface{}) (*User, error)
+	GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]User, error)
+	GetWorkspace(ctx context.Context, teamID uuid.UUID) (*Team, error)
+	UpdateWorkspace(ctx context.Context, teamID uuid.UUID, updates map[string]interface{}) (*Team, error)
+	GetHealthStats(ctx context.Context, teamID uuid.UUID) (*TeamHealthStats, error)
+}
+
+type ServiceStatus string
+
+const (
+	StatusHealthy  ServiceStatus = "healthy"
+	StatusDegraded ServiceStatus = "degraded"
+	StatusDown     ServiceStatus = "down"
+)
+
+type ServiceHealth struct {
+	ID        string        `json:"id"`
+	Name      string        `json:"name"`
+	Status    ServiceStatus `json:"status"`
+	Latency   string        `json:"latency"`
+	Uptime    string        `json:"uptime"`
+	LastCheck string        `json:"lastCheck"`
+}
+
+type TeamHealthStats struct {
+	Services []ServiceHealth `json:"services"`
+	Usage    struct {
+		TotalTokens int     `json:"total_tokens"`
+		Cost        float64 `json:"cost"`
+	} `json:"usage"`
 }

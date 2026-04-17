@@ -30,6 +30,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useSocialStore } from '@/store/useSocialStore';
 import { gooeyToast } from 'goey-toast';
 import { useEffect } from 'react';
+import { useTranslation } from '@/lib/i18n';
 import {
   Dialog,
   DialogContent,
@@ -57,9 +58,10 @@ const mockBannedWords = ['free', 'guaranteed', 'spam', 'winner', 'crypto scam'];
 /* ─── Main Component ────────────────────────────────────────────── */
 
 export default function SystemSettingsPanel() {
-  const { theme, setTheme } = useUIStore();
+  const { theme, setTheme, language, setLanguage } = useUIStore();
   const { user } = useAuthStore();
   const { accounts, isLoading, fetchAccounts, saveAccount, deleteAccount } = useSocialStore();
+  const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<TabValue>('connections');
   const [bannedWords, setBannedWords] = useState(mockBannedWords);
@@ -84,9 +86,12 @@ export default function SystemSettingsPanel() {
     if (!user?.team_id) return;
     try {
       await saveAccount({
-        ...newConn,
         team_id: user.team_id,
         user_id: user.id,
+        platform: newConn.platform,
+        profile_name: newConn.profile_name,
+        access_token: newConn.access_token,
+        page_id: newConn.page_id,
       });
       gooeyToast.success(`Đã kết nối ${newConn.platform} thành công`);
       setIsDialogOpen(false);
@@ -121,8 +126,8 @@ export default function SystemSettingsPanel() {
             <Settings className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-heading tracking-tight">Cấu hình Hệ thống</h2>
-            <p className="text-[10px] text-dim mt-0.5">Quản lý Workspace & Brand Identity</p>
+            <h2 className="text-sm font-semibold text-heading tracking-tight">{t('settings.title')}</h2>
+            <p className="text-[10px] text-dim mt-0.5">{t('settings.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -131,13 +136,13 @@ export default function SystemSettingsPanel() {
         <div className="px-4 pt-4 shrink-0">
           <TabsList className="w-full bg-surface-hover/50 h-9 rounded-xl p-1 border border-default/50">
             <TabsTrigger value="connections" className="flex-1 text-[10px] rounded-lg">
-              <Link2 className="w-3 h-3 mr-1.5" /> Kết nối
+              <Link2 className="w-3 h-3 mr-1.5" /> {t('settings.tabs.connections')}
             </TabsTrigger>
             <TabsTrigger value="workspace" className="flex-1 text-[10px] rounded-lg">
-              <LayoutGrid className="w-3 h-3 mr-1.5" /> Workspace
+              <LayoutGrid className="w-3 h-3 mr-1.5" /> {t('settings.tabs.workspace')}
             </TabsTrigger>
             <TabsTrigger value="app" className="flex-1 text-[10px] rounded-lg">
-              <Zap className="w-3 h-3 mr-1.5" /> App
+              <Zap className="w-3 h-3 mr-1.5" /> {t('settings.tabs.app')}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -147,8 +152,9 @@ export default function SystemSettingsPanel() {
             
             {/* ══════════ TẬP 1: CONNECTIONS ══════════ */}
             <TabsContent value="connections" className="m-0 space-y-4">
+              {/* Header */}
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-dim uppercase tracking-wider">Social Integrations</span>
+                <span className="text-[10px] font-semibold text-dim uppercase tracking-wider">Kết nối Nền tảng</span>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -160,96 +166,172 @@ export default function SystemSettingsPanel() {
                 </Button>
               </div>
 
+              {/* How it works */}
+              <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-3 space-y-1.5">
+                <p className="text-[10px] font-medium text-primary flex items-center gap-1.5">
+                  <Zap className="w-3 h-3" /> Cách hoạt động
+                </p>
+                <p className="text-[9px] text-dim leading-relaxed">
+                  Kết nối Access Token của nền tảng để hệ thống tự động đăng bài theo lịch. 
+                  Mỗi nền tảng yêu cầu token và quyền truy cập khác nhau.
+                </p>
+              </div>
+
+              {/* Connected accounts */}
               <div className="grid gap-2.5">
                 {accounts.length === 0 && !isLoading && (
-                  <div className="text-center py-6 border border-dashed border-default rounded-xl">
-                    <p className="text-[10px] text-dim">Chưa có kết nối nào</p>
+                  <div className="text-center py-8 border border-dashed border-default rounded-xl bg-surface-hover/20">
+                    <Link2 className="w-8 h-8 text-faint mx-auto mb-2 opacity-40" />
+                    <p className="text-[11px] text-dim mb-1">Chưa có kết nối nào</p>
+                    <p className="text-[9px] text-faint">Thêm kết nối để bắt đầu tự động đăng bài</p>
                   </div>
                 )}
                 
-                {accounts.map((conn) => (
-                  <div key={conn.id} className="group relative rounded-xl border border-default bg-surface-hover/30 p-3 hover:bg-surface-hover transition-all">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{getPlatformIcon(conn.platform)}</span>
-                        <div>
-                          <p className="text-[11px] font-medium text-heading">
-                            {conn.platform.charAt(0).toUpperCase() + conn.platform.slice(1)}
-                          </p>
-                          <p className="text-[9px] text-dim">{conn.profile_name || 'Tài khoản ẩn danh'}</p>
+                {accounts.map((conn) => {
+                  const isPlaceholder = !conn.profile_name || conn.profile_name?.includes('placeholder');
+                  const platformLabel = conn.platform.charAt(0).toUpperCase() + conn.platform.slice(1);
+                  return (
+                    <div key={conn.id} className="group relative rounded-xl border border-default bg-surface-hover/30 p-3 hover:bg-surface-hover transition-all">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{getPlatformIcon(conn.platform)}</span>
+                          <div>
+                            <p className="text-[11px] font-medium text-heading">{platformLabel}</p>
+                            <p className="text-[9px] text-dim">{conn.profile_name || 'Chưa cấu hình'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isPlaceholder ? (
+                            <Badge variant="outline" className="text-[8px] h-4 px-1.5 bg-amber-500/10 text-amber-500 border-amber-500/20">
+                              Cần cấu hình
+                            </Badge>
+                          ) : conn.is_active ? (
+                            <Badge variant="outline" className="text-[8px] h-4 px-1.5 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                              <Check className="w-2 h-2 mr-0.5" /> Sẵn sàng
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[8px] h-4 px-1.5 bg-red-500/10 text-red-400 border-red-500/20">
+                              Token hết hạn
+                            </Badge>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="w-6 h-6 text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => user?.team_id && deleteAccount(conn.id, user.team_id)}
+                          >
+                            <Plus className="w-3 h-3 rotate-45" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`text-[8px] h-4 px-1.5 ${conn.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-gray-500/10 text-dim border-default'}`}>
-                          {conn.is_active ? 'Đã kết nối' : 'Lỗi'}
-                        </Badge>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="w-6 h-6 text-red-400 hover:bg-red-400/10"
-                          onClick={() => user?.team_id && deleteAccount(conn.id, user.team_id)}
-                        >
-                          <Plus className="w-3 h-3 rotate-45" />
-                        </Button>
-                      </div>
+                      {/* Token expiry info */}
+                      {conn.last_sync_at && (
+                        <p className="text-[8px] text-faint mt-1.5 ml-9">
+                          Đồng bộ lần cuối: {new Date(conn.last_sync_at).toLocaleDateString('vi-VN')}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
+                {/* Add Connection Dialog */}
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="w-full h-8 text-[10px] bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 border-dashed">
+                    <Button className="w-full h-9 text-[10px] bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 border-dashed">
                       <Plus className="w-3 h-3 mr-1.5" /> Thêm kết nối mới
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[400px] bg-surface-1 border-default">
+                  <DialogContent className="sm:max-w-[440px] bg-surface-1 border-default">
                     <DialogHeader>
                       <DialogTitle className="text-sm font-semibold text-heading">Kết nối Nền tảng</DialogTitle>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-3">
+                      {/* Platform selector */}
                       <div className="grid gap-2">
-                        <Label htmlFor="platform" className="text-[11px] text-dim">Nền tảng</Label>
+                        <Label className="text-[11px] text-dim">Nền tảng</Label>
                         <Select 
                           value={newConn.platform} 
-                          onValueChange={(v) => setNewConn(p => ({ ...p, platform: v }))}
+                          onValueChange={(v) => setNewConn(p => ({ ...p, platform: v, page_id: '' }))}
                         >
                           <SelectTrigger className="h-9 bg-surface-active border-default text-[11px]">
                             <SelectValue placeholder="Chọn nền tảng" />
                           </SelectTrigger>
                           <SelectContent className="bg-surface-active border-default">
-                            <SelectItem value="facebook">Facebook</SelectItem>
-                            <SelectItem value="linkedin">LinkedIn</SelectItem>
-                            <SelectItem value="blog">Blog / Webhook</SelectItem>
+                            <SelectItem value="facebook">🔵 Facebook Page</SelectItem>
+                            <SelectItem value="linkedin">🔷 LinkedIn</SelectItem>
+                            <SelectItem value="blog">📝 Blog / Webhook</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {/* Platform-specific setup guide */}
+                      <div className="rounded-lg border border-default bg-surface-hover/50 p-3 space-y-2">
+                        <p className="text-[9px] font-semibold text-primary uppercase tracking-wider">
+                          Hướng dẫn cấu hình {newConn.platform === 'facebook' ? 'Facebook' : newConn.platform === 'linkedin' ? 'LinkedIn' : 'Blog'}
+                        </p>
+                        {newConn.platform === 'facebook' && (
+                          <div className="text-[9px] text-dim space-y-1 leading-relaxed">
+                            <p>1. Truy cập <span className="text-primary font-medium">developers.facebook.com</span> → Tạo App</p>
+                            <p>2. Thêm quyền <code className="px-1 py-0.5 rounded bg-surface-active text-[8px] font-mono">pages_manage_posts</code></p>
+                            <p>3. Vào Graph API Explorer → Chọn Page → Tạo <span className="font-medium text-heading">Page Access Token</span></p>
+                            <p>4. Dán token dưới đây và nhập <span className="font-medium text-heading">Page ID</span> (số trong URL fanpage)</p>
+                          </div>
+                        )}
+                        {newConn.platform === 'linkedin' && (
+                          <div className="text-[9px] text-dim space-y-1 leading-relaxed">
+                            <p>1. Truy cập <span className="text-primary font-medium">linkedin.com/developers</span> → Tạo App</p>
+                            <p>2. Yêu cầu quyền <code className="px-1 py-0.5 rounded bg-surface-active text-[8px] font-mono">w_member_social</code></p>
+                            <p>3. Sử dụng OAuth 2.0 flow để lấy <span className="font-medium text-heading">Access Token</span></p>
+                            <p>4. Page ID = LinkedIn Member URN (VD: <code className="text-[8px] font-mono">urn:li:person:abc123</code>)</p>
+                          </div>
+                        )}
+                        {newConn.platform === 'blog' && (
+                          <div className="text-[9px] text-dim space-y-1 leading-relaxed">
+                            <p><span className="font-medium text-heading">WordPress:</span> Vào Settings → Application Passwords → Tạo mật khẩu</p>
+                            <p>→ Token = <code className="text-[8px] font-mono">base64(user:app_password)</code></p>
+                            <p>→ Page ID = URL site (VD: <code className="text-[8px] font-mono">https://blog.example.com</code>)</p>
+                            <p className="pt-1"><span className="font-medium text-heading">Webhook:</span> Dán URL webhook và secret token</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Profile name */}
                       <div className="grid gap-2">
-                        <Label htmlFor="name" className="text-[11px] text-dim">Tên hiển thị</Label>
+                        <Label className="text-[11px] text-dim">Tên hiển thị</Label>
                         <Input 
-                          id="name" 
-                          placeholder="VD: Fanpage Bityagi" 
+                          placeholder={newConn.platform === 'facebook' ? 'VD: Fanpage ABC' : newConn.platform === 'linkedin' ? 'VD: Nguyễn Văn A' : 'VD: Tech Blog'} 
                           className="h-9 bg-surface-active border-default text-[11px]"
                           value={newConn.profile_name}
                           onChange={(e) => setNewConn(p => ({ ...p, profile_name: e.target.value }))}
                         />
                       </div>
+
+                      {/* Access Token */}
                       <div className="grid gap-2">
-                        <Label htmlFor="token" className="text-[11px] text-dim">Access Token</Label>
+                        <Label className="text-[11px] text-dim">
+                          {newConn.platform === 'facebook' ? 'Page Access Token' : newConn.platform === 'linkedin' ? 'OAuth Access Token' : 'Token / Secret'}
+                        </Label>
                         <Input 
-                          id="token" 
                           type="password"
                           placeholder="Dán token tại đây..." 
-                          className="h-9 bg-surface-active border-default text-[11px]"
+                          className="h-9 bg-surface-active border-default text-[11px] font-mono"
                           value={newConn.access_token}
                           onChange={(e) => setNewConn(p => ({ ...p, access_token: e.target.value }))}
                         />
                       </div>
+
+                      {/* Page ID / Endpoint */}
                       <div className="grid gap-2">
-                        <Label htmlFor="page_id" className="text-[11px] text-dim">Page ID / External ID (Tùy chọn)</Label>
+                        <Label className="text-[11px] text-dim">
+                          {newConn.platform === 'facebook' ? 'Page ID (Bắt buộc)' : newConn.platform === 'linkedin' ? 'Member/Org URN' : 'WordPress URL / Webhook URL'}
+                        </Label>
                         <Input 
-                          id="page_id" 
-                          placeholder="ID của trang hoặc ứng dụng" 
-                          className="h-9 bg-surface-active border-default text-[11px]"
+                          placeholder={
+                            newConn.platform === 'facebook' ? 'VD: 123456789012345' 
+                            : newConn.platform === 'linkedin' ? 'VD: urn:li:person:abc123' 
+                            : 'VD: https://blog.example.com'
+                          }
+                          className="h-9 bg-surface-active border-default text-[11px] font-mono"
                           value={newConn.page_id}
                           onChange={(e) => setNewConn(p => ({ ...p, page_id: e.target.value }))}
                         />
@@ -259,9 +341,9 @@ export default function SystemSettingsPanel() {
                       <Button 
                         onClick={handleSaveConnection}
                         className="w-full bg-primary text-primary-foreground h-9 text-[11px]"
-                        disabled={!newConn.access_token}
+                        disabled={!newConn.access_token || !newConn.profile_name}
                       >
-                        Xác nhận Kết nối
+                        <Check className="w-3 h-3 mr-1.5" /> Xác nhận Kết nối
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -325,8 +407,8 @@ export default function SystemSettingsPanel() {
                       {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                     </div>
                     <div>
-                      <p className="text-[11px] font-medium text-heading">Chế độ giao diện</p>
-                      <p className="text-[9px] text-dim">Sử dụng tối hoặc sáng</p>
+                      <p className="text-[11px] font-medium text-heading">{t('settings.app.theme')}</p>
+                      <p className="text-[9px] text-dim">{t('settings.app.theme_desc')}</p>
                     </div>
                   </div>
                   <Switch 
@@ -344,11 +426,22 @@ export default function SystemSettingsPanel() {
                       <Languages className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-medium text-heading">Ngôn ngữ hệ thống</p>
-                      <p className="text-[9px] text-dim">Tiếng Việt mặc định</p>
+                      <p className="text-[11px] font-medium text-heading">{t('settings.app.language')}</p>
+                      <p className="text-[9px] text-dim">{language === 'vi' ? 'Tiếng Việt' : 'English'}</p>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-dim" />
+                  <Select 
+                    value={language} 
+                    onValueChange={(v) => setLanguage(v as 'vi' | 'en')}
+                  >
+                    <SelectTrigger className="w-[100px] h-7 bg-surface-active border-default text-[10px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-active border-default">
+                      <SelectItem value="vi">Tiếng Việt</SelectItem>
+                      <SelectItem value="en">English (US)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Separator className="bg-default/50" />
@@ -359,8 +452,8 @@ export default function SystemSettingsPanel() {
                       <BellRing className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-medium text-heading">Thông báo đẩy</p>
-                      <p className="text-[9px] text-dim">Cập nhật tiến trình đăng bài</p>
+                      <p className="text-[11px] font-medium text-heading">{t('settings.app.notifications')}</p>
+                      <p className="text-[9px] text-dim">{t('settings.app.notifications_desc')}</p>
                     </div>
                   </div>
                   <Switch defaultChecked className="scale-90" />
@@ -378,7 +471,7 @@ export default function SystemSettingsPanel() {
         {/* Footer Actions */}
         <div className="p-4 border-t border-default bg-surface-hover/30 shrink-0">
           <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-[10px] h-9 shadow-lg shadow-primary/20">
-            <Save className="w-3.5 h-3.5 mr-2" /> Lưu tất cả thay đổi
+            <Save className="w-3.5 h-3.5 mr-2" /> {t('settings.save_all')}
           </Button>
         </div>
       </Tabs>
