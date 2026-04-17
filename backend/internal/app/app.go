@@ -28,11 +28,12 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 	aiProviderRepo := repository.NewAIProviderRepository(db)
 	scheduleRepo := repository.NewScheduleRepository(db)
 	userPrefsRepo := repository.NewUserPreferencesRepository(db)
+	notificationRepo := repository.NewNotificationRepository(db)
 
 	// 2. Service
 	userService := service.NewUserService(userRepo, jwtSecret, distributor)
 	crawlService := service.NewCrawlService(crawlRepo, distributor)
-	scheduleService := service.NewScheduleService(scheduleRepo)
+	scheduleService := service.NewScheduleService(scheduleRepo, notificationRepo)
 
 	// 3. Handlers
 	userHandler := http.NewUserHandler(userService)
@@ -41,6 +42,7 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 	contentHandler := http.NewContentHandler(aiProviderRepo, crawlRepo)
 	scheduleHandler := http.NewScheduleHandler(scheduleService)
 	userPrefsHandler := http.NewUserPreferencesHandler(userPrefsRepo)
+	notificationHandler := http.NewNotificationHandler(notificationRepo)
 
 	// 4. Router Setup
 	r := chi.NewRouter()
@@ -71,6 +73,7 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 
 		r.Post("/content/generate", contentHandler.GenerateContent)
 		r.Post("/content/outline", contentHandler.GenerateOutline)
+		r.Post("/content/auto-suggest", contentHandler.AutoSuggest)
 
 		// Schedule & Publishing
 		r.Post("/schedules", scheduleHandler.CreateSchedule)
@@ -79,10 +82,18 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 		r.Put("/schedules/{scheduleID}", scheduleHandler.UpdateSchedule)
 		r.Delete("/schedules/{scheduleID}", scheduleHandler.DeleteSchedule)
 		r.Post("/schedules/publish-due", scheduleHandler.PublishDue)
+		r.Get("/social-accounts", scheduleHandler.ListSocialAccounts)
+		r.Post("/social-accounts", scheduleHandler.SaveSocialAccount)
+		r.Delete("/social-accounts/{id}", scheduleHandler.DeleteSocialAccount)
 
 		// User Preferences
 		r.Get("/users/{userID}/preferences", userPrefsHandler.GetPreferences)
 		r.Put("/users/{userID}/preferences", userPrefsHandler.SavePreferences)
+
+		// Notifications
+		r.Get("/notifications", notificationHandler.List)
+		r.Put("/notifications/{id}/read", notificationHandler.MarkRead)
+		r.Post("/notifications/mark-all-read", notificationHandler.MarkAllRead)
 	})
 
 	return &App{

@@ -42,8 +42,8 @@ type Post struct {
 	SEOScore           map[string]interface{} `json:"seo_score,omitempty" gorm:"type:jsonb;serializer:json"`
 	FeaturedImageURL   string                 `json:"featured_image_url,omitempty"`
 	PublishedAt        *time.Time             `json:"published_at,omitempty"`
-	AIModelUsed        string                 `json:"ai_model_used,omitempty"`
-	LastAIProcessedAt  *time.Time             `json:"last_ai_processed_at,omitempty"`
+	AIModelUsed        string                 `json:"ai_model_used,omitempty" gorm:"column:ai_model_used"`
+	LastAIProcessedAt  *time.Time             `json:"last_ai_processed_at,omitempty" gorm:"column:last_ai_processed_at"`
 	CreatedAt          time.Time              `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt          time.Time              `json:"updated_at" gorm:"autoUpdateTime"`
 }
@@ -147,6 +147,9 @@ type ScheduleRepository interface {
 	// Social Accounts
 	GetSocialAccountByID(ctx context.Context, id uuid.UUID) (*SocialAccount, error)
 	GetSocialAccountByPlatform(ctx context.Context, teamID uuid.UUID, platform string) (*SocialAccount, error)
+	ListSocialAccountsByTeam(ctx context.Context, teamID uuid.UUID) ([]SocialAccount, error)
+	UpsertSocialAccount(ctx context.Context, account *SocialAccount) error
+	DeleteSocialAccount(ctx context.Context, id uuid.UUID) error
 	EnsureSocialAccount(ctx context.Context, teamID uuid.UUID, platform string) (*SocialAccount, error)
 }
 
@@ -159,4 +162,9 @@ type ScheduleService interface {
 	UpdateSchedule(ctx context.Context, id uuid.UUID, req *UpdateScheduleRequest) error
 	DeleteSchedule(ctx context.Context, id uuid.UUID) error
 	PublishDueSchedules(ctx context.Context) (int, error)
+
+	// Social Account Management
+	ListSocialAccounts(ctx context.Context, teamID uuid.UUID) ([]SocialAccount, error)
+	SaveSocialAccount(ctx context.Context, account *SocialAccount) error
+	DeleteSocialAccount(ctx context.Context, id uuid.UUID) error
 }

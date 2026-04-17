@@ -2,7 +2,7 @@ package main
 
 import (
 	"bityagi/internal/app"
-	// "bityagi/internal/domain"
+	"bityagi/internal/domain"
 	"log"
 	"net/http"
 	"os"
@@ -30,12 +30,10 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	// Database connection initialized successfully
-	// GORM AutoMigrate will safely create new tables AND add missing columns to existing tables
-	// db.AutoMigrate(
-	// 	&domain.UserPreferences{},
-	// 	&domain.Team{}, // This will automatically add brand_persona to the existing teams table
-	// )
+	// 3. Database Migration
+	db.AutoMigrate(
+		&domain.Notification{},
+	)
 	// 3. Environment Configs
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {

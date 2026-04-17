@@ -17,6 +17,7 @@ const (
 	CrawlStrategyHTTP        = "http"
 	CrawlStrategyBrowser     = "browser"
 	CrawlStrategyBrowserless = "browserless"
+	CrawlStrategyImage       = "image"
 )
 
 type CrawlJob struct {
@@ -30,6 +31,7 @@ type CrawlJob struct {
 	FinalURL          string                 `json:"final_url,omitempty"`
 	Status            string                 `json:"status" gorm:"type:varchar(20);not null;default:'pending';index"`
 	Strategy          string                 `json:"strategy" gorm:"type:varchar(20);not null;default:'auto'"`
+	SourceImageURL    string                 `json:"source_image_url,omitempty" gorm:"type:text"`
 	Provider          string                 `json:"provider,omitempty" gorm:"type:varchar(50)"`
 	HTTPStatus        int                    `json:"http_status,omitempty"`
 	PagesCrawled      int                    `json:"pages_crawled"`
@@ -80,6 +82,7 @@ type StartURLResearchRequest struct {
 	UserID      *uuid.UUID `json:"user_id,omitempty"`
 	BriefID     *uuid.UUID `json:"brief_id,omitempty"`
 	URL         string     `json:"url"`
+	ImageURL    string     `json:"image_url,omitempty"`
 	Strategy    string     `json:"strategy,omitempty"`
 	MaxPages    int        `json:"max_pages,omitempty"`
 	UseStealth  bool       `json:"use_stealth,omitempty"`
@@ -134,6 +137,19 @@ type CrawlPageResult struct {
 	ExtractedText string                 `json:"extracted_text"`
 	MarkdownText  string                 `json:"markdown_text"`
 	Metadata      map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ImageAnalysisResult holds structured output from LLaVA vision model analysis.
+type ImageAnalysisResult struct {
+	Description string   `json:"description"`  // Chi tiết mô tả nội dung hình ảnh
+	Theme       string   `json:"theme"`        // Chủ đề chính
+	Objects     []string `json:"objects"`      // Các đối tượng trong ảnh
+	Emotions    []string `json:"emotions"`     // Cảm xúc, tông cảm xúc
+	Colors      []string `json:"colors"`       // Bảng màu chủ đạo
+	Purpose     string   `json:"purpose"`      // Mục đích sử dụng ảnh
+	Message     string   `json:"message"`      // Thông điệp truyền tải
+	Composition string   `json:"composition"` // Bố cục, góc chụp
+	ImageURL    string   `json:"image_url"`    // URL gốc của ảnh
 }
 
 type CrawlRepository interface {

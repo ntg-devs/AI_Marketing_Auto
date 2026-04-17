@@ -128,7 +128,7 @@ const platformConfigs: Record<
         </g>
       </svg>
     ),
-    color: "text-blue-400",
+    color: "text-blue-600 dark:text-blue-400",
     placeholder: "Write your Facebook post content...",
     defaultContent: `
       <h2>🚀 AI-Powered Content Automation</h2>
@@ -162,7 +162,7 @@ const platformConfigs: Record<
         </g>
       </svg>
     ),
-    color: "text-sky-400",
+    color: "text-sky-600 dark:text-sky-400",
     placeholder: "Write your LinkedIn article...",
     defaultContent: `
       <h1>The Future of Marketing Automation in 2026</h1>
@@ -187,8 +187,27 @@ const platformConfigs: Record<
   },
   blog: {
     title: "Blog Post",
-    icon: FileText,
-    color: "text-emerald-400",
+    icon: (props: any) => (
+      <svg
+        viewBox="0 0 511.999 511.999"
+        width={20}
+        {...props}
+      >
+        <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+        <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
+        <g id="SVGRepo_iconCarrier">
+          <path className="fill-emerald-600 dark:fill-[#A5EB78]" d="M490.459,139.522c-13.413-24.343-32.425-46.06-56.507-64.546 c-47.877-36.752-111.076-56.993-177.951-56.993c-66.876,0-130.073,20.241-177.952,56.993 c-24.082,18.486-43.094,40.203-56.507,64.546C7.248,165.464,0,193.131,0,221.756s7.248,56.293,21.541,82.234 c12.356,22.425,29.475,42.614,50.92,60.109L60.577,477.06c-1.238,11.769,10.762,20.443,21.549,15.576l150.582-67.943l0,0 c7.701,0.548,15.47,0.836,23.291,0.836c66.875,0,130.073-20.241,177.951-56.993c24.082-18.486,43.094-40.203,56.507-64.546 c14.294-25.942,21.541-53.609,21.541-82.234S504.753,165.464,490.459,139.522z"></path>
+          <path className="fill-white/80 dark:fill-[#FFFFFF]" d="M395.901,318.968C358.877,347.389,309.193,363.04,256,363.04s-102.879-15.652-139.902-44.072 c-34.57-26.538-53.609-61.061-53.609-97.211s19.04-70.674,53.61-97.211c37.024-28.421,86.708-44.072,139.902-44.072 c53.192,0,102.877,15.652,139.901,44.072c34.571,26.537,53.61,61.061,53.61,97.211S430.472,292.43,395.901,318.968z"></path>
+          <path className="fill-emerald-800/10 dark:opacity-10 dark:fill-white" d="M85.211,244.48c0-36.15,19.04-70.674,53.61-97.211 c37.024-28.421,86.708-44.072,139.902-44.072c53.192,0,102.877,15.652,139.901,44.072c1.478,1.134,2.915,2.288,4.337,3.451 c-7.529-9.339-16.575-18.126-27.06-26.174c-37.024-28.421-86.708-44.072-139.901-44.072s-102.879,15.652-139.902,44.072 c-34.571,26.537-53.61,61.06-53.61,97.211c0,34.606,17.457,67.715,49.274,93.761C94.464,294.06,85.211,269.666,85.211,244.48z"></path>
+          <g>
+            <path className="fill-emerald-800 dark:fill-[#515262]" d="M256,286.413c-16.154,0-31.402-5.514-40.79-14.747c-3.355-3.301-3.4-8.695-0.1-12.05 c3.301-3.357,8.697-3.398,12.049-0.1c6.181,6.08,17.232,9.855,28.841,9.855c11.671,0,22.751-3.806,28.917-9.931 c3.338-3.316,8.735-3.299,12.05,0.039c3.318,3.338,3.299,8.735-0.039,12.05C287.548,280.848,272.247,286.413,256,286.413z"></path>
+            <circle className="fill-emerald-800 dark:fill-[#515262]" cx="212.665" cy="195.782" r="16.284"></circle>
+            <circle className="fill-emerald-800 dark:fill-[#515262]" cx="299.444" cy="195.782" r="16.284"></circle>
+          </g>
+        </g>
+      </svg>
+    ),
+    color: "text-emerald-600 dark:text-emerald-400",
     placeholder: "Write your blog post...",
     defaultContent: `
       <h1>The Complete Guide to AI-Powered Content Automation</h1>
@@ -252,6 +271,11 @@ function ScheduleActionBar({ selectedPlatform, editorContent, platformConfigs: c
     linkedin: '09:00',
     blog: '10:00',
   });
+  const [perPlatformDates, setPerPlatformDates] = useState<Record<Platform, Date>>({
+    facebook: new Date(),
+    linkedin: new Date(),
+    blog: new Date(),
+  });
 
   // Get platforms that have content
   const platformsWithContent = useMemo(() => {
@@ -285,18 +309,25 @@ function ScheduleActionBar({ selectedPlatform, editorContent, platformConfigs: c
       return;
     }
 
+    const actualTeamId = user?.team_id || activeJob?.job?.team_id;
+    const actualUserId = user?.id;
+    if (!actualTeamId || !actualUserId) {
+      gooeyToast.error('Bạn cần đăng nhập và chọn Workspace để lên lịch');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const cfg = configs[selectedPlatform];
       await createSchedule({
-        teamId: user?.team_id || activeJob?.job?.team_id || '123e4567-e89b-12d3-a456-426614174000',
-        userId: user?.id || '123e4567-e89b-12d3-a456-426614174000',
+        teamId: actualTeamId,
+        userId: actualUserId,
         platform: selectedPlatform,
         title: `${cfg.title}: ${new Date().toLocaleDateString('vi-VN')}`,
         contentHtml: content,
         scheduledAt: scheduledAt.toISOString(),
       });
-      gooeyToast.success(`✅ Đã lên lịch ${cfg.title} lúc ${format(scheduledAt, 'HH:mm dd/MM', { locale: vi })}`);
+      gooeyToast.success(`Đã lên lịch ${cfg.title} lúc ${format(scheduledAt, 'HH:mm dd/MM', { locale: vi })}`);
       setShowScheduler(false);
     } catch (error: any) {
       gooeyToast.error(error?.message || 'Lên lịch thất bại');
@@ -311,13 +342,20 @@ function ScheduleActionBar({ selectedPlatform, editorContent, platformConfigs: c
       return;
     }
 
+    const actualTeamId = user?.team_id || activeJob?.job?.team_id;
+    const actualUserId = user?.id;
+    if (!actualTeamId || !actualUserId) {
+      gooeyToast.error('Bạn cần đăng nhập và chọn Workspace để lên lịch');
+      return;
+    }
+
     setIsSubmitting(true);
     let successCount = 0;
 
     try {
       for (const platform of platformsWithContent) {
         const content = editorContent[platform];
-        const scheduledAt = new Date(selectedDate);
+        const scheduledAt = new Date(perPlatformDates[platform] || new Date());
         const [h, m] = perPlatformTimes[platform].split(':').map(Number);
         scheduledAt.setHours(h, m, 0, 0);
 
@@ -326,8 +364,8 @@ function ScheduleActionBar({ selectedPlatform, editorContent, platformConfigs: c
         try {
           const cfg = configs[platform];
           await createSchedule({
-            teamId: user?.team_id || activeJob?.job?.team_id || '00000000-0000-0000-0000-000000000000',
-            userId: user?.id || '00000000-0000-0000-0000-000000000000',
+            teamId: actualTeamId,
+            userId: actualUserId,
             platform,
             title: `${cfg.title}: ${new Date().toLocaleDateString('vi-VN')}`,
             contentHtml: content,
@@ -340,7 +378,7 @@ function ScheduleActionBar({ selectedPlatform, editorContent, platformConfigs: c
       }
 
       if (successCount > 0) {
-        gooeyToast.success(`✅ Đã lên lịch ${successCount}/${platformsWithContent.length} nền tảng`);
+        gooeyToast.success(`Đã lên lịch ${successCount}/${platformsWithContent.length} nền tảng`);
         setShowScheduler(false);
       } else {
         gooeyToast.error('Không thể lên lịch cho bất kỳ nền tảng nào');
@@ -467,51 +505,47 @@ function ScheduleActionBar({ selectedPlatform, editorContent, platformConfigs: c
           ) : (
             /* All Platforms Schedule */
             <div className="space-y-2">
-              {/* Date picker (shared) */}
-              <div className="flex items-center gap-2">
-                <label className="text-[9px] text-dim w-12 shrink-0">Chọn ngày:</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="text-left bg-surface-hover border border-default rounded px-2 py-1 text-[10px] text-body hover:border-strong transition-colors">
-                      {format(selectedDate, 'dd/MM/yyyy (EEE)', { locale: vi })}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-surface-1 border-default" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(d) => d && setSelectedDate(d)}
-                      disabled={(date) => isBefore(date, new Date())}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Per-platform time */}
-              <div className="space-y-1">
+              {/* Per-platform configurations */}
+              <div className="space-y-1.5">
                 {platformsWithContent.map((p) => {
                   const cfg = configs[p];
-                  const dayOfWeek = selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1;
-                  const platformAiSlot = optimalSlots
-                    .filter((s) => s.platform === p && s.day_of_week === dayOfWeek)
-                    .sort((a, b) => b.score - a.score)[0];
 
                   return (
-                    <div key={p} className="flex items-center gap-2 py-1 px-2 rounded bg-surface-hover/50">
+                    <div key={p} className="flex items-center gap-2 py-1.5 px-2 rounded bg-surface-hover/50">
                       <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-                      <span className={`text-[10px] font-medium w-20 shrink-0 ${cfg.color}`}>
+                      <span className={`text-[10px] font-medium w-[80px] shrink-0 ${cfg.color} truncate`}>
                         {cfg.title}
                       </span>
-                      <select
-                        value={perPlatformTimes[p]}
-                        onChange={(e) => setPerPlatformTimes((prev) => ({ ...prev, [p]: e.target.value }))}
-                        className="flex-1 bg-surface-2 border border-default rounded px-1.5 py-0.5 text-[10px] text-body outline-none [color-scheme:dark]"
-                      >
-                        {timeOptions.map((t) => (
-                          <option key={t} value={t} className="bg-surface-2">{t}</option>
-                        ))}
-                      </select>
+                      
+                      <div className="flex-1 flex gap-1.5 min-w-0">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="flex-1 min-w-0 text-left bg-surface-2 border border-default rounded px-2 py-1 text-[10px] text-body hover:border-strong transition-colors truncate">
+                              {format(perPlatformDates[p] || new Date(), 'dd/MM (EEE)', { locale: vi })}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 bg-surface-1 border-default" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={perPlatformDates[p] || new Date()}
+                              onSelect={(d) => {
+                                if (d) setPerPlatformDates((prev) => ({ ...prev, [p]: d }));
+                              }}
+                              disabled={(date) => isBefore(date, new Date())}
+                            />
+                          </PopoverContent>
+                        </Popover>
 
+                        <select
+                          value={perPlatformTimes[p]}
+                          onChange={(e) => setPerPlatformTimes((prev) => ({ ...prev, [p]: e.target.value }))}
+                          className="w-16 shrink-0 bg-surface-2 border border-default rounded px-1.5 py-1 text-[10px] text-body outline-none [color-scheme:dark]"
+                        >
+                          {timeOptions.map((t) => (
+                            <option key={t} value={t} className="bg-surface-2">{t}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   );
                 })}
@@ -1072,6 +1106,23 @@ export default function MultiFormatEditorModule() {
                           </p>
                         </div>
                       </div>
+
+                      {/* Featured Media (from Research Image) */}
+                      {activeJob?.job?.source_image_url && (
+                        <div className="px-4 pt-1 pb-3">
+                           <div className="rounded-lg overflow-hidden border border-default aspect-video bg-surface-hover shadow-sm">
+                              <img 
+                                src={activeJob.job.source_image_url} 
+                                alt="Reference asset" 
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                           </div>
+                           <p className="mt-1.5 text-[9px] text-primary/60 italic font-medium">
+                              ✨ Featured asset from combined research
+                           </p>
+                        </div>
+                      )}
 
                       {/* Content Preview - Rendered HTML */}
                       <div

@@ -37,11 +37,13 @@ interface SchedulerState {
   currentWeekOffset: number;
   isLoadingJobs: boolean;
   filterPlatform: SchedulePlatform | 'all';
+  filterDate: string | null; // YYYY-MM-DD format for filtering
 
   // Actions — Local state
   setSelectedJobId: (id: string | null) => void;
   setCurrentWeekOffset: (offset: number) => void;
   setFilterPlatform: (platform: SchedulePlatform | 'all') => void;
+  setFilterDate: (date: string | null) => void;
 
   // Actions — API-backed CRUD
   fetchSchedules: (teamId: string) => Promise<void>;
@@ -73,10 +75,12 @@ export const useSchedulerStore = create<SchedulerState>()(
       currentWeekOffset: 0,
       isLoadingJobs: false,
       filterPlatform: 'all',
+      filterDate: null,
 
       setSelectedJobId: (id) => set({ selectedJobId: id }),
       setCurrentWeekOffset: (offset) => set({ currentWeekOffset: offset }),
       setFilterPlatform: (platform) => set({ filterPlatform: platform }),
+      setFilterDate: (date) => set({ filterDate: date }),
 
       // ─── Fetch all schedules from backend ────────────────
       fetchSchedules: async (teamId: string) => {
@@ -243,6 +247,7 @@ export const useSchedulerStore = create<SchedulerState>()(
         // Only persist UI preferences, not data (that comes from API)
         currentWeekOffset: state.currentWeekOffset,
         filterPlatform: state.filterPlatform,
+        filterDate: state.filterDate,
       }),
     }
   )

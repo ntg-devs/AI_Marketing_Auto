@@ -107,6 +107,40 @@ const timeOptions = [
   "22:00",
 ];
 
+const FacebookIcon = (props: any) => (
+  <svg viewBox="0 0 16 16" fill="none" {...props}>
+    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+    <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
+    <g id="SVGRepo_iconCarrier">
+      <path fill="#1877F2" d="M15 8a7 7 0 00-7-7 7 7 0 00-1.094 13.915v-4.892H5.13V8h1.777V6.458c0-1.754 1.045-2.724 2.644-2.724.766 0 1.567.137 1.567.137v1.723h-.883c-.87 0-1.14.54-1.14 1.093V8h1.941l-.31 2.023H9.094v4.892A7.001 7.001 0 0015 8z"></path>
+      <path fill="#ffffff" d="M10.725 10.023L11.035 8H9.094V6.687c0-.553.27-1.093 1.14-1.093h.883V3.87s-.801-.137-1.567-.137c-1.6 0-2.644.97-2.644 2.724V8H5.13v2.023h1.777v4.892a7.037 7.037 0 002.188 0v-4.892h1.63z"></path>
+    </g>
+  </svg>
+);
+
+const LinkedInIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9H12.76v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  </svg>
+);
+
+const BlogIcon = (props: any) => (
+  <svg viewBox="0 0 511.999 511.999" {...props}>
+    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+    <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
+    <g id="SVGRepo_iconCarrier">
+      <path className="fill-emerald-600 dark:fill-[#A5EB78]" d="M490.459,139.522c-13.413-24.343-32.425-46.06-56.507-64.546 c-47.877-36.752-111.076-56.993-177.951-56.993c-66.876,0-130.073,20.241-177.952,56.993 c-24.082,18.486-43.094,40.203-56.507,64.546C7.248,165.464,0,193.131,0,221.756s7.248,56.293,21.541,82.234 c12.356,22.425,29.475,42.614,50.92,60.109L60.577,477.06c-1.238,11.769,10.762,20.443,21.549,15.576l150.582-67.943l0,0 c7.701,0.548,15.47,0.836,23.291,0.836c66.875,0,130.073-20.241,177.951-56.993c24.082-18.486,43.094-40.203,56.507-64.546 c14.294-25.942,21.541-53.609,21.541-82.234S504.753,165.464,490.459,139.522z"></path>
+      <path className="fill-white/80 dark:fill-[#FFFFFF]" d="M395.901,318.968C358.877,347.389,309.193,363.04,256,363.04s-102.879-15.652-139.902-44.072 c-34.57-26.538-53.609-61.061-53.609-97.211s19.04-70.674,53.61-97.211c37.024-28.421,86.708-44.072,139.902-44.072 c53.192,0,102.877,15.652,139.901,44.072c34.571,26.537,53.61,61.061,53.61,97.211S430.472,292.43,395.901,318.968z"></path>
+      <path className="fill-emerald-800/10 dark:opacity-10 dark:fill-white" d="M85.211,244.48c0-36.15,19.04-70.674,53.61-97.211 c37.024-28.421,86.708-44.072,139.902-44.072c53.192,0,102.877,15.652,139.901,44.072c1.478,1.134,2.288,4.337,3.451 c-7.529-9.339-16.575-18.126-27.06-26.174c-37.024-28.421-86.708-44.072-139.901-44.072s-102.879,15.652-139.902,44.072 c-34.571,26.537-53.61,61.06-53.61,97.211c0,34.606,17.457,67.715,49.274,93.761C94.464,294.06,85.211,269.666,85.211,244.48z"></path>
+      <g>
+        <path className="fill-emerald-800 dark:fill-[#515262]" d="M256,286.413c-16.154,0-31.402-5.514-40.79-14.747c-3.355-3.301-3.4-8.695-0.1-12.05 c3.301-3.357,8.697-3.398,12.049-0.1c6.181,6.08,17.232,9.855,28.841,9.855c11.671,0,22.751-3.806,28.917-9.931 c3.338-3.316,8.735-3.299,12.05,0.039c3.318,3.338,3.299,8.735-0.039,12.05C287.548,280.848,272.247,286.413,256,286.413z"></path>
+        <circle className="fill-emerald-800 dark:fill-[#515262]" cx="212.665" cy="195.782" r="16.284"></circle>
+        <circle className="fill-emerald-800 dark:fill-[#515262]" cx="299.444" cy="195.782" r="16.284"></circle>
+      </g>
+    </g>
+  </svg>
+);
+
 const platformConfig: Record<
   SchedulePlatform,
   {
@@ -114,29 +148,29 @@ const platformConfig: Record<
     color: string;
     bgColor: string;
     borderColor: string;
-    icon: string;
+    icon: any;
   }
 > = {
   linkedin: {
     label: "LinkedIn",
-    color: "text-sky-400",
+    color: "text-sky-600 dark:text-sky-400",
     bgColor: "bg-sky-500/10",
     borderColor: "border-sky-500/25",
-    icon: "🔷",
+    icon: LinkedInIcon,
   },
   facebook: {
     label: "Facebook",
-    color: "text-blue-400",
+    color: "text-blue-600 dark:text-blue-400",
     bgColor: "bg-blue-500/10",
     borderColor: "border-blue-500/25",
-    icon: "🔵",
+    icon: FacebookIcon,
   },
   blog: {
     label: "Blog",
-    color: "text-emerald-400",
+    color: "text-emerald-600 dark:text-emerald-400",
     bgColor: "bg-emerald-500/10",
     borderColor: "border-emerald-500/25",
-    icon: "📝",
+    icon: BlogIcon,
   },
 };
 
@@ -235,16 +269,9 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
     );
   }, [generatedContent]);
 
-  // Auto-apply AI times when switching to "all" mode
+  // No auto-apply AI times to respect "ignore AI suggestions" preference
   useEffect(() => {
-    if (scheduleMode === "all") {
-      const updated = { ...perPlatformTimes };
-      for (const p of Object.keys(platformConfig) as SchedulePlatform[]) {
-        const slot = getAiSlot(p, selectedDate);
-        if (slot) updated[p] = slot.hour;
-      }
-      setPerPlatformTimes(updated);
-    }
+    // Keep user selected times or defaults
   }, [scheduleMode, selectedDate]);
 
   const handleSubmitSingle = async () => {
@@ -271,7 +298,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
         scheduledAt: scheduledAt.toISOString(),
       });
       gooeyToast.success(
-        `✅ Đã lên lịch "${title}" cho ${platformConfig[platform].label}`,
+        `Đã lên lịch "${title}" cho ${platformConfig[platform].label}`,
       );
       onClose();
     } catch (error: any) {
@@ -320,7 +347,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
       }
       if (success > 0) {
         gooeyToast.success(
-          `✅ Đã lên lịch ${success}/${enabledPlatforms.length} nền tảng thành công`,
+          `Đã lên lịch ${success}/${enabledPlatforms.length} nền tảng thành công`,
         );
         onClose();
       } else {
@@ -402,7 +429,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
                         : "bg-surface-hover border-default text-dim hover:bg-surface-active"
                     }`}
                   >
-                    <span>{cfg.icon}</span>
+                    <cfg.icon className="w-3 h-3" />
                     {cfg.label}
                     {hasContent && (
                       <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400" />
@@ -520,7 +547,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
 
                     {/* Platform */}
                     <div className="flex items-center gap-1.5 w-20 shrink-0">
-                      <span className="text-xs">{cfg.icon}</span>
+                    <cfg.icon className="w-3 h-3" />
                       <span
                         className={`text-[10px] font-medium ${isEnabled ? cfg.color : "text-dim"}`}
                       >
@@ -534,7 +561,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
                         variant="outline"
                         className="text-[7px] px-1 py-0 h-3.5 bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shrink-0"
                       >
-                        AI ✓
+                        Đã có
                       </Badge>
                     ) : (
                       <Badge
@@ -695,7 +722,7 @@ function JobCard({ job }: { job: ScheduleJob }) {
       {/* Top Row: Platform + Status */}
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs leading-none">{pConfig.icon}</span>
+          <pConfig.icon className="w-3 h-3" />
           <Badge
             variant="outline"
             className={`text-[8px] px-1 py-0 h-3.5 ${pConfig.borderColor} ${pConfig.color}`}
@@ -879,17 +906,22 @@ export default function SmartSchedulerModule() {
     setCurrentWeekOffset,
     filterPlatform,
     setFilterPlatform,
+    filterDate,
+    setFilterDate,
     publishAllDue,
     fetchSchedules,
     getStats,
   } = useSchedulerStore();
+  const activeJob = useResearchStore((s) => s.activeJob);
 
-  // Fetch schedules on mount
+  const teamId = user?.team_id || activeJob?.job?.team_id;
+
+  // Fetch schedules on mount or when teamId becomes available
   useEffect(() => {
-    if (user?.team_id) {
-      fetchSchedules(user.team_id);
+    if (teamId) {
+      fetchSchedules(teamId);
     }
-  }, [user?.team_id]);
+  }, [teamId, fetchSchedules]);
 
   // Calculate week dates
   const weekDates = useMemo(() => {
@@ -907,6 +939,9 @@ export default function SmartSchedulerModule() {
     let result = [...jobs];
     if (filterPlatform !== "all") {
       result = result.filter((j) => j.platform === filterPlatform);
+    }
+    if (filterDate) {
+      result = result.filter((j) => format(new Date(j.scheduled_at), 'yyyy-MM-dd') === filterDate);
     }
     // Sort: processing first, then scheduled (nearest first), then others
     result.sort((a, b) => {
@@ -1041,49 +1076,56 @@ export default function SmartSchedulerModule() {
             <div className="grid grid-cols-7 gap-1">
               {weekDates.map((date, idx) => {
                 const isToday = isDateToday(date);
+                const dateKey = format(date, "yyyy-MM-dd");
+                const isSelected = filterDate === dateKey;
                 const jobCount = getJobsCountForDate(date);
-                const slots = getSlotsForDate(date);
+
                 return (
                   <div key={idx} className="text-center">
-                    <span className="text-[8px] text-faint block mb-0.5">
+                    <span className="text-[8px] text-faint block mb-1">
                       {weekDays[idx]}
                     </span>
-                    <div
-                      className={`w-full aspect-square rounded-md flex flex-col items-center justify-center transition-all relative ${
-                        isToday
-                          ? "bg-primary/20 border border-primary/40 shadow-[0_0_8px_rgba(var(--primary-rgb),0.15)]"
-                          : "bg-surface-hover border border-subtle hover:border-strong hover:bg-surface-active"
+                    <button
+                      onClick={() => setFilterDate(isSelected ? null : dateKey)}
+                      className={`w-full aspect-square rounded-lg flex flex-col items-center justify-center transition-all relative border ${
+                        isSelected
+                          ? "bg-primary/20 border-primary shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)]"
+                          : isToday
+                            ? "bg-surface-hover border-primary/40 bg-primary/5"
+                            : "bg-surface-hover border-default hover:border-strong hover:bg-surface-active"
                       }`}
                     >
                       <span
-                        className={`text-[10px] font-medium ${
-                          isToday ? "text-primary" : "text-label"
+                        className={`text-[10px] font-bold ${
+                          isSelected || isToday ? "text-primary" : "text-label"
                         }`}
                       >
                         {format(date, "d")}
                       </span>
+                      
                       {/* Indicators */}
                       <div className="flex gap-0.5 mt-0.5">
-                        {slots.length > 0 && (
-                          <span
-                            className="w-1 h-1 rounded-full bg-amber-400"
-                            title="AI optimal"
-                          />
-                        )}
                         {jobCount > 0 && (
-                          <span
-                            className="w-1 h-1 rounded-full bg-primary"
-                            title={`${jobCount} bài`}
-                          />
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: Math.min(jobCount, 3) }).map((_, i) => (
+                              <span
+                                key={i}
+                                className={`w-1 h-1 rounded-full ${isSelected ? 'bg-primary' : 'bg-primary/60'}`}
+                              />
+                            ))}
+                          </div>
                         )}
                       </div>
-            {/* Job count badge */}
+
+                      {/* Job count badge */}
                       {jobCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-primary text-[7px] text-white font-bold flex items-center justify-center">
+                        <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-[7px] font-bold flex items-center justify-center ${
+                          isSelected ? 'bg-primary text-white' : 'bg-surface-3 text-primary border border-primary/20'
+                        }`}>
                           {jobCount}
                         </span>
                       )}
-                    </div>
+                    </button>
                   </div>
                 );
               })}
@@ -1120,8 +1162,8 @@ export default function SmartSchedulerModule() {
                       : "text-dim hover:text-body hover:bg-surface-hover border border-transparent"
                   }`}
                 >
-                  <span className={`text-xs transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
-                    {cfg.icon}
+                  <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                    <cfg.icon className="w-3 h-3" />
                   </span>
                   <span className="hidden sm:inline-block">{cfg.label}</span>
                   {count > 0 && (

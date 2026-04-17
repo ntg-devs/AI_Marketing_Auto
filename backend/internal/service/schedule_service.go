@@ -35,10 +35,11 @@ func titleCase(s string) string {
 
 type scheduleService struct {
 	repo domain.ScheduleRepository
+	notifRepo domain.NotificationRepository
 }
 
-func NewScheduleService(repo domain.ScheduleRepository) domain.ScheduleService {
-	return &scheduleService{repo: repo}
+func NewScheduleService(repo domain.ScheduleRepository, notifRepo domain.NotificationRepository) domain.ScheduleService {
+	return &scheduleService{repo: repo, notifRepo: notifRepo}
 }
 
 // CreateAndSchedule creates a Post + PublishSchedule in one operation.
@@ -115,6 +116,15 @@ func (s *scheduleService) CreateAndSchedule(ctx context.Context, req *domain.Cre
 	if err := s.repo.CreateSchedule(ctx, schedule); err != nil {
 		return nil, fmt.Errorf("failed to create schedule: %w", err)
 	}
+
+	// 4. Create Notification
+	_ = s.notifRepo.Create(ctx, &domain.Notification{
+		TeamID:  teamID,
+		UserID:  &userID,
+		Type:    "publish",
+		Title:   "Lịch đăng bài mới",
+		Message: fmt.Sprintf("Bài viết '%s' đã được lên lịch đăng vào %s", post.Title, scheduledAt.Format("15:04 02/01")),
+	})
 
 	log.Printf("[Schedule Service] ✅ Scheduled post %s for %s at %s", post.ID, req.Platform, scheduledAt.Format(time.RFC3339))
 
@@ -214,4 +224,16 @@ func (s *scheduleService) PublishDueSchedules(ctx context.Context) (int, error) 
 	}
 
 	return published, nil
+}
+
+func (s *scheduleService) ListSocialAccounts(ctx context.Context, teamID uuid.UUID) ([]domain.SocialAccount, error) {
+	return s.repo.ListSocialAccountsByTeam(ctx, teamID)
+}
+
+func (s *scheduleService) SaveSocialAccount(ctx context.Context, account *domain.SocialAccount) error {
+	return s.repo.UpsertSocialAccount(ctx, account)
+}
+
+func (s *scheduleService) DeleteSocialAccount(ctx context.Context, id uuid.UUID) error {
+	return s.repo.DeleteSocialAccount(ctx, id)
 }

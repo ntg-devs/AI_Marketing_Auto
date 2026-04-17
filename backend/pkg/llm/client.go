@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -32,7 +33,7 @@ func NewClientWithConfig(apiKey, baseURL, modelName, providerName string) *Clien
 			providerName = "gemini"
 		} else if strings.HasPrefix(modelName, "claude") {
 			providerName = "anthropic"
-		} else if strings.HasPrefix(modelName, "qwen") || strings.Contains(strings.ToLower(modelName), "ollama") {
+		} else if strings.HasPrefix(modelName, "qwen") || strings.HasPrefix(modelName, "llama") || strings.Contains(strings.ToLower(modelName), "ollama") {
 			providerName = "ollama"
 		} else {
 			providerName = "openai"
@@ -182,6 +183,227 @@ func (c *Client) GenerateEmbedding(ctx context.Context, text string) ([]float32,
 	return resp.Data[0].Embedding, resp.Usage.TotalTokens, nil
 }
 
+// NewOllamaVisionClient creates a dedicated client for Ollama LLaVA vision model.
+func NewOllamaVisionClient(ollamaBaseURL string) *Client {
+	if ollamaBaseURL == "" {
+		ollamaBaseURL = "http://127.0.0.1:11434/v1"
+	}
+	return NewClientWithConfig("ollama", ollamaBaseURL, "llava", "ollama")
+}
+
+// NewOllamaTextClient creates a dedicated client for Ollama text model (e.g., Qwen 2.5:3B).
+func NewOllamaTextClient(ollamaBaseURL, modelName string) *Client {
+	if ollamaBaseURL == "" {
+		ollamaBaseURL = "http://127.0.0.1:11434/v1"
+	}
+	if modelName == "" {
+		modelName = "qwen2.5:3b"
+	}
+	return NewClientWithConfig("ollama", ollamaBaseURL, modelName, "ollama")
+}
+
+// AnalyzeImage sends an image (as base64) to a vision model (LLaVA) for detailed analysis.
+// Returns structured JSON analysis of the image content.
+func (c *Client) AnalyzeImage(ctx context.Context, imageBase64 string, mimeType string) (string, error) {
+	if imageBase64 == "" {
+		return "", fmt.Errorf("empty image data provided for analysis")
+	}
+
+	if mimeType == "" {
+		mimeType = "image/jpeg"
+	}
+
+	dataURI := fmt.Sprintf("data:%s;base64,%s", mimeType, imageBase64)
+
+	systemPrompt := `You are an expert Image Analyst AI. Analyze the provided image and return a structured JSON response.
+
+Your analysis must cover:
+1. **Description**: A detailed description of the image content (2-3 sentences)
+2. **Theme**: The main theme/subject of the image (1-2 words)
+3. **Objects**: Key objects, people, or elements visible in the image
+4. **Emotions**: The emotional tone or mood conveyed
+5. **Colors**: The dominant color palette
+6. **Purpose**: The likely intended purpose of this image (marketing, editorial, product showcase, etc.)
+7. **Message**: Any message, text overlay, or implied communication
+8. **Composition**: Photography/design composition (angle, framing, layout)
+
+Return ONLY valid JSON in this exact format, no markdown fences:
+{
+  "description": "...",
+  "theme": "...",
+  "objects": ["...", "..."],
+  "emotions": ["...", "..."],
+  "colors": ["...", "..."],
+  "purpose": "...",
+  "message": "...",
+  "composition": "..."
+}`
+
+	log.Printf("[LLM Client] Analyzing image using model '%s' (provider: %s). Base64 length: %d chars",
+		c.modelName, c.providerName, len(imageBase64))
+
+	req := openai.ChatCompletionRequest{
+		Model: c.modelName,
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleSystem,
+				Content: systemPrompt,
+			},
+			{
+				Role: openai.ChatMessageRoleUser,
+				MultiContent: []openai.ChatMessagePart{
+					{
+						Type: openai.ChatMessagePartTypeText,
+						Text: "Analyze this image in detail and return structured JSON as specified.",
+					},
+					{
+						Type: openai.ChatMessagePartTypeImageURL,
+						ImageURL: &openai.ChatMessageImageURL{
+							URL:    dataURI,
+							Detail: openai.ImageURLDetailLow,
+						},
+					},
+				},
+			},
+		},
+		Temperature: 0.3,
+	}
+
+	// Retry with exponential backoff
+	maxRetries := 3
+	var resp openai.ChatCompletionResponse
+	var err error
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		resp, err = c.client.CreateChatCompletion(ctx, req)
+		if err == nil {
+			break
+		}
+
+		errMsg := err.Error()
+		isRetryable := strings.Contains(errMsg, "503") || strings.Contains(errMsg, "429") ||
+			strings.Contains(errMsg, "UNAVAILABLE") || strings.Contains(errMsg, "connection refused")
+
+		if !isRetryable || attempt == maxRetries {
+			log.Printf("[LLM Client] ❌ Image analysis failed after %d attempt(s). Error: %v", attempt, err)
+			return "", fmt.Errorf("failed to analyze image with LLM: %w", err)
+		}
+
+		backoff := time.Duration(attempt) * 5 * time.Second
+		log.Printf("[LLM Client] ⚠️ Image analysis attempt %d/%d failed (retryable). Retrying in %v... Error: %v",
+			attempt, maxRetries, backoff, err)
+		time.Sleep(backoff)
+	}
+
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf("no response from vision model")
+	}
+
+	log.Printf("[LLM Client] ✅ Image analysis response received from model '%s'", resp.Model)
+	log.Printf("[LLM Client] Token Usage — Prompt: %d | Completion: %d | Total: %d",
+		resp.Usage.PromptTokens, resp.Usage.CompletionTokens, resp.Usage.TotalTokens)
+
+	result := resp.Choices[0].Message.Content
+	// Clean potential markdown fences
+	result = strings.TrimPrefix(result, "```json")
+	result = strings.TrimPrefix(result, "```")
+	result = strings.TrimSuffix(result, "```")
+	result = strings.TrimSpace(result)
+
+	return result, nil
+}
+
+// FormatImageAnalysisAsKnowledge converts structured image analysis JSON into a human-readable
+// knowledge text suitable for content generation pipeline.
+func FormatImageAnalysisAsKnowledge(analysisJSON string, imageURL string) string {
+	var result strings.Builder
+	result.WriteString("### Image Analysis Report\n\n")
+	result.WriteString(fmt.Sprintf("**Source Image**: %s\n\n", imageURL))
+	result.WriteString("**Structured Analysis (JSON)**:\n")
+	result.WriteString(analysisJSON)
+	result.WriteString("\n\n---\n")
+	result.WriteString("This knowledge was extracted from an image using AI vision analysis (LLaVA). ")
+	result.WriteString("Use the description, theme, emotions, and message to craft platform-optimized marketing content.\n")
+	return result.String()
+}
+
+// AutoSuggestResult holds the AI-generated configuration suggestions from Qwen 2.5:3b.
+type AutoSuggestResult struct {
+	Tone           string   `json:"tone"`
+	TargetAudience string   `json:"target_audience"`
+	Framework      string   `json:"framework_suggestion"`
+	KeyInsights    []string `json:"key_insights"`
+	ContentType    string   `json:"content_type"`
+	AISuggested    bool     `json:"ai_suggested"`
+}
+
+// AutoSuggestFromContent uses Qwen 2.5:3b to analyze crawled content and return
+// smart suggestions for tone, audience, framework, and key insights.
+// This powers Step 2: AI-Powered Auto-Configuration.
+func (c *Client) AutoSuggestFromContent(ctx context.Context, knowledgeText string, language string) (*AutoSuggestResult, error) {
+	if knowledgeText == "" {
+		return nil, fmt.Errorf("empty knowledge text")
+	}
+
+	if len(knowledgeText) > 4000 {
+		knowledgeText = knowledgeText[:4000]
+	}
+
+	langName := "Vietnamese"
+	if language == "en" {
+		langName = "English"
+	}
+
+	systemPrompt := fmt.Sprintf(`You are an AI content strategist assistant. Analyze the provided text and suggest the best content configuration.
+
+Return ONLY valid JSON (no markdown fences) with this exact structure:
+{
+  "tone": "professional|casual|storyteller|data-driven",
+  "target_audience": "A concise description of the ideal target audience",
+  "framework_suggestion": "standard|aida|pas|storytelling|analytical",
+  "key_insights": ["insight 1", "insight 2", "insight 3"],
+  "content_type": "article|tutorial|review|news|opinion",
+  "ai_suggested": true
+}
+
+Rules:
+- "tone": Choose based on the writing style and subject matter. Technical = professional. Personal story = storyteller. Lots of stats = data-driven.
+- "target_audience": Identify WHO would benefit most from this content. 
+- "framework_suggestion": AIDA for persuasive/sales content, PAS for problem-solving content, storytelling for narrative content, analytical for data-heavy content, standard otherwise.
+- "key_insights": Extract 3-5 most important facts, statistics, or unique angles from the text.
+- "content_type": Categorize the content type.
+- LANGUAGE: You MUST write the "target_audience" and all "key_insights" in %s.
+`, langName)
+
+	resp, err := c.callWithRetry(ctx, systemPrompt, knowledgeText, 0.3)
+	if err != nil {
+		return nil, fmt.Errorf("auto-suggest LLM call failed: %w", err)
+	}
+
+	resultJSON := resp.Choices[0].Message.Content
+	// Clean potential markdown fences
+	resultJSON = strings.TrimPrefix(resultJSON, "```json")
+	resultJSON = strings.TrimPrefix(resultJSON, "```")
+	resultJSON = strings.TrimSuffix(resultJSON, "```")
+	resultJSON = strings.TrimSpace(resultJSON)
+
+	var result AutoSuggestResult
+	if err := parseJSON(resultJSON, &result); err != nil {
+		log.Printf("[LLM Client] ⚠️ Failed to parse auto-suggest JSON: %v. Raw: %s", err, resultJSON[:min(len(resultJSON), 200)])
+		// Return defaults with whatever we can extract
+		return &AutoSuggestResult{
+			Tone:           "professional",
+			Framework:      "standard",
+			KeyInsights:    []string{},
+			ContentType:    "article",
+			AISuggested:    false,
+		}, nil
+	}
+
+	result.AISuggested = true
+	return &result, nil
+}
+
 // ContentBrief holds user-provided parameters for content generation.
 type ContentBrief struct {
 	Platform               string // "facebook", "linkedin", "blog"
@@ -196,6 +418,10 @@ type ContentBrief struct {
 	BrandGuidelines string // Brand voice guidelines
 	// Outline (passed from Step 1 → Step 2)
 	Outline string // JSON outline from GenerateMasterOutline
+	// User-provided image URL — injected as visual anchor in generated content
+	ImageURL     string // Direct URL to user-uploaded or referenced image
+	ImageEmotion string // Emotional metadata from Vision analysis (e.g., "inspiring, warm")
+	ImageContext string // Contextual description from Vision analysis
 }
 
 // OutlineResult holds the generated master outline.
@@ -255,48 +481,48 @@ You MUST infuse every section of the outline with this brand identity.`,
 	platformGuide := getPlatformGuide(brief.Platform)
 	toneGuide := getToneGuide(brief.Tone)
 
-	systemPrompt := fmt.Sprintf(`You are a Senior Content Strategist AI. Your role is to create a **Master Content Outline** from research data.
+	systemPrompt := fmt.Sprintf(`Bạn là một Chuyên gia Chiến lược Nội dung Cao cấp. Nhiệm vụ của bạn là lập một **Dàn ý Nội dung Master** từ dữ liệu nghiên cứu.
 %s
 
-=== YOUR TASK ===
-1. Analyze the research knowledge provided
-2. Inject the Brand DNA to align insights with brand identity
-3. Create a structured outline using the appropriate framework:
-   - For Blog/LinkedIn: Use AIDA (Attention → Interest → Desire → Action) or PAS (Problem → Agitate → Solve)
-   - For Facebook: Use Hook → Story → Offer → CTA
-4. Each section should have a clear purpose and key talking points
+=== NHIỆM VỤ CỦA BẠN ===
+1. Phân tích dữ liệu nghiên cứu được cung cấp.
+2. Tiêm DNA Thương hiệu để căn chỉnh các insight phù hợp với bản sắc thương hiệu.
+3. Tạo dàn ý có cấu trúc bằng cách sử dụng framework phù hợp:
+   - Đối với Blog/LinkedIn: Sử dụng AIDA (Attention → Interest → Desire → Action) hoặc PAS (Problem → Agitate → Solve).
+   - Đối với Facebook: Sử dụng Hook → Story → Offer → CTA.
+4. Mỗi phần phải có mục đích rõ ràng và các điểm thảo luận chính.
 
-=== PLATFORM ===
+=== NỀN TẢNG ===
 %s
 
-=== TONE ===
+=== TÔNG GIỌNG ===
 %s
 
-=== REQUIREMENTS ===
-- Target audience: %s
-- Language: %s
-- Additional context: %s
+=== YÊU CẦU ===
+- Đối tượng mục tiêu: %s
+- Ngôn ngữ: Bạn BẮT BUỘC phải viết toàn bộ dàn ý bằng %s.
+- Hướng dẫn bổ sung: %s
 
-=== OUTPUT FORMAT ===
-Return a JSON object with this exact structure:
+=== ĐỊNH DẠNG ĐẦU RA ===
+Trả về một JSON object với cấu trúc chính xác như sau:
 {
   "framework": "AIDA|PAS|Hook-Story-Offer",
-  "title_suggestion": "Suggested headline for the content",
+  "title_suggestion": "Tiêu đề gợi ý cho nội dung",
   "sections": [
     {
       "id": "1",
-      "heading": "Section heading",
-      "purpose": "Why this section exists (e.g., 'Hook the reader')",
-      "key_points": ["Point 1", "Point 2"],
+      "heading": "Tiêu đề phần",
+      "purpose": "Tại sao phần này tồn tại (VD: 'Thu hút người đọc')",
+      "key_points": ["Điểm 1", "Điểm 2"],
       "suggested_length": "short|medium|long",
-      "data_to_include": "Specific data/stats from research to use here"
+      "data_to_include": "Dữ liệu/thống kê cụ thể từ nghiên cứu để sử dụng ở đây"
     }
   ],
-  "cta": "Suggested call-to-action",
+  "cta": "Lời kêu gọi hành động gợi ý",
   "hashtags": ["#tag1", "#tag2"]
 }
 
-Return ONLY the JSON. No markdown fences, no explanation.`,
+CHỈ trả về JSON. Không có markdown, không giải thích.`,
 		brandContext, platformGuide, toneGuide,
 		defaultStr(brief.TargetAudience, "General audience"),
 		lang,
@@ -333,6 +559,9 @@ Return ONLY the JSON. No markdown fences, no explanation.`,
 }
 
 // GenerateMarketingContent creates platform-optimized marketing content.
+// Uses Context Window Master with multi-layer prompt architecture:
+// Layer 1 (Base): Brand DNA · Layer 2 (Info): Web Scraper insights
+// Layer 3 (Emotion): Image/Vision metadata · Layer 4 (Structure): Copywriting Framework
 // If brief.Outline is provided (from GenerateMasterOutline), content follows the approved structure.
 func (c *Client) GenerateMarketingContent(ctx context.Context, knowledgeText string, brief ContentBrief) (*ContentResult, error) {
 	if knowledgeText == "" {
@@ -361,62 +590,99 @@ func (c *Client) GenerateMarketingContent(ctx context.Context, knowledgeText str
 	platformGuide := getPlatformGuide(brief.Platform)
 	toneGuide := getToneGuide(brief.Tone)
 
-	// Brand DNA context
-	brandSection := ""
+	// ═══════════════════════════════════════════════════════
+	// CONTEXT WINDOW MASTER — Multi-Layer Prompt Architecture
+	// ═══════════════════════════════════════════════════════
+
+	// LAYER 1 (Base): Brand DNA — ensures brand consistency
+	brandLayer := ""
 	if brief.BrandName != "" || brief.BrandPersona != "" {
-		brandSection = fmt.Sprintf(`
-=== BRAND IDENTITY ===
+		brandLayer = fmt.Sprintf(`
+[BRAND CONTEXT]: Sử dụng giọng văn %s cho đối tượng %s.
 - Brand: %s
 - Persona: %s
 - Guidelines: %s
 Infuse the brand identity naturally throughout the content.`,
+			defaultStr(brief.Tone, "professional"),
+			defaultStr(brief.TargetAudience, "General audience"),
 			defaultStr(brief.BrandName, ""),
 			defaultStr(brief.BrandPersona, "Expert professional"),
 			defaultStr(brief.BrandGuidelines, ""))
 	}
 
-	// Outline section - Dynamic framework injection
+	// LAYER 3 (Emotion): Image/Vision metadata — visual anchor for hooks
+	visualLayer := ""
+	imageInstruction := ""
+	if brief.ImageURL != "" {
+		visualLayer = fmt.Sprintf(`
+[VISUAL ANCHOR]: Người dùng đã cung cấp một hình ảnh tham chiếu.
+Cảm xúc hình ảnh: %s. Ngữ cảnh hình ảnh: %s.
+- Sử dụng siêu dữ liệu cảm xúc và ngữ cảnh từ hình ảnh này để tạo ra một đoạn Hook mở đầu đầy hấp dẫn.`,
+			defaultStr(brief.ImageEmotion, "thu hút, chuyên nghiệp"),
+			defaultStr(brief.ImageContext, "nội dung hình ảnh minh họa cho bài viết"))
+		
+		imageInstruction = "- KHÔNG sử dụng hay sinh ra thẻ <img> nào trong nội dung do hệ thống sẽ tự động chèn ảnh tham chiếu của người dùng vào bài viết."
+	} else {
+		imageInstruction = `- QUAN TRỌNG: Bạn PHẢI tự tạo 1-2 hình ảnh liên quan để minh họa nội dung. Dùng URL với định dạng chính xác sau: <img src="https://image.pollinations.ai/prompt/{mô_tả_ảnh_bằng_tiếng_anh_viết_liền_bằng_dấu_cộng}?width=800&height=400&nologo=true" alt="{mô_tả}" style="border-radius: 8px; margin: 16px 0; width: 100%%; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />`
+	}
+
+	// LAYER 4 (Structure): Copywriting Framework — outline-driven structure
 	outlineSection := ""
 	if brief.Outline != "" {
 		outlineSection = fmt.Sprintf(`
-=== MANDATORY CONTENT FRAMEWORK (OUTLINE) ===
+[STRUCTURE]: Triển khai bài viết theo khung %s với độ dài %s.
 Your content MUST follow the structural sequence below. Treat each Level 1 item as a major section (H2) and Level 2 items as sub-topics (H3). 
 If the outline is provided in JSON format, parse it and use its hierarchy as your skeleton.
 DO NOT skip any sections specified here.
 
 FRAMEWORK DATA:
-%s`, brief.Outline)
+%s`, getCopywritingFrameworkLabel(brief.Outline), wordTarget, brief.Outline)
 	}
 
-	systemPrompt := fmt.Sprintf(`You are an expert Marketing Content Creator AI. Your goal is to craft high-converting, platform-optimized content.
+	// Build system prompt with Context Window Master
+	systemPrompt := fmt.Sprintf(`Bạn là một chuyên gia Content Marketing cao cấp. Nhiệm vụ của bạn là tạo ra một bài viết thực tế, không ảo tưởng, dựa trên các lớp dữ liệu cung cấp dưới đây.
 %s
 %s
+%s
 
-=== OPERATIONAL REQUIREMENTS ===
-1. PLATFORM GUIDELINES: %s
-2. TONE & VOICE: %s
-3. TARGET AUDIENCE: %s
-4. SEO & WORD COUNT: Target ~%s words.
-5. LANGUAGE: %s
+=== YÊU CẦU VẬN HÀNH ===
+1. HƯỚNG DẪN NỀN TẢNG: %s
+2. TÔNG GIỌNG & PHONG CÁCH: %s
+3. ĐỐI TƯỢNG MỤC TIÊU: %s
+4. SEO & ĐỘ DÀI: Mục tiêu khoảng %s từ.
+5. NGÔN NGỮ: Bạn BẮT BUỘC phải viết toàn bộ nội dung bài viết bằng %s. Không sử dụng bất kỳ ngôn ngữ nào khác.
 
-=== STRICT OUTPUT FORMAT ===
-- Use ONLY standard HTML tags: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, <blockquote>.
-- NO Markdown formatting. NO wrapper <div>. 
-- NO opening/closing commentary or metadata. Just the article content.
-- Ensure the HTML is semantically correct and follows the logical structure of the FRAMEWORK provided.
-- Every section in the OUTLINE MUST be turned into content.
+=== TIÊU CHUẨN COPYWRITING CHUYÊN NGHIỆP (BẮT BUỘC) ===
+- RULE OF ONE: Mỗi bài viết nên tập trung vào MỘT thông điệp cốt lõi hoặc một giải pháp duy nhất để tránh làm loãng sự chú ý.
+- BENEFIT OVER FEATURE: Đừng chỉ liệt kê tính năng (VD: RAM 16GB). Hãy bán "Lợi ích" (VD: Chạy mượt mà mọi ứng dụng nặng nhất mà không giật lag).
+- SHOW, DON'T TELL: Thay vì nói "Sản phẩm của chúng tôi rất nhanh", hãy đưa ra số liệu hoặc ví dụ cụ thể (VD: "Xử lý 1000 dữ liệu chỉ trong 2 giây").
+- STRONG HOOK: Mở đầu bằng một câu hỏi nhức nhối, một con số gây sốc hoặc một lời khẳng định phá vỡ định kiến để giữ chân người đọc ngay từ 3 giây đầu.
+- NHỊP ĐIỆU VĂN BẢN: Câu văn phải có sự thay đổi về độ dài để tạo sự lôi cuốn, tránh viết các câu dài liên tiếp gây mệt mỏi.
+- NGÔN NGỮ CHUYÊN GIA: Nói tiếng nói của ngành nhưng vẫn đủ dễ hiểu để thu phục đối tượng khách hàng mục tiêu. Tránh các từ sáo rỗng như "đột phá", "vượt trội" mà không có dẫn chứng.
 
-=== ADDITIONAL INSTRUCTIONS ===
-%s`,
-		brandSection, outlineSection, platformGuide, toneGuide, 
+=== ĐỊNH DẠNG ĐẦU RA NGHIÊM NGẶT (PHẢI TUÂN THỦ) ===
+- BẮT BUỘC CHỈ sử dụng các thẻ HTML tiêu chuẩn: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, blockquote, br, hr.
+- TUYỆT ĐỐI KHÔNG sử dụng ký hiệu Markdown như **văn bản**, # Tiêu đề, [link](url), hay các dấu gạch đầu dòng Markdown (- hay *). Thay vào đó, hãy dùng <strong>văn bản</strong>, <h2>Tiêu đề</h2>, và <ul><li>...</li></ul>.
+- KHÔNG bao quanh toàn bộ bài viết bằng thẻ <div>.
+- Giữ các đoạn văn cực kỳ ngắn gọn, dễ thở (tối đa 1-2 câu mỗi đoạn).
+- Sử dụng in đậm (<strong>) một cách chiến lược cho các từ khóa quan trọng và emoji biểu cảm một cách tinh tế.
+- Đảm bảo HTML đúng ngữ nghĩa (semantic HTML) và tuân theo cấu trúc DÀN Ý đã đề ra.
+- KHÔNG có lời chào hỏi hay kết luận ngoài lề của AI. Chỉ xuất ra nội dung HTML của bài viết.
+- Văn bản phải sạch, chuyên nghiệp, ready-to-publish ngay lập tức.
+
+[YÊU CẦU CỤ THỂ]: %s
+[VÍ DỤ SAI]: **Đây là một lỗi**
+[VÍ DỤ ĐÚNG]: <strong>Đây là sự chuyên nghiệp</strong>`,
+		brandLayer, visualLayer, outlineSection, platformGuide, toneGuide, 
 		defaultStr(brief.TargetAudience, "General audience"),
-		wordTarget, lang,
+		wordTarget, lang, imageInstruction,
 		defaultStr(brief.AdditionalInstructions, "None"))
 
-	userPrompt := fmt.Sprintf("Based on the following research knowledge, create the content:\n\n%s", knowledgeText)
+	// LAYER 2 (Info): Research Data — the core content source
+	userPrompt := fmt.Sprintf("[RESEARCH DATA]: Các sự thật/dữ liệu quan trọng từ nguồn nghiên cứu:\n\n%s", knowledgeText)
 
-	log.Printf("[LLM Client] Generating %s content (%s tone, ~%s words, %s, outline: %v)...",
-		brief.Platform, brief.Tone, wordTarget, lang, brief.Outline != "")
+	log.Printf("[LLM Client] Generating %s content (%s tone, ~%s words, %s, outline: %v, image: %v)...",
+		brief.Platform, brief.Tone, wordTarget, lang, brief.Outline != "", brief.ImageURL != "")
 
 	resp, err := c.callWithRetry(ctx, systemPrompt, userPrompt, 0.7)
 	if err != nil {
@@ -425,8 +691,40 @@ FRAMEWORK DATA:
 
 	log.Printf("[LLM Client] ✅ Content generated. Model: %s, Tokens: %d", resp.Model, resp.Usage.TotalTokens)
 
+	contentHTML := resp.Choices[0].Message.Content
+
+	// ═══════════════════════════════════════════════════
+	// POST-PROCESSING: Deterministic Image Injection
+	// Instead of relying on LLM to insert <img> (unreliable),
+	// we programmatically inject the user's image at the optimal position.
+	// ═══════════════════════════════════════════════════
+	if brief.ImageURL != "" {
+		imgTag := fmt.Sprintf(`<figure style="margin: 24px 0; text-align: center;"><img src="%s" alt="%s" style="border-radius: 12px; width: 100%%; max-width: 720px; box-shadow: 0 8px 25px -5px rgb(0 0 0 / 0.15); display: inline-block;" /><figcaption style="font-size: 13px; color: #888; margin-top: 8px; font-style: italic;">%s</figcaption></figure>`,
+			brief.ImageURL,
+			defaultStr(brief.ImageContext, "Hình ảnh minh họa"),
+			defaultStr(brief.ImageContext, "Hình ảnh minh họa cho bài viết"))
+
+		// Strategy: Insert after the first </h1> if exists, otherwise after first </p>
+		injected := false
+		for _, marker := range []string{"</h1>", "</h2>", "</p>"} {
+			idx := strings.Index(contentHTML, marker)
+			if idx >= 0 {
+				insertPos := idx + len(marker)
+				contentHTML = contentHTML[:insertPos] + "\n" + imgTag + "\n" + contentHTML[insertPos:]
+				injected = true
+				log.Printf("[LLM Client] 🖼️ Image injected after %s at position %d", marker, insertPos)
+				break
+			}
+		}
+		// Fallback: prepend if no suitable marker found
+		if !injected {
+			contentHTML = imgTag + "\n" + contentHTML
+			log.Printf("[LLM Client] 🖼️ Image prepended (no HTML marker found)")
+		}
+	}
+
 	result := &ContentResult{
-		ContentHTML: resp.Choices[0].Message.Content,
+		ContentHTML: contentHTML,
 		ModelUsed:   resp.Model,
 	}
 	result.TokenUsage.Prompt = resp.Usage.PromptTokens
@@ -496,13 +794,12 @@ func getPlatformGuide(platform string) string {
 - End with a question to encourage engagement
 - Structure: Hook → Context → Insight → Framework → CTA`
 	case "blog":
-		return `- Start with a compelling H1 title
-- Use H2 and H3 subheadings to structure the article
-- Include an introduction that sets context
-- Use bullet points, numbered lists for key takeaways
-- Include blockquotes for emphasis or citations
-- End with a conclusion and next steps
-- SEO-friendly: naturally include keywords in headings`
+		return `- Sử dụng tiêu đề H1 mạnh mẽ, thu hút sự chú ý.
+- Chia nội dung thành các phần rõ ràng bằng thẻ H2 và H3.
+- Sử dụng danh sách có dấu đầu dòng (ul/li) để liệt kê các lợi ích hoặc bước thực hiện.
+- Sử dụng thẻ <blockquote> cho các trích dẫn quan trọng hoặc lời chứng thực.
+- Kết thúc bằng một phần kết luận súc tích và CTA rõ ràng.
+- SEO-friendly: Chèn từ khóa một cách tự nhiên vào các tiêu đề và nội dung.`
 	default:
 		return "Write clear, engaging content appropriate for the platform."
 	}
@@ -539,4 +836,28 @@ func stripHTMLTags(s string) string {
 		}
 	}
 	return strings.TrimSpace(result.String())
+}
+
+// parseJSON is a safe JSON parser helper.
+func parseJSON(raw string, v interface{}) error {
+	return json.Unmarshal([]byte(raw), v)
+}
+
+// getCopywritingFrameworkLabel extracts framework type from outline JSON.
+func getCopywritingFrameworkLabel(outlineJSON string) string {
+	type frameworkDetect struct {
+		Framework string `json:"framework"`
+	}
+	var fd frameworkDetect
+	if err := json.Unmarshal([]byte(outlineJSON), &fd); err == nil && fd.Framework != "" {
+		return fd.Framework
+	}
+	return "Standard"
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

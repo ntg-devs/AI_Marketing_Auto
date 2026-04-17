@@ -100,7 +100,8 @@ export const PROVIDERS: ProviderMeta[] = [
     models: [
       { value: "qwen2.5:3b", label: "Qwen 2.5 (3B)", description: "Local model nhẹ, xử lý nhanh", tier: "free" },
       { value: "qwen2.5:7b", label: "Qwen 2.5 (7B)", description: "Local model mạnh mẽ hơn", tier: "standard" },
-      { value: "llama3", label: "Llama 3", description: "Meta Llama", tier: "standard" },
+      { value: "llama3.1", label: "Llama 3.1", description: "Meta Llama 3.1 (8B)", tier: "standard" },
+      { value: "llama3", label: "Llama 3 (8B)", description: "Meta Llama 3", tier: "standard" },
     ],
   },
 ];

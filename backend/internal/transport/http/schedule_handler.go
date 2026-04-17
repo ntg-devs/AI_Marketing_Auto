@@ -168,3 +168,55 @@ func (h *scheduleHandler) PublishDue(w http.ResponseWriter, r *http.Request) {
 
 	response.JSON(w, http.StatusOK, map[string]int{"published_count": count}, "Published due schedules")
 }
+
+// GET /api/v1/social-accounts?team_id=...
+func (h *scheduleHandler) ListSocialAccounts(w http.ResponseWriter, r *http.Request) {
+	teamIDStr := r.URL.Query().Get("team_id")
+	if teamIDStr == "" {
+		response.Error(w, http.StatusBadRequest, "team_id is required")
+		return
+	}
+	teamID, err := uuid.Parse(teamIDStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid team_id")
+		return
+	}
+
+	res, err := h.service.ListSocialAccounts(r.Context(), teamID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(w, http.StatusOK, res, "Social accounts retrieved")
+}
+
+// POST /api/v1/social-accounts
+func (h *scheduleHandler) SaveSocialAccount(w http.ResponseWriter, r *http.Request) {
+	var acc domain.SocialAccount
+	if err := json.NewDecoder(r.Body).Decode(&acc); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if err := h.service.SaveSocialAccount(r.Context(), &acc); err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(w, http.StatusOK, acc, "Social account saved")
+}
+
+// DELETE /api/v1/social-accounts/{id}
+func (h *scheduleHandler) DeleteSocialAccount(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	if err := h.service.DeleteSocialAccount(r.Context(), id); err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(w, http.StatusOK, nil, "Social account deleted")
+}

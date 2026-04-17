@@ -1,10 +1,11 @@
-export type CrawlStrategy = 'auto' | 'http' | 'browser' | 'browserless';
+export type CrawlStrategy = 'auto' | 'http' | 'browser' | 'browserless' | 'image';
 
 export interface StartResearchRequest {
   team_id: string;
   user_id?: string;
   brief_id?: string;
   url: string;
+  image_url?: string;
   strategy?: CrawlStrategy;
   max_pages?: number;
   use_stealth?: boolean;
@@ -30,6 +31,7 @@ export interface CrawlJob {
   final_url?: string;
   status: string;
   strategy: CrawlStrategy;
+  source_image_url?: string;
   provider?: string;
   http_status?: number;
   pages_crawled: number;

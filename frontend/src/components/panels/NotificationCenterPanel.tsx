@@ -29,22 +29,16 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useNotificationStore } from '@/store/useNotificationStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useEffect } from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 /* ─── Types ────────────────────────────────────────────────────────── */
 
 type JobAlertType = 'crawl' | 'llm' | 'image' | 'publish';
-type JobAlertStatus = 'completed' | 'processing' | 'failed' | 'queued';
 type HealthStatus = 'healthy' | 'degraded' | 'down';
-
-interface JobAlert {
-  id: string;
-  type: JobAlertType;
-  title: string;
-  description: string;
-  status: JobAlertStatus;
-  timestamp: string;
-  progress?: number;
-}
 
 interface SystemService {
   id: string;
@@ -66,52 +60,6 @@ interface FeedbackTrigger {
 }
 
 /* ─── Mock Data ────────────────────────────────────────────────────── */
-
-const mockJobAlerts: JobAlert[] = [
-  {
-    id: '1',
-    type: 'crawl',
-    title: 'Web Crawl Complete',
-    description: 'Scraped 24 competitor articles from 6 domains',
-    status: 'completed',
-    timestamp: '2 min ago',
-  },
-  {
-    id: '2',
-    type: 'llm',
-    title: 'LLM Content Generation',
-    description: 'Generating LinkedIn post variant B — GPT-4o',
-    status: 'processing',
-    timestamp: '1 min ago',
-    progress: 72,
-  },
-  {
-    id: '3',
-    type: 'image',
-    title: 'Image Processing',
-    description: 'Resizing & optimizing 3 visuals for multi-platform',
-    status: 'processing',
-    timestamp: '30s ago',
-    progress: 45,
-  },
-  {
-    id: '4',
-    type: 'publish',
-    title: 'LinkedIn Publish Failed',
-    description: 'Rate limit exceeded — retry scheduled at 10:30 AM',
-    status: 'failed',
-    timestamp: '15 min ago',
-  },
-  {
-    id: '5',
-    type: 'crawl',
-    title: 'Keyword Research',
-    description: 'Queued: Analyze trending keywords for Q2 campaign',
-    status: 'queued',
-    timestamp: '20 min ago',
-  },
-];
-
 const mockServices: SystemService[] = [
   { id: '1', name: 'Redis Cache', status: 'healthy', latency: '0.8ms', uptime: '99.98%', lastCheck: '10s ago' },
   { id: '2', name: 'BullMQ Workers', status: 'healthy', latency: '12ms', uptime: '99.95%', lastCheck: '10s ago' },
@@ -136,11 +84,9 @@ const jobTypeConfig: Record<JobAlertType, { icon: typeof FileText; color: string
   publish: { icon: TrendingUp, color: 'text-emerald-500' },
 };
 
-const jobStatusConfig: Record<JobAlertStatus, { color: string; bgColor: string; label: string }> = {
-  completed: { color: 'text-emerald-500', bgColor: 'bg-emerald-500/10 border-emerald-500/15', label: 'Done' },
-  processing: { color: 'text-amber-500', bgColor: 'bg-amber-500/10 border-amber-500/15', label: 'Running' },
-  failed: { color: 'text-red-500', bgColor: 'bg-red-500/10 border-red-500/15', label: 'Failed' },
-  queued: { color: 'text-gray-400', bgColor: 'bg-surface-hover border-default', label: 'Queued' },
+const jobStatusConfig: Record<string, { color: string; bgColor: string; label: string }> = {
+  unread: { color: 'text-amber-500', bgColor: 'bg-amber-500/10 border-amber-500/15', label: 'New' },
+  read: { color: 'text-dim', bgColor: 'bg-surface-hover/30 border-default', label: 'Read' },
 };
 
 const healthConfig: Record<HealthStatus, { color: string; dotColor: string; label: string }> = {
@@ -158,14 +104,21 @@ const feedbackStatusConfig: Record<FeedbackTrigger['status'], { color: string; b
 /* ─── Component ────────────────────────────────────────────────────── */
 
 export default function NotificationCenterPanel() {
-  const [alerts, setAlerts] = useState(mockJobAlerts);
+  const { notifications, isLoading, fetchNotifications, markRead, markAllRead } = useNotificationStore();
+  const user = useAuthStore((s) => s.user);
 
-  const unreadCount = alerts.filter(
-    (a) => a.status === 'processing' || a.status === 'failed'
-  ).length;
+  useEffect(() => {
+    if (user?.team_id) {
+      fetchNotifications(user.team_id);
+    }
+  }, [user?.team_id, fetchNotifications]);
 
-  const clearCompleted = () => {
-    setAlerts((prev) => prev.filter((a) => a.status !== 'completed'));
+  const unreadCount = notifications.filter((a) => a.status === 'unread').length;
+
+  const handleClearAll = () => {
+    if (user?.team_id) {
+      markAllRead(user.team_id);
+    }
   };
 
   return (
@@ -222,45 +175,45 @@ export default function NotificationCenterPanel() {
           </TabsList>
         </div>
 
-        {/* ══════════ Tab 1: Job Status Alerts ══════════ */}
+        {/* ══════════ Tab 1: Notification Alerts ══════════ */}
         <TabsContent value="jobs" className="flex-1 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-2">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[9px] text-dim">
-                  {alerts.length} background jobs
+                  {notifications.length} notifications
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={clearCompleted}
+                  onClick={handleClearAll}
                   className="h-5 px-1.5 text-[9px] text-dim hover:text-body hover:bg-surface-hover"
                 >
-                  Clear done
+                  Mark all as read
                 </Button>
               </div>
 
-              {alerts.map((alert) => {
-                const typeConfig = jobTypeConfig[alert.type];
-                const stConfig = jobStatusConfig[alert.status];
+              {notifications.map((notif) => {
+                const typeConfig = jobTypeConfig[notif.type as JobAlertType] || jobTypeConfig.crawl;
+                const stConfig = jobStatusConfig[notif.status];
                 const TypeIcon = typeConfig.icon;
+                
                 return (
                   <div
-                    key={alert.id}
-                    className={`rounded-lg border p-3 transition-colors ${stConfig.bgColor}`}
+                    key={notif.id}
+                    onClick={() => user?.team_id && markRead(notif.id, user.team_id)}
+                    className={`rounded-lg border p-3 transition-colors cursor-pointer ${stConfig.bgColor}`}
                   >
                     <div className="flex items-start gap-2.5">
                       <div className="mt-0.5">
                         <TypeIcon
-                          className={`w-3.5 h-3.5 ${typeConfig.color} ${
-                            alert.status === 'processing' ? 'animate-pulse' : ''
-                          }`}
+                          className={`w-3.5 h-3.5 ${typeConfig.color}`}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <p className="text-[11px] font-medium text-heading truncate">
-                            {alert.title}
+                          <p className={`text-[11px] font-medium truncate ${notif.status === 'unread' ? 'text-heading' : 'text-dim'}`}>
+                            {notif.title}
                           </p>
                           <Badge
                             variant="outline"
@@ -270,38 +223,11 @@ export default function NotificationCenterPanel() {
                           </Badge>
                         </div>
                         <p className="text-[9px] text-dim mt-0.5 leading-relaxed">
-                          {alert.description}
+                          {notif.message}
                         </p>
 
-                        {alert.status === 'processing' && alert.progress && (
-                          <div className="mt-2">
-                            <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-[8px] text-faint">Progress</span>
-                              <span className="text-[8px] text-amber-500 tabular-nums font-medium">
-                                {alert.progress}%
-                              </span>
-                            </div>
-                            <div className="h-0.5 bg-surface-hover rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-amber-400/60 rounded-full transition-all duration-700"
-                                style={{ width: `${alert.progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {alert.status === 'failed' && (
-                          <Button
-                            size="sm"
-                            className="h-5 px-2 mt-2 text-[9px] bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
-                          >
-                            <RefreshCw className="w-2.5 h-2.5 mr-0.5" />
-                            Retry
-                          </Button>
-                        )}
-
                         <span className="text-[8px] text-faint block mt-1.5">
-                          {alert.timestamp}
+                          {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: vi })}
                         </span>
                       </div>
                     </div>
