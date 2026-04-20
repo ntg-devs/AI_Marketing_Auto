@@ -29,6 +29,7 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 	scheduleRepo := repository.NewScheduleRepository(db)
 	userPrefsRepo := repository.NewUserPreferencesRepository(db)
 	notificationRepo := repository.NewNotificationRepository(db)
+	postRepo := repository.NewPostRepository(db)
 
 	// 2. Service
 	userService := service.NewUserService(userRepo, db, jwtSecret, distributor)
@@ -39,10 +40,11 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 	userHandler := http.NewUserHandler(userService)
 	crawlHandler := http.NewCrawlHandler(crawlService)
 	aiProviderHandler := http.NewAIProviderHandler(aiProviderRepo)
-	contentHandler := http.NewContentHandler(aiProviderRepo, crawlRepo)
+	contentHandler := http.NewContentHandler(aiProviderRepo, crawlRepo, postRepo)
 	scheduleHandler := http.NewScheduleHandler(scheduleService)
 	userPrefsHandler := http.NewUserPreferencesHandler(userPrefsRepo)
 	notificationHandler := http.NewNotificationHandler(notificationRepo)
+	postHandler := http.NewPostHandler(postRepo)
 
 	// 4. Router Setup
 	r := chi.NewRouter()
@@ -85,6 +87,9 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 			r.Post("/content/generate", contentHandler.GenerateContent)
 			r.Post("/content/outline", contentHandler.GenerateOutline)
 			r.Post("/content/auto-suggest", contentHandler.AutoSuggest)
+			
+			// Posts / History
+			r.Get("/posts/history", postHandler.GetCampaignHistory)
 
 			// Schedule & Publishing
 			r.Post("/schedules", scheduleHandler.CreateSchedule)

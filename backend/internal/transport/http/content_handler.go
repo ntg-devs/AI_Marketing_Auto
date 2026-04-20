@@ -4,9 +4,11 @@ import (
 	"bityagi/internal/domain"
 	"bityagi/pkg/llm"
 	"bityagi/pkg/response"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -14,10 +16,11 @@ import (
 type contentHandler struct {
 	aiRepo    domain.AIProviderRepository
 	crawlRepo domain.CrawlRepository
+	postRepo  domain.PostRepository
 }
 
-func NewContentHandler(aiRepo domain.AIProviderRepository, crawlRepo domain.CrawlRepository) *contentHandler {
-	return &contentHandler{aiRepo: aiRepo, crawlRepo: crawlRepo}
+func NewContentHandler(aiRepo domain.AIProviderRepository, crawlRepo domain.CrawlRepository, postRepo domain.PostRepository) *contentHandler {
+	return &contentHandler{aiRepo: aiRepo, crawlRepo: crawlRepo, postRepo: postRepo}
 }
 
 func (h *contentHandler) GenerateContent(w http.ResponseWriter, r *http.Request) {
@@ -132,6 +135,32 @@ func (h *contentHandler) GenerateContent(w http.ResponseWriter, r *http.Request)
 
 	log.Printf("[Content Handler] ✅ Content generated successfully. %d chars HTML, %d total tokens",
 		len(result.ContentHTML), result.TokenUsage.Total)
+
+	// Save to DB
+	user, ok := r.Context().Value("user").(*domain.User)
+	if ok && user != nil {
+		now := time.Now()
+		topic := req.Platform + " content"
+		if req.BrandName != "" {
+			topic = req.BrandName + " - " + topic
+		}
+		post := &domain.Post{
+			TeamID:            user.TeamID,
+			UserID:            user.ID,
+			Title:             topic,
+			Topic:             topic,
+			ContentHTML:       result.ContentHTML,
+			Language:          req.Language,
+			Status:            "draft",
+			AIModelUsed:       result.ModelUsed,
+			LastAIProcessedAt: &now,
+		}
+		go func() {
+			if err := h.postRepo.CreatePost(context.Background(), post); err != nil {
+				log.Printf("[Content Handler] Failed to save post to DB: %v", err)
+			}
+		}()
+	}
 
 	response.JSON(w, http.StatusOK, result, "Content generated successfully")
 }

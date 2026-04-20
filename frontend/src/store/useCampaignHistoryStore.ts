@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { campaignHistoryApi } from '@/api/campaignHistory';
+import type { CampaignHistoryItem } from '@/types/campaignHistory';
 
 interface CampaignHistoryState {
   isOpen: boolean;
@@ -6,6 +8,10 @@ interface CampaignHistoryState {
   filterStatus: 'all' | 'scheduled' | 'success' | 'failed';
   filterChannel: 'all' | 'facebook' | 'linkedin' | 'blog';
   searchQuery: string;
+
+  data: CampaignHistoryItem[];
+  isLoading: boolean;
+  error: string | null;
 
   // Actions
   openHistory: () => void;
@@ -16,6 +22,8 @@ interface CampaignHistoryState {
   setFilterStatus: (status: CampaignHistoryState['filterStatus']) => void;
   setFilterChannel: (channel: CampaignHistoryState['filterChannel']) => void;
   setSearchQuery: (query: string) => void;
+  
+  fetchHistory: () => Promise<void>;
 }
 
 export const useCampaignHistoryStore = create<CampaignHistoryState>((set, get) => ({
@@ -24,6 +32,10 @@ export const useCampaignHistoryStore = create<CampaignHistoryState>((set, get) =
   filterStatus: 'all',
   filterChannel: 'all',
   searchQuery: '',
+
+  data: [],
+  isLoading: false,
+  error: null,
 
   openHistory: () => set({ isOpen: true }),
   closeHistory: () => set({ isOpen: false, expandedRowId: null }),
@@ -40,4 +52,14 @@ export const useCampaignHistoryStore = create<CampaignHistoryState>((set, get) =
   setFilterStatus: (status) => set({ filterStatus: status }),
   setFilterChannel: (channel) => set({ filterChannel: channel }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+
+  fetchHistory: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await campaignHistoryApi.getHistory();
+      set({ data: (res as any).items || [], isLoading: false });
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+    }
+  },
 }));

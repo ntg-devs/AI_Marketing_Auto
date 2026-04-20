@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useResearchStore } from '@/store/useResearchStore';
+import { gooeyToast } from 'goey-toast';
 import type { CampaignHistoryItem } from '@/types/campaignHistory';
 
 interface ExpandedDetailPanelProps {
@@ -157,11 +159,31 @@ export default function ExpandedDetailPanel({ item }: ExpandedDetailPanelProps) 
 
       {/* Column 3: Recommendation */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-          <h4 className="text-[11px] font-semibold text-heading uppercase tracking-wider">
-            Recommendation
-          </h4>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+            <h4 className="text-[11px] font-semibold text-heading uppercase tracking-wider">
+              Recommendation
+            </h4>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              useResearchStore.getState().setGeneratedContent(item.channel, {
+                platform: item.channel,
+                html: item.contentHTML,
+                modelUsed: 'Imported from History',
+                tokenUsage: { prompt: 0, completion: 0, total: 0 },
+                generatedAt: new Date().toISOString(),
+              });
+              gooeyToast.success('Content imported to editor!');
+            }}
+            className="h-6 px-2 text-[10px] text-primary border-primary/20 hover:bg-primary/10 gap-1"
+          >
+            <Sparkles className="w-3 h-3" />
+            Reuse Content
+          </Button>
         </div>
 
         <div className="px-3 py-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
@@ -208,6 +230,57 @@ export default function ExpandedDetailPanel({ item }: ExpandedDetailPanelProps) 
             </div>
           </div>
         )}
+        {/* Content Preview */}
+        <div className="space-y-1.5 mt-4">
+          <div className="flex items-center gap-2">
+            <Share2 className="w-3 h-3 text-dim" />
+            <span className="text-[10px] font-medium text-dim uppercase tracking-tighter">Content Preview</span>
+          </div>
+          <div className="relative group/preview overflow-hidden h-[120px] border border-default rounded-md bg-black/20 hover:border-primary/30 transition-all">
+            <div 
+              className="p-3 text-[10px] text-body line-clamp-4 prose-compact prose-invert"
+              dangerouslySetInnerHTML={{ __html: item.contentHTML }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-1/90 via-transparent to-transparent" />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/preview:opacity-100 transition-opacity">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const win = window.open('', '_blank');
+                  if (win) {
+                    win.document.write(`
+                      <html>
+                        <head>
+                          <title>Preview: ${item.title}</title>
+                          <style>
+                            body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; padding: 40px; max-width: 800px; margin: 0 auto; background: #0f1116; color: #e1e7ef; }
+                            h1, h2, h3 { color: #f8fafc; }
+                            img { max-width: 100%; border-radius: 8px; margin: 20px 0; }
+                            ul, ol { margin-bottom: 20px; }
+                            p { margin-bottom: 1.25em; }
+                          </style>
+                        </head>
+                        <body>
+                          <h1>${item.title}</h1>
+                          <div class="meta" style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 30px;">
+                            Platform: ${item.channel.toUpperCase()} • Campaign: ${item.campaignName}
+                          </div>
+                          ${item.contentHTML}
+                        </body>
+                      </html>
+                    `);
+                    win.document.close();
+                  }
+                }}
+                className="h-7 px-3 text-[10px] bg-surface-1 shadow-lg border border-default"
+              >
+                <ExternalLink className="w-3 h-3 mr-1" />
+                View Full HTML
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
