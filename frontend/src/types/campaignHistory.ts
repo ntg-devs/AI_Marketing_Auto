@@ -38,4 +38,5 @@ export interface CampaignHistoryItem {
   researchKnowledgeBase: string[];
   sources: ResearchSource[];
   aiAnalysis: AIAnalysis;
+  contentHTML: string;
 }

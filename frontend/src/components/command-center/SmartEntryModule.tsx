@@ -1359,12 +1359,12 @@ export default function SmartEntryModule() {
                             )}
                           </div>
                           <div className="flex-1 bg-surface-1/40 rounded-xl border border-default/40 shadow-sm flex flex-col min-h-0 overflow-hidden relative">
-                            <div className="flex-1 flex flex-col md:flex-row min-h-0">
-                              <ScrollArea className="flex-1 w-full relative border-r border-default/30">
-                                <div className="p-5 md:p-7 pr-4 text-left overflow-auto">
+                            <div className="flex-1 flex flex-col md:flex-row min-h-0 relative h-full">
+                              <div className="flex-1 relative border-r border-default/30 h-full min-h-0">
+                                <div className="absolute inset-0 overflow-y-auto p-5 md:p-7 pr-4 text-left custom-scrollbar">
                                   <FormattedText text={activePreviewItem.content} />
                                 </div>
-                              </ScrollArea>
+                              </div>
                               {aiSuggestions && activePreviewItem.id === 'ks' && (
                                 <div className="w-full md:w-80 bg-surface-2/50 shrink-0 overflow-y-auto border-t md:border-t-0 p-5 space-y-4">
                                   <div className="flex items-center gap-2 mb-1">
@@ -1417,21 +1417,26 @@ export default function SmartEntryModule() {
 
                             {/* Generation Stage Progress Bar */}
                             {isGenerating && generationStage && (
-                              <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-3 space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
-                                  <span className="text-[11px] font-medium text-primary">{generationStage}</span>
+                              <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/[0.02] p-4 space-y-3 shadow-sm shadow-indigo-500/5">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="p-1.5 rounded-lg bg-indigo-500/10">
+                                      <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+                                    </div>
+                                    <span className="text-[11px] font-semibold text-indigo-300 tracking-wide uppercase">{generationStage}</span>
+                                  </div>
+                                  <span className="text-[10px] text-indigo-400/60 font-mono">Step 2/3</span>
                                 </div>
-                                <div className="h-1.5 bg-surface-hover rounded-full overflow-hidden">
-                                  <div className="h-full bg-gradient-to-r from-indigo-500 via-emerald-500 to-blue-500 rounded-full animate-pulse" style={{ width: '66%' }} />
+                                <div className="h-1.5 bg-surface-hover rounded-full overflow-hidden border border-white/5">
+                                  <div className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-500 rounded-full animate-progress-shimmer" style={{ width: '66%', backgroundSize: '200% 100%' }} />
                                 </div>
                               </div>
                             )}
 
                             {/* Image Reference Preview (if user provided an image) */}
                             {(imageUrlValue.trim() || activeJob?.job?.source_image_url || detectedImageURL) && (
-                              <div className="rounded-lg border border-violet-500/20 bg-violet-500/[0.04] p-3 flex items-center gap-3">
-                                <div className="w-14 h-14 rounded-lg overflow-hidden border border-default/50 bg-surface-hover shrink-0">
+                              <div className="rounded-xl border border-slate-700/50 bg-slate-800/40 p-4 flex items-center gap-4 group hover:border-indigo-500/30 transition-all duration-300 shadow-lg shadow-black/20">
+                                <div className="w-16 h-16 rounded-xl overflow-hidden border border-white/10 bg-surface-hover shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500">
                                   <img 
                                     src={imageUrlValue.trim() || activeJob?.job?.source_image_url || detectedImageURL || ''} 
                                     alt="Reference" 
@@ -1440,36 +1445,47 @@ export default function SmartEntryModule() {
                                   />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5 mb-1">
-                                    <ImageIcon className="w-3 h-3 text-violet-400 shrink-0" />
-                                    <span className="text-[10px] font-semibold text-violet-400">{(DICTIONARY[briefForm.language as keyof typeof DICTIONARY]?.visualAnchor || DICTIONARY.en.visualAnchor)}</span>
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="p-1 rounded bg-violet-500/20">
+                                      <ImageIcon className="w-3 h-3 text-violet-400 shrink-0" />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest">{(DICTIONARY[briefForm.language as keyof typeof DICTIONARY]?.visualAnchor || DICTIONARY.en.visualAnchor)}</span>
                                   </div>
-                                  <p className="text-[10px] text-dim leading-relaxed">{(DICTIONARY[briefForm.language as keyof typeof DICTIONARY]?.visualHint || DICTIONARY.en.visualHint)}</p>
+                                  <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                                    {(DICTIONARY[briefForm.language as keyof typeof DICTIONARY]?.visualHint || DICTIONARY.en.visualHint)}
+                                  </p>
                                 </div>
                               </div>
                             )}
-                            <div className="space-y-1.5">
-                              <label className="text-[11px] font-medium text-label">{(DICTIONARY[briefForm.language as keyof typeof DICTIONARY]?.targetPlatforms || DICTIONARY.en.targetPlatforms)}</label>
-                              <div className="rounded-lg bg-gradient-to-r from-emerald-500/[0.07] to-blue-500/[0.07] border border-emerald-500/20 p-3">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span className="text-[11px] font-medium text-emerald-400">Multi-Platform Generation</span>
+
+                            <div className="space-y-2">
+                              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
+                                {(DICTIONARY[briefForm.language as keyof typeof DICTIONARY]?.targetPlatforms || DICTIONARY.en.targetPlatforms)}
+                              </label>
+                              <div className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-4 shadow-sm">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <div className="p-1.5 rounded-lg bg-emerald-500/10">
+                                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                                  </div>
+                                  <span className="text-[11px] font-bold text-emerald-400 tracking-tight">Multi-Platform Content Synthesis</span>
                                 </div>
-                                <p className="text-[10px] text-dim leading-relaxed mb-2.5">
+                                <p className="text-[11px] text-slate-400 leading-relaxed mb-4 font-medium opacity-80">
                                   {(DICTIONARY[briefForm.language as keyof typeof DICTIONARY]?.platformHint || DICTIONARY.en.platformHint)}
                                 </p>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2.5">
                                   {([
-                                    { label: "Blog", hint: briefForm.language === 'en' ? "SEO-optimized article" : "Bài viết chuẩn SEO", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#F59E0B" d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/><path fill="#FFF" d="M16 14H8v-2h8v2zm0-4H8V8h8v2z"/></svg>, color: "text-amber-400" },
-                                    { label: "Facebook", hint: briefForm.language === 'en' ? "Engaging post" : "Bài đăng thu hút", icon: <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0"><g><path fill="#1877F2" d="M15 8a7 7 0 00-7-7 7 7 0 00-1.094 13.915v-4.892H5.13V8h1.777V6.458c0-1.754 1.045-2.724 2.644-2.724.766 0 1.567.137 1.567.137v1.723h-.883c-.87 0-1.14 1.093V8h1.941l-.31 2.023H9.094v4.892A7.001 7.001 0 0015 8z"></path><path fill="#ffffff" d="M10.725 10.023L11.035 8H9.094V6.687c0-.553.27-1.093 1.14-1.093h.883V3.87s-.801-.137-1.567-.137c-1.6 0-2.644.97-2.644 2.724V8H5.13v2.023h1.777v4.892a7.037 7.037 0 002.188 0v-4.892h1.63z"></path></g></svg>, color: "text-blue-400" },
-                                    { label: "LinkedIn", hint: briefForm.language === 'en' ? "Professional article" : "Bài viết chuyên nghiệp", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9H12.76v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>, color: "text-sky-400" },
+                                    { label: "Blog", hint: briefForm.language === 'en' ? "Full SEO Article" : "Bài viết SEO", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#F59E0B" d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/><path fill="#FFF" d="M16 14H8v-2h8v2zm0-4H8V8h8v2z"/></svg>, color: "text-amber-400" },
+                                    { label: "Facebook", hint: briefForm.language === 'en' ? "Social Post" : "Bài đăng MXH", icon: <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0"><g><path fill="#1877F2" d="M15 8a7 7 0 00-7-7 7 7 0 00-1.094 13.915v-4.892H5.13V8h1.777V6.458c0-1.754 1.045-2.724 2.644-2.724.766 0 1.567.137 1.567.137v1.723h-.883c-.87 0-1.14 1.093V8h1.941l-.31 2.023H9.094v4.892A7.001 7.001 0 0015 8z"></path><path fill="#ffffff" d="M10.725 10.023L11.035 8H9.094V6.687c0-.553.27-1.093 1.14-1.093h.883V3.87s-.801-.137-1.567-.137c-1.6 0-2.644.97-2.644 2.724V8H5.13v2.023h1.777v4.892a7.037 7.037 0 002.188 0v-4.892h1.63z"></path></g></svg>, color: "text-blue-400" },
+                                    { label: "LinkedIn", hint: briefForm.language === 'en' ? "Professional" : "Chuyên nghiệp", icon: <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9H12.76v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>, color: "text-sky-400" },
                                   ]).map((p) => (
-                                    <div key={p.label} className="flex-1 px-2.5 py-2 rounded-lg bg-surface-hover/60 border border-default/50 flex flex-col items-center gap-1">
-                                      <div className="flex items-center gap-1.5">
-                                        {p.icon}
-                                        <span className={`text-[10px] font-semibold ${p.color}`}>{p.label}</span>
+                                    <div key={p.label} className="flex-1 px-3 py-3 rounded-xl bg-slate-900/60 border border-white/5 flex flex-col items-center gap-1.5 hover:bg-slate-900 transition-colors shadow-inner">
+                                      <div className="flex items-center gap-2">
+                                        <div className="p-1 rounded bg-white/5">
+                                          {p.icon}
+                                        </div>
+                                        <span className={`text-[10px] font-bold ${p.color} uppercase tracking-tight`}>{p.label}</span>
                                       </div>
-                                      <span className="text-[9px] text-faint">{p.hint}</span>
+                                      <span className="text-[9px] text-slate-500 font-semibold">{p.hint}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -1711,7 +1727,8 @@ function FormattedText({ text }: { text?: string }) {
   if (!text) return <p className="text-dim text-xs italic">No content available.</p>;
 
   const formatBold = (str: string) => {
-    const boldRegex = /\*\*(.*?)\*\*/g;
+    // Use [\s\S]*? instead of .*? with 's' flag to support matching across newlines without ES2018 requirement
+    const boldRegex = /\*\*([\s\S]*?)\*\*/g;
     return str.split(boldRegex).map((part, i) => 
       i % 2 === 1 ? <strong key={i} className="font-semibold text-heading">{part}</strong> : part
     );
@@ -1733,7 +1750,7 @@ function FormattedText({ text }: { text?: string }) {
           return (
             <ul key={idx} className="list-disc pl-5 space-y-1 my-3">
               {content.split('\n').map((item, i) => (
-                <li key={i} className="text-[13px] text-body">{formatBold(item.replace(/^[-*]\s+/, ''))}</li>
+                <li key={i} className="text-[13px] text-body whitespace-pre-wrap">{formatBold(item.replace(/^[-*]\s+/, ''))}</li>
               ))}
             </ul>
           );
@@ -1747,7 +1764,7 @@ function FormattedText({ text }: { text?: string }) {
             const elements: React.ReactNode[] = [];
             for (let i = 0; i < parts.length; i += 3) {
                 if (parts[i]) {
-                    elements.push(<span key={`t-${i}`}>{formatBold(parts[i])}</span>);
+                    elements.push(<span key={`t-${i}`} className="whitespace-pre-wrap">{formatBold(parts[i])}</span>);
                 }
                 if (i + 1 < parts.length) {
                     const alt = parts[i+1];
@@ -1764,7 +1781,7 @@ function FormattedText({ text }: { text?: string }) {
         }
 
         return (
-          <p key={idx} className="text-[13px] leading-relaxed text-dim">
+          <p key={idx} className="text-[13px] leading-relaxed text-dim whitespace-pre-wrap">
             {formatBold(content)}
           </p>
         );

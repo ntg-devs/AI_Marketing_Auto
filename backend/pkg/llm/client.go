@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/sashabaranov/go-openai"
 )
@@ -94,12 +96,14 @@ Filter out what this audience cares about the most.
 You must also perform a GAP ANALYSIS compared to previous campaigns: "%s".
 Identify any NEW findings or angles in this article that were not covered before.
 
-Provide your output as a Markdown block with three sections:
+Provide your output as a Markdown block with three sections. 
+CRITICAL FORMATTING RULE: You MUST use double line breaks (\n\n) to separate every paragraph and every bullet point. Do not write text bunched together.
+
 ### 1. Persona-Focused Summary
-(A concise summary of key points most relevant to the Persona)
+(A concise summary of key points most relevant to the Persona. Use short paragraphs with empty lines between them.)
 
 ### 2. Gap Analysis
-(Bullet points of new concepts, data, or angles not present in previous campaigns)
+(Bullet points of new concepts, data, or angles not present in previous campaigns. Leave an empty line between each bullet point.)
 
 ### 3. Extracted Entities
 (Keywords, brand mentions, product categories)`, 
@@ -360,7 +364,7 @@ Return ONLY valid JSON (no markdown fences) with this exact structure:
 {
   "tone": "professional|casual|storyteller|data-driven",
   "target_audience": "A concise description of the ideal target audience",
-  "framework_suggestion": "standard|aida|pas|storytelling|analytical",
+  "framework_suggestion": "standard|conversational|narrative|aida|pas|analytical",
   "key_insights": ["insight 1", "insight 2", "insight 3"],
   "content_type": "article|tutorial|review|news|opinion",
   "ai_suggested": true
@@ -369,7 +373,7 @@ Return ONLY valid JSON (no markdown fences) with this exact structure:
 Rules:
 - "tone": Choose based on the writing style and subject matter. Technical = professional. Personal story = storyteller. Lots of stats = data-driven.
 - "target_audience": Identify WHO would benefit most from this content. 
-- "framework_suggestion": AIDA for persuasive/sales content, PAS for problem-solving content, storytelling for narrative content, analytical for data-heavy content, standard otherwise.
+- "framework_suggestion": "conversational" for relatable/friendly content, "narrative" for stories, AIDA for persuasive/sales content, PAS for problem-solving content, analytical for data-heavy content, standard otherwise.
 - "key_insights": Extract 3-5 most important facts, statistics, or unique angles from the text.
 - "content_type": Categorize the content type.
 - LANGUAGE: You MUST write the "target_audience" and all "key_insights" in %s.
@@ -487,9 +491,10 @@ You MUST infuse every section of the outline with this brand identity.`,
 === NHIỆM VỤ CỦA BẠN ===
 1. Phân tích dữ liệu nghiên cứu được cung cấp.
 2. Tiêm DNA Thương hiệu để căn chỉnh các insight phù hợp với bản sắc thương hiệu.
-3. Tạo dàn ý có cấu trúc bằng cách sử dụng framework phù hợp:
-   - Đối với Blog/LinkedIn: Sử dụng AIDA (Attention → Interest → Desire → Action) hoặc PAS (Problem → Agitate → Solve).
-   - Đối với Facebook: Sử dụng Hook → Story → Offer → CTA.
+3. Tạo dàn ý có cấu trúc linh hoạt dựa trên sự chuyển đổi tự nhiên của ý tưởng:
+   - Thay vì bám sát cứng nhắc vào framework, hãy ưu tiên sự kết nối giữa các phần.
+   - Các framework như AIDA hoặc PAS chỉ dùng làm kim chỉ nam cho luồng logic, không nhất thiết phải xuất hiện tên các phần này trong bài viết.
+   - Khuyến khích sử dụng các cấu trúc như: Kể chuyện (Storytelling), Câu hỏi & Giải pháp, hoặc Chia sẻ kinh nghiệm thực tế.
 4. Mỗi phần phải có mục đích rõ ràng và các điểm thảo luận chính.
 
 === NỀN TẢNG ===
@@ -506,7 +511,7 @@ You MUST infuse every section of the outline with this brand identity.`,
 === ĐỊNH DẠNG ĐẦU RA ===
 Trả về một JSON object với cấu trúc chính xác như sau:
 {
-  "framework": "AIDA|PAS|Hook-Story-Offer",
+  "framework": "Narrative|Conversational|AIDA|PAS|Question-Solution",
   "title_suggestion": "Tiêu đề gợi ý cho nội dung",
   "sections": [
     {
@@ -621,9 +626,9 @@ Cảm xúc hình ảnh: %s. Ngữ cảnh hình ảnh: %s.
 			defaultStr(brief.ImageEmotion, "thu hút, chuyên nghiệp"),
 			defaultStr(brief.ImageContext, "nội dung hình ảnh minh họa cho bài viết"))
 		
-		imageInstruction = "- KHÔNG sử dụng hay sinh ra thẻ <img> nào trong nội dung do hệ thống sẽ tự động chèn ảnh tham chiếu của người dùng vào bài viết."
+		imageInstruction = "- TUYỆT ĐỐI KHÔNG tự tạo bất kỳ thẻ <img> hay markdown ![...](...) nào trong nội dung bài viết. Hệ thống của tôi sẽ tự động thực hiện việc chèn ảnh vào vị trí phù hợp sau."
 	} else {
-		imageInstruction = `- QUAN TRỌNG: Bạn PHẢI tự tạo 1-2 hình ảnh liên quan để minh họa nội dung. Dùng URL với định dạng chính xác sau: <img src="https://image.pollinations.ai/prompt/{mô_tả_ảnh_bằng_tiếng_anh_viết_liền_bằng_dấu_cộng}?width=800&height=400&nologo=true" alt="{mô_tả}" style="border-radius: 8px; margin: 16px 0; width: 100%%; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" />`
+		imageInstruction = `- QUAN TRỌNG: Bạn PHẢI tự chèn 1-2 hình ảnh liên quan để minh họa nội dung (không dùng gạch ngang). Dùng URL với định dạng HTML sau: <img src="https://image.pollinations.ai/prompt/{mô_tả_ảnh_bằng_tiếng_anh_viết_liền_bằng_dấu_cộng}?width=800&height=400&nologo=true" alt="{mô_tả}" style="border-radius: 8px; margin: 16px 0; width: 100%%;" />`
 	}
 
 	// LAYER 4 (Structure): Copywriting Framework — outline-driven structure
@@ -658,16 +663,20 @@ FRAMEWORK DATA:
 - SHOW, DON'T TELL: Thay vì nói "Sản phẩm của chúng tôi rất nhanh", hãy đưa ra số liệu hoặc ví dụ cụ thể (VD: "Xử lý 1000 dữ liệu chỉ trong 2 giây").
 - STRONG HOOK: Mở đầu bằng một câu hỏi nhức nhối, một con số gây sốc hoặc một lời khẳng định phá vỡ định kiến để giữ chân người đọc ngay từ 3 giây đầu.
 - NHỊP ĐIỆU VĂN BẢN: Câu văn phải có sự thay đổi về độ dài để tạo sự lôi cuốn, tránh viết các câu dài liên tiếp gây mệt mỏi.
-- NGÔN NGỮ CHUYÊN GIA: Nói tiếng nói của ngành nhưng vẫn đủ dễ hiểu để thu phục đối tượng khách hàng mục tiêu. Tránh các từ sáo rỗng như "đột phá", "vượt trội" mà không có dẫn chứng.
+- NGÔN NGỮ CHUYÊN GIA: Nói tiếng nói của ngành nhưng vẫn đủ dễ hiểu để thu phục đối tượng khách hàng mục tiêu. Tránh các từ sáo rỗng như "đột phá", "vượt trội", "đẳng cấp" mà không có dẫn chứng.
+- HÀNH VĂN TỰ NHIÊN (RẤT QUAN TRỌNG): Tránh việc chia bài viết quá rập khuôn theo framework (như ghi rõ chữ Attention, Interest...). Hãy sử dụng các đoạn chuyển tiếp mượt mà như đang nói chuyện trực tiếp với độc giả. Viết sao cho người đọc cảm thấy đây là chia sẻ từ một con người thực thụ, không phải từ một cỗ máy quảng cáo.
+- GẦN GŨI & THỰC TẾ: Sử dụng các ví dụ đời thường, ngôn ngữ đời sống để giải thích các vấn đề phức tạp. Tránh lối viết lý thuyết, giáo điều.
 
 === ĐỊNH DẠNG ĐẦU RA NGHIÊM NGẶT (RẤT QUAN TRỌNG) ===
 - BẮT BUỘC CHỈ sử dụng HTML tags. TUYỆT ĐỐI KHÔNG dùng ký hiệu Markdown (#, **, [link], -, *).
 - MỖI ĐOẠN VĂN phải được bọc trong thẻ <p>...</p>. 
 - GIỮA CÁC ĐOẠN VĂN (giữa các thẻ </p> và <p>) phải có ít nhất 1 dòng trống (\n\n) để tạo không gian thở.
-- Sử dụng <h2>, <h3> cho các tiêu đề phần để phân tách nội dung rõ ràng.
-- Sử dụng <ul><li>...</li></ul> cho các danh sách liệt kê để tăng tính chuyên nghiệp.
 - Nội dung phải được trình bày sạch sẽ như một bài báo chuyên nghiệp trên blog.
+- Trả về mã HTML thuần (RAW HTML). TUYỆT ĐỐI KHÔNG được thực thể hóa (escape) các thẻ HTML (VD: không dùng &lt;, &gt;, &quot;). Thẻ HTML phải được render trực tiếp.
 - TUYỆT ĐỐI KHÔNG viết dính liền thành một khối văn bản.
+- TUYỆT ĐỐI KHÔNG sử dụng gạch ngang (strikethrough) hoặc các thẻ <s>, <strike>, <del> trong bất kỳ trường hợp nào.
+- TUYỆT ĐỐI KHÔNG sử dụng ký tự gạch chéo ngược (backslash \ ) làm dấu ngăn cách hay xuống dòng.
+- ĐẢM BẢO nội dung được bọc hoàn toàn trong các thẻ HTML hợp lệ.
 
 [YÊU CẦU CỤ THỂ]: %s
 [VÍ DỤ SAI]: **Headline** \n Dữ liệu dính liền...
@@ -694,14 +703,15 @@ FRAMEWORK DATA:
 
 	// ═══════════════════════════════════════════════════
 	// POST-PROCESSING: Deterministic Image Injection
-	// Instead of relying on LLM to insert <img> (unreliable),
-	// we programmatically inject the user's image at the optimal position.
 	// ═══════════════════════════════════════════════════
 	if brief.ImageURL != "" {
+		safeURL := strings.ReplaceAll(brief.ImageURL, `"`, `%22`)
+		safeContext := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(defaultStr(brief.ImageContext, "Hình ảnh minh họa"), `"`, `&quot;`), `<`, `&lt;`), `>`, `&gt;`)
+		
 		imgTag := fmt.Sprintf(`<figure style="margin: 24px 0; text-align: center;"><img src="%s" alt="%s" style="border-radius: 12px; width: 100%%; max-width: 720px; box-shadow: 0 8px 25px -5px rgb(0 0 0 / 0.15); display: inline-block;" /><figcaption style="font-size: 13px; color: #888; margin-top: 8px; font-style: italic;">%s</figcaption></figure>`,
-			brief.ImageURL,
-			defaultStr(brief.ImageContext, "Hình ảnh minh họa"),
-			defaultStr(brief.ImageContext, "Hình ảnh minh họa cho bài viết"))
+			safeURL,
+			safeContext,
+			safeContext)
 
 		// Strategy: Insert after the first </h1> if exists, otherwise after first </p>
 		injected := false
@@ -725,13 +735,52 @@ FRAMEWORK DATA:
 	// ═══════════════════════════════════════════════════
 	// POST-PROCESSING: Fix common AI formatting errors
 	// ═══════════════════════════════════════════════════
-	// 1. Convert any leaked Markdown bold to HTML strong
-	contentHTML = strings.ReplaceAll(contentHTML, "**", "<strong>")
-	// 2. Ensure paragraphs have double newlines for the editor to breathe
+	
+	// 1. Clean ALL strike-through tags (s, strike, del) - case insensitive, handles attributes
+	strikeRegex := regexp.MustCompile(`(?i)<(s|strike|del|strikethrough)[^>]*>|</(s|strike|del|strikethrough)>`)
+	contentHTML = strikeRegex.ReplaceAllString(contentHTML, "")
+	
+	// 2. Remove markdown strikethrough (~~)
+	contentHTML = strings.ReplaceAll(contentHTML, "~~", "")
+	
+	// 3. Convert any leaked Markdown bold (**text**) to HTML strong (<strong>text</strong>)
+	boldRegex := regexp.MustCompile(`\*\*(.*?)\*\*`)
+	contentHTML = boldRegex.ReplaceAllString(contentHTML, "<strong>$1</strong>")
+	
+	// 4. Convert any leaked Markdown italic (*text*) to HTML em (<em>text</em>)
+	italicRegex := regexp.MustCompile(`\*([^*]+)\*`)
+	contentHTML = italicRegex.ReplaceAllString(contentHTML, "<em>$1</em>")
+
+	// 5. Clean stray backslashes (often appearing as escaped newlines or separators)
+	contentHTML = strings.ReplaceAll(contentHTML, " \\ ", " ")
+	contentHTML = strings.ReplaceAll(contentHTML, "\\\n", "\n")
+	contentHTML = strings.ReplaceAll(contentHTML, "\\ ", " ")
+
+	// 6. Clean stray backticks (sometimes models wrap HTML in code blocks)
+	contentHTML = strings.ReplaceAll(contentHTML, "```html", "")
+	contentHTML = strings.ReplaceAll(contentHTML, "```", "")
+
+	// 7. Fix common spacing issues for the editor
 	contentHTML = strings.ReplaceAll(contentHTML, "</p><p>", "</p>\n\n<p>")
 	contentHTML = strings.ReplaceAll(contentHTML, "</h2><p>", "</h2>\n\n<p>")
 	contentHTML = strings.ReplaceAll(contentHTML, "</h3><p>", "</h3>\n\n<p>")
 	contentHTML = strings.ReplaceAll(contentHTML, "</h1><p>", "</h1>\n\n<p>")
+	
+	// 8. Prevent mangled markdown image + HTML injection artifacts
+	contentHTML = strings.ReplaceAll(contentHTML, "!<figure", "<figure")
+	contentHTML = strings.ReplaceAll(contentHTML, "!<img", "<img")
+
+	// 8. Scrub non-printable characters (common 'tofu' sources in LLM outputs)
+	sb := strings.Builder{}
+	for _, r := range contentHTML {
+		if unicode.IsPrint(r) || r == '\n' || r == '\r' || r == '\t' {
+			sb.WriteRune(r)
+		}
+	}
+	contentHTML = sb.String()
+
+	// 9. Remove any trailing or leading whitespace/newlines
+	contentHTML = strings.TrimSpace(contentHTML)
 
 	result := &ContentResult{
 		ContentHTML: contentHTML,
@@ -818,25 +867,31 @@ func getPlatformGuide(platform string) string {
 func getToneGuide(tone string) string {
 	switch tone {
 	case "casual":
-		return "Write like you're talking to a friend. Use contractions, casual language, humor where appropriate. Be relatable and approachable."
+		return "Viết như đang trò chuyện thân mật với một người bạn. Sử dụng ngôn ngữ đời thường, gần gũi, pha chút hóm hỉnh nếu phù hợp. Tránh dùng thuật ngữ chuyên môn khó hiểu. Hãy tạo cảm giác chân thực và dễ kết nối."
 	case "storyteller":
-		return "Use narrative techniques: anecdotes, vivid descriptions, emotional hooks. Take the reader on a journey. Paint pictures with words."
+		return "Sử dụng kỹ thuật kể chuyện: đưa vào các tình huống thực tế, mô tả sống động và đánh vào cảm xúc. Dẫn dắt người đọc qua một hành trình trải nghiệm. Biến các dữ liệu khô khan thành những câu chuyện có hồn."
 	case "data-driven":
-		return "Lead with numbers, statistics, and evidence. Use precise language. Include percentages, comparisons, and measurable outcomes. Be authoritative."
+		return "Dẫn dắt bài viết bằng con số, số liệu thống kê và bằng chứng thực tế. Ngôn ngữ chính xác, khách quan nhưng vẫn phải dễ hiểu. Tập trung vào các kết quả có thể đo lường được để tạo sự tin tưởng tuyệt đối."
 	default: // "professional"
-		return "Write with authority and expertise. Be clear, concise, and credible. Use industry terminology appropriately. Maintain a polished, trustworthy voice."
+		return "Viết với phong thái của một chuyên gia nhưng vẫn giữ được sự tinh tế và gần gũi. Ngôn ngữ chuyên nghiệp, rõ ràng, súc tích và có chiều sâu. Tránh lối viết quá trang trọng một cách máy móc; thay vào đó, hãy dùng sự thấu hiểu để chia sẻ kiến thức."
 	}
 }
 
 func stripHTMLTags(s string) string {
 	var result strings.Builder
 	inTag := false
+	inQuote := false
 	for _, r := range s {
-		if r == '<' {
+		if r == '"' {
+			if inTag {
+				inQuote = !inQuote
+			}
+		}
+		if r == '<' && !inQuote {
 			inTag = true
 			continue
 		}
-		if r == '>' {
+		if r == '>' && !inQuote {
 			inTag = false
 			result.WriteRune(' ')
 			continue

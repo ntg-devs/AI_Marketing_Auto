@@ -74,14 +74,14 @@ export const DICTIONARY = {
       { value: "expert", label: "Chuyên gia & Kỹ thuật" }
     ],
     frameworks: [
-      { value: "standard", label: "Bài viết Tiêu chuẩn" },
+      { value: "conversational", label: "Hành văn Tự nhiên (Gần gũi, thực tế)" },
+      { value: "narrative", label: "Lối kể chuyện (Thấu cảm, truyền cảm hứng)" },
+      { value: "standard", label: "Bài viết Tiêu chuẩn (Cân bằng)" },
       { value: "aida", label: "AIDA (Gây chú ý, Quan tâm, Khao khát, Hành động)" },
       { value: "pas", label: "PAS (Vấn đề, Xát muối, Giải pháp)" },
-      { value: "storytelling", label: "Storytelling (Mở đầu, Mâu thuẫn, Giải quyết)" },
+      { value: "question_solution", label: "Câu hỏi & Giải pháp (Trực diện, hữu ích)" },
       { value: "analytical", label: "Phân tích (Dữ liệu, Insight, Kết luận)" },
-      { value: "4c", label: "4C (Rõ ràng, Súc tích, Thuyết phục, Đáng tin)" },
-      { value: "bab", label: "BAB (Trước, Sau, Cầu nối)" },
-      { value: "fab", label: "FAB (Đặc điểm, Lợi thế, Lợi ích)" }
+      { value: "bab", label: "BAB (Trước, Sau, Cầu nối)" }
     ]
   },
   en: {
@@ -134,14 +134,14 @@ export const DICTIONARY = {
       { value: "expert", label: "Expert & Technical" }
     ],
     frameworks: [
-      { value: "standard", label: "Standard Article" },
+      { value: "conversational", label: "Natural & Conversational" },
+      { value: "narrative", label: "Story-Driven Narrative" },
+      { value: "standard", label: "Standard (Balanced)" },
       { value: "aida", label: "AIDA (Attention, Interest, Desire, Action)" },
       { value: "pas", label: "PAS (Problem, Agitate, Solution)" },
-      { value: "storytelling", label: "Storytelling (Hook, Conflict, Resolution)" },
-      { value: "analytical", label: "Analytical (Data, Insights, Conclusion)" },
-      { value: "4c", label: "4C (Clear, Concise, Compelling, Credible)" },
-      { value: "bab", label: "BAB (Before, After, Bridge)" },
-      { value: "fab", label: "FAB (Features, Advantages, Benefits)" }
+      { value: "question_solution", label: "Question & Solution" },
+      { value: "analytical", label: "Analytical (Data, Insights)" },
+      { value: "bab", label: "BAB (Before, After, Bridge)" }
     ]
   }
 };

@@ -32,7 +32,14 @@ func main() {
 
 	// 3. Database Migration
 	db.AutoMigrate(
+		&domain.User{},
+		&domain.Team{},
+		&domain.SocialAccount{},
+		&domain.PublishSchedule{},
 		&domain.Notification{},
+		&domain.Post{},
+		&domain.AIProviderConfig{},
+		&domain.UserPreferences{},
 	)
 	// 3. Environment Configs
 	jwtSecret := os.Getenv("JWT_SECRET")

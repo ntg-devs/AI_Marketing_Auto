@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   History,
   Search,
@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCampaignHistoryStore } from '@/store/useCampaignHistoryStore';
-import { campaignHistoryData } from '@/constants/campaignHistoryData';
+// import { campaignHistoryData } from '@/constants/campaignHistoryData';
 import CampaignHistoryRow from './CampaignHistoryRow';
 import type { CampaignHistoryItem } from '@/types/campaignHistory';
 
@@ -47,11 +47,20 @@ export default function CampaignHistoryOverlay() {
     setFilterChannel,
     searchQuery,
     setSearchQuery,
+    data,
+    isLoading,
+    fetchHistory,
   } = useCampaignHistoryStore();
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchHistory();
+    }
+  }, [isOpen, fetchHistory]);
 
   // Filtered data
   const filteredData = useMemo(() => {
-    return campaignHistoryData.filter((item: CampaignHistoryItem) => {
+    return data.filter((item: CampaignHistoryItem) => {
       const matchesStatus =
         filterStatus === 'all' || item.status === filterStatus;
       const matchesChannel =
@@ -66,15 +75,15 @@ export default function CampaignHistoryOverlay() {
 
   // Summary stats
   const stats = useMemo(() => {
-    const total = campaignHistoryData.length;
-    const success = campaignHistoryData.filter((i) => i.status === 'success').length;
-    const failed = campaignHistoryData.filter((i) => i.status === 'failed').length;
-    const scheduled = campaignHistoryData.filter((i) => i.status === 'scheduled').length;
+    const total = data.length;
+    const success = data.filter((i) => i.status === 'success').length;
+    const failed = data.filter((i) => i.status === 'failed').length;
+    const scheduled = data.filter((i) => i.status === 'scheduled').length;
     const avgEngagement =
-      campaignHistoryData
+      data
         .filter((i) => i.engagementRate > 0)
         .reduce((sum, i) => sum + i.engagementRate, 0) /
-        campaignHistoryData.filter((i) => i.engagementRate > 0).length || 0;
+        (data.filter((i) => i.engagementRate > 0).length || 1);
 
     return { total, success, failed, scheduled, avgEngagement };
   }, []);
@@ -222,7 +231,12 @@ export default function CampaignHistoryOverlay() {
         {/* ═══ List Area ═══ */}
         <ScrollArea className="flex-1 min-h-0">
           <div className="px-4 py-3 space-y-1">
-            {filteredData.length === 0 ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-3"></div>
+                <p className="text-sm text-label">Loading history...</p>
+              </div>
+            ) : filteredData.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="w-12 h-12 rounded-xl bg-surface-hover flex items-center justify-center mb-3">
                   <Search className="w-5 h-5 text-dim" />
