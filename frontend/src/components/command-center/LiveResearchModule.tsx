@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { researchApi, LiveInsight, LiveSourceRef } from '@/api/research';
+import { useResearchStore } from '@/store/useResearchStore';
+import { DEFAULT_TEAM_ID } from '@/constants/smart-entry';
 import {
   TrendingUp,
   MessageCircle,
@@ -7,57 +9,16 @@ import {
   ShieldCheck,
   RefreshCw,
   Flame,
+  Plus,
+  Search,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { gooeyToast } from 'goey-toast';
 
 type FeedTab = 'insights' | 'sources';
-
-const insightPool: Omit<LiveInsight, 'id' | 'score' | 'timestamp'>[] = [
-  { source: 'reddit', title: 'Users frustrated with onboarding complexity', snippet: '"We lost 40% of trial users in the first 3 days because the setup was too confusing..."' },
-  { source: 'trends', title: '"AI automation" search volume +340%', snippet: 'Google Trends shows massive spike in "AI marketing automation" queries across SEA region.' },
-  { source: 'quora', title: 'How to reduce SaaS churn with content?', snippet: '"Educational content that addresses Day-1 confusion reduces churn by 25%..."' },
-  { source: 'reddit', title: 'Pricing page best practices discussion', snippet: '"Transparent pricing with a comparison table converts 2x better than hidden pricing..."' },
-  { source: 'trends', title: 'Rising keyword: "B2B growth hacks"', snippet: 'Breakout query detected: startups looking for low-cost B2B acquisition channels.' },
-  { source: 'quora', title: 'Is email marketing dead in 2026?', snippet: '"Actually, personalized plain-text emails are seeing a 45% higher open rate than HTML ones."' },
-  { source: 'reddit', title: 'Stop using generic CTA buttons', snippet: "I changed 'Submit' to 'Get Free Assessment' and conversions jumped by 18% overnight." },
-  { source: 'trends', title: 'Demand for video testimonials surging', snippet: 'Searches for "how to collect video reviews" grew 120% YoY.' },
-  { source: 'quora', title: 'What is the ROI of case studies?', snippet: '"B2B buyers consume an average of 3 case studies before making a purchasing decision..."' },
-  { source: 'reddit', title: 'TikTok for B2B? Surprisingly yes.', snippet: '"We ran an experimental behind-the-scenes campaign and generated 200 high-intent leads."' },
-];
-
-const sourcePool: Omit<LiveSourceRef, 'id' | 'relevance'>[] = [
-  { url: 'hubspot.com/blog/marketing-automation', title: 'Marketing Automation Guide 2026', verified: true },
-  { url: 'neil-patel.com/content-strategy', title: 'Content Strategy Framework', verified: true },
-  { url: 'semrush.com/blog/saas-seo', title: 'SaaS SEO Playbook', verified: true },
-  { url: 'reddit.com/r/SaaS/comments/...', title: 'Community Discussion: Churn', verified: false },
-  { url: 'forbes.com/business-trends', title: 'B2B Marketing Trends Report 2026', verified: true },
-  { url: 'g2.com/research/software-buyers', title: 'G2 Buyer Behavior Study', verified: true },
-  { url: 'indiehackers.com/post/growth', title: '0 to $10k MRR Marketing Playbook', verified: false },
-  { url: 'marketingprofs.com/articles', title: 'The Psychology of CTA Copywriting', verified: true },
-  { url: 'techcrunch.com/startups', title: 'How AI is eating marketing jobs', verified: true },
-  { url: 'quora.com/What-are-the-best-SEO-tools', title: 'User reviews on Top SEO Tools', verified: false },
-];
-
-const generateDynamicInsights = (count: number): LiveInsight[] => {
-  const shuffled = [...insightPool].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count).map((item, index) => ({
-    ...item,
-    id: `insight-${Date.now()}-${index}`,
-    score: Math.floor(Math.random() * 30) + 70, // 70-99
-    timestamp: `${Math.floor(Math.random() * 8) + 1}m ago`,
-  }));
-};
-
-const generateDynamicSources = (count: number): LiveSourceRef[] => {
-  const shuffled = [...sourcePool].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count).map((item, index) => ({
-    ...item,
-    id: `source-${Date.now()}-${index}`,
-    relevance: Math.floor(Math.random() * 25) + 75, // 75-99
-  }));
-};
 
 const sourceIcons: Record<LiveInsight['source'], typeof TrendingUp> = {
   reddit: MessageCircle,
@@ -74,9 +35,17 @@ const sourceColors: Record<LiveInsight['source'], string> = {
 export default function LiveResearchModule() {
   const [activeTab, setActiveTab] = useState<FeedTab>('insights');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const setPendingInput = useResearchStore(s => s.setPendingInput);
+  const setActiveJobId = useResearchStore(s => s.setActiveJobId);
+  const setPolling = useResearchStore(s => s.setPolling);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   
   const [displayedInsights, setDisplayedInsights] = useState<LiveInsight[]>([]);
   const [displayedSources, setDisplayedSources] = useState<LiveSourceRef[]>([]);
+  const [activeSearchJobId, setActiveSearchJobId] = useState<string | null>(null);
+  const [isPollingSearch, setIsPollingSearch] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -86,12 +55,8 @@ export default function LiveResearchModule() {
     // Clean architecture: Call the standard API service integration instead of raw 'fetch'
     const liveData = await researchApi.getLiveResearch();
     
-    // Mix data locally out of API scope to represent fallback combinations
-    const combinedInsights = [...(liveData.insights || []).slice(0, 3), ...generateDynamicInsights(1)].sort(() => 0.5 - Math.random());
-    const combinedSources = [...(liveData.sources || []).slice(0, 3), ...generateDynamicSources(1)].sort(() => 0.5 - Math.random());
-    
-    setDisplayedInsights(combinedInsights);
-    setDisplayedSources(combinedSources);
+    setDisplayedInsights(liveData.insights || []);
+    setDisplayedSources(liveData.sources || []);
     setIsRefreshing(false);
     setIsLoading(false);
   }, []);
@@ -100,8 +65,95 @@ export default function LiveResearchModule() {
     loadData();
   }, [loadData]);
 
+  // Poll for search results if a search job is active
+  useEffect(() => {
+    if (!activeSearchJobId) return;
+
+    let timer: NodeJS.Timeout;
+    const poll = async () => {
+      try {
+        const detail = await researchApi.getResearchJob(activeSearchJobId);
+        if (detail.job.status === 'completed') {
+          if (detail.pages && detail.pages.length > 0) {
+            console.log("Search job completed. Found pages:", detail.pages);
+            const results: LiveSourceRef[] = detail.pages
+              .filter(p => p.url && p.url !== 'about:blank')
+              .map(p => ({
+                id: p.id || p.url,
+                url: p.url,
+                title: p.title || p.url,
+                relevance: 95,
+                verified: true
+              }));
+            
+            if (results.length > 0) {
+              setDisplayedSources(prev => [...results, ...prev]);
+              setActiveTab('sources');
+              gooeyToast.success(`Tìm thấy ${results.length} kết quả tìm kiếm!`);
+            } else {
+              gooeyToast.info("Không tìm thấy link hợp lệ trong kết quả");
+            }
+          }
+          setActiveSearchJobId(null);
+          setIsPollingSearch(false);
+        } else if (detail.job.status === 'failed') {
+          setActiveSearchJobId(null);
+          setIsPollingSearch(false);
+          gooeyToast.error("Tìm kiếm thất bại");
+        } else {
+          timer = setTimeout(poll, 3000);
+        }
+      } catch (err) {
+        setActiveSearchJobId(null);
+        setIsPollingSearch(false);
+      }
+    };
+
+    setIsPollingSearch(true);
+    poll();
+    return () => clearTimeout(timer);
+  }, [activeSearchJobId]);
+
   const handleRefresh = () => {
     loadData();
+  };
+
+  const handleApplyInsight = (insight: LiveInsight) => {
+    setPendingInput(insight.title, null);
+  };
+
+  const handleApplySource = (source: LiveSourceRef) => {
+    const url = source.url.startsWith('http') ? source.url : `https://${source.url}`;
+    
+    // Open in new tab as requested
+    window.open(url, '_blank');
+    
+    // Push to Smart Entry input
+    setPendingInput(url, null);
+    gooeyToast.success("Đã đẩy URL vào Smart Entry");
+  };
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!searchQuery.trim() || isSearching) return;
+
+    setIsSearching(true);
+    try {
+      const response = await researchApi.startURLResearch({
+        team_id: DEFAULT_TEAM_ID,
+        url: searchQuery.trim(),
+        strategy: 'search',
+        max_pages: 1,
+        use_stealth: true,
+      });
+      setActiveSearchJobId(response.job_id);
+      setSearchQuery('');
+      gooeyToast.success("Bắt đầu tìm kiếm chuyên sâu...");
+    } catch (err: any) {
+      gooeyToast.error(err?.message || "Lỗi khi bắt đầu tìm kiếm");
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -124,6 +176,34 @@ export default function LiveResearchModule() {
             <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
+      </div>
+
+      {/* Search Input Section */}
+      <div className="px-3 py-3 border-b border-default bg-surface/30">
+        <form onSubmit={handleSearch} className="relative group">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-3.5 w-3.5 text-dim group-focus-within:text-primary transition-colors" />
+          </div>
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Google Search..."
+            className="block w-full pl-9 pr-14 py-2 h-9 text-[11px] bg-surface-hover border-default focus:border-primary/50 focus:ring-0 rounded-lg placeholder:text-faint transition-all"
+          />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-1.5">
+            {searchQuery && (
+              <Button
+                type="submit"
+                disabled={isSearching || isPollingSearch}
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[9px] font-bold text-primary hover:bg-primary/10 transition-colors border border-primary/20"
+              >
+                {(isSearching || isPollingSearch) ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'SEARCH'}
+              </Button>
+            )}
+          </div>
+        </form>
       </div>
 
       {/* Tabs */}
@@ -166,8 +246,12 @@ export default function LiveResearchModule() {
               return (
                 <div
                   key={insight.id}
-                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group cursor-pointer break-words"
+                  onClick={() => handleApplyInsight(insight)}
+                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group cursor-pointer break-words relative overflow-hidden"
                 >
+                  <div className="absolute right-0 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity bg-primary/10 rounded-bl-lg">
+                    <Plus className="w-3 h-3 text-primary" />
+                  </div>
                   <div className="flex items-start justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <SourceIcon
@@ -199,17 +283,29 @@ export default function LiveResearchModule() {
 
           {activeTab === 'sources' && (
             <div className="space-y-2 break-words">
-              <div className="flex items-center gap-1.5 px-1 mb-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span className="text-[10px] text-emerald-500 font-medium">
-                  Anti-Hallucination Sources
-                </span>
+              <div className="flex items-center justify-between px-1 mb-1">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                  <span className="text-[10px] text-emerald-500 font-medium">
+                    Anti-Hallucination Sources
+                  </span>
+                </div>
+                {isPollingSearch && (
+                   <div className="flex items-center gap-1.5 animate-pulse">
+                     <RefreshCw className="w-2.5 h-2.5 text-primary animate-spin" />
+                     <span className="text-[9px] text-primary font-bold">SEARCHING...</span>
+                   </div>
+                )}
               </div>
               {displayedSources.map((source) => (
                 <div
                   key={source.id}
-                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group break-words"
+                  onClick={() => handleApplySource(source)}
+                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group cursor-pointer break-words relative overflow-hidden"
                 >
+                  <div className="absolute right-0 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-500/10 rounded-bl-lg">
+                    <Plus className="w-3 h-3 text-emerald-500" />
+                  </div>
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <p className="text-[11px] text-heading font-medium truncate break-words">

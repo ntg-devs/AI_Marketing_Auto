@@ -179,7 +179,7 @@ export default function SystemSettingsPanel() {
 
               {/* Connected accounts */}
               <div className="grid gap-2.5">
-                {accounts.length === 0 && !isLoading && (
+                {accounts?.length === 0 && !isLoading && (
                   <div className="text-center py-8 border border-dashed border-default rounded-xl bg-surface-hover/20">
                     <Link2 className="w-8 h-8 text-faint mx-auto mb-2 opacity-40" />
                     <p className="text-[11px] text-dim mb-1">Chưa có kết nối nào</p>
@@ -187,7 +187,7 @@ export default function SystemSettingsPanel() {
                   </div>
                 )}
                 
-                {accounts.map((conn) => {
+                {accounts?.map((conn) => {
                   const isPlaceholder = !conn.profile_name || conn.profile_name?.includes('placeholder');
                   const platformLabel = conn.platform.charAt(0).toUpperCase() + conn.platform.slice(1);
                   return (

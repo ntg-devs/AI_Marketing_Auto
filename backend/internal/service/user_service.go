@@ -388,7 +388,7 @@ func (s *userService) GetHealthStats(ctx context.Context, teamID uuid.UUID) (*do
 	var totalTokens int64
 	s.db.WithContext(ctx).Table("api_usage_logs").
 		Where("team_id = ?", teamID).
-		Select("SUM(total_tokens)").
+		Select("COALESCE(SUM(total_tokens), 0)").
 		Scan(&totalTokens)
 	
 	stats.Usage.TotalTokens = int(totalTokens)

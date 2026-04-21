@@ -1,6 +1,6 @@
-export type DistributionChannel = 'facebook' | 'linkedin' | 'blog';
+export type DistributionChannel = 'facebook' | 'linkedin' | 'blog' | 'instagram';
 
-export type CampaignStatus = 'scheduled' | 'success' | 'failed';
+export type CampaignStatus = 'scheduled' | 'success' | 'failed' | 'draft';
 
 export interface SparklineDataPoint {
   day: string;

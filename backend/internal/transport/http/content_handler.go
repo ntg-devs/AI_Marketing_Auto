@@ -151,6 +151,7 @@ func (h *contentHandler) GenerateContent(w http.ResponseWriter, r *http.Request)
 			Topic:             topic,
 			ContentHTML:       result.ContentHTML,
 			Language:          req.Language,
+			Platform:          req.Platform,
 			Status:            "draft",
 			AIModelUsed:       result.ModelUsed,
 			LastAIProcessedAt: &now,

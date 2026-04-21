@@ -25,12 +25,14 @@ const statusFilterOptions = [
   { value: 'all' as const, label: 'All', icon: <Filter className="w-3 h-3" /> },
   { value: 'success' as const, label: 'Success', icon: <CheckCircle className="w-3 h-3" /> },
   { value: 'scheduled' as const, label: 'Scheduled', icon: <Clock className="w-3 h-3" /> },
+  { value: 'draft' as const, label: 'Drafts', icon: <Clock className="w-3 h-3 text-slate-400" /> },
   { value: 'failed' as const, label: 'Failed', icon: <XCircle className="w-3 h-3" /> },
 ];
 
 const channelFilterOptions = [
   { value: 'all' as const, label: 'All Channels' },
   { value: 'facebook' as const, label: 'Facebook' },
+  { value: 'instagram' as const, label: 'Instagram' },
   { value: 'linkedin' as const, label: 'LinkedIn' },
   { value: 'blog' as const, label: 'Blog' },
 ];

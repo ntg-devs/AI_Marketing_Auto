@@ -44,7 +44,11 @@ apiClient.interceptors.response.use(
     // Un-wrap standardized backend response { success, data, message, error }
     if (resData && typeof resData === 'object' && 'success' in resData) {
       if (resData.success) {
-        // If it has standard data wrapper, unwrap it but attach the message
+        // If it's an array, return it directly to preserve array methods like .map()
+        if (Array.isArray(resData.data)) {
+          return resData.data;
+        }
+        // If it has standard data wrapper (object), unwrap it but attach the message
         if (resData.data && typeof resData.data === 'object') {
           return {
             ...resData.data,

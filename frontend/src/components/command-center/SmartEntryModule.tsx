@@ -145,7 +145,6 @@ export default function SmartEntryModule() {
     }
   }, [abortController]);
 
-  // Sync briefForm when preferences are loaded from server (only once)
   const [prefsApplied, setPrefsApplied] = useState(false);
   useEffect(() => {
     if (userPrefs && !prefsApplied) {
@@ -160,6 +159,25 @@ export default function SmartEntryModule() {
       setPrefsApplied(true);
     }
   }, [userPrefs, prefsApplied]);
+  
+  // Watch for pending inputs from other modules (e.g. Live Research)
+  const pendingKeyword = useResearchStore(s => s.pendingKeyword);
+  const pendingImageURL = useResearchStore(s => s.pendingImageURL);
+  const setPendingInput = useResearchStore(s => s.setPendingInput);
+  
+  useEffect(() => {
+    if (pendingKeyword) {
+      setInputMode('link'); // Switch to link mode as it now handles queries
+      setInputValue(pendingKeyword);
+      setPendingInput(null, null); // Clear after applying
+      gooeyToast.success("Insight applied to Research");
+    } else if (pendingImageURL) {
+      setInputMode('link');
+      setImageUrlValue(pendingImageURL);
+      setPendingInput(null, null); // Clear after applying
+      gooeyToast.success("Source applied to Research");
+    }
+  }, [pendingKeyword, pendingImageURL, setPendingInput]);
 
   // Save preferences back to server when user completes content generation
   const persistBriefToPreferences = useCallback(() => {
@@ -177,7 +195,6 @@ export default function SmartEntryModule() {
 
   const modes: { key: InputMode; icon: any; label: string }[] = [
     { key: "link", icon: Link2, label: "Web Link" },
-    { key: "keyword", icon: Search, label: "Keywords" },
     { key: "file", icon: Upload, label: "File" },
   ];
 
@@ -353,26 +370,6 @@ export default function SmartEntryModule() {
     if (!valueToUse.trim() && !isCombined) return;
     if (isCombined && (!inputValue.trim() || !imageUrlValue.trim())) return;
 
-    if (!isVisionOnly && !isCombined && inputMode === "keyword") {
-      const keywords = valueToUse
-        .split(",")
-        .map((keyword) => keyword.trim())
-        .filter(Boolean)
-        .slice(0, 4);
-
-      if (keywords.length > 0) {
-        setContextTags(
-          keywords.map((keyword, index) => ({
-            id: `keyword-${index}`,
-            label: keyword,
-            type: "topic" as const,
-          })),
-        );
-      }
-      gooeyToast.success("Keywords added to context");
-      return;
-    }
-
     if (!isVisionOnly && !isCombined && inputMode === "file") {
       gooeyToast.info("File analysis coming soon!");
       return;
@@ -385,7 +382,7 @@ export default function SmartEntryModule() {
 
       const payload: StartResearchRequest = {
         team_id: resolveTeamId(),
-        user_id: user?.id,
+        user_id: user?.id?.trim() ? user.id : undefined,
         url: inputValue.trim() || (isVisionOnly ? imageUrlValue.trim() : ""),
         image_url: isCombined || isVisionOnly ? imageUrlValue.trim() : undefined,
         strategy: strategy,

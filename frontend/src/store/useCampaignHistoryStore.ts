@@ -5,8 +5,8 @@ import type { CampaignHistoryItem } from '@/types/campaignHistory';
 interface CampaignHistoryState {
   isOpen: boolean;
   expandedRowId: string | null;
-  filterStatus: 'all' | 'scheduled' | 'success' | 'failed';
-  filterChannel: 'all' | 'facebook' | 'linkedin' | 'blog';
+  filterStatus: 'all' | 'scheduled' | 'success' | 'failed' | 'draft';
+  filterChannel: 'all' | 'facebook' | 'linkedin' | 'blog' | 'instagram';
   searchQuery: string;
 
   data: CampaignHistoryItem[];

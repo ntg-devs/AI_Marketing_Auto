@@ -32,6 +32,13 @@ const statusConfig: Record<
     bgClass: 'bg-red-500/10 border-red-500/20',
     icon: <XCircle className="w-3 h-3" />,
   },
+  draft: {
+    label: 'Draft',
+    dotClass: 'bg-slate-400',
+    textClass: 'text-slate-400',
+    bgClass: 'bg-slate-500/10 border-slate-500/20',
+    icon: <Clock className="w-3 h-3" />,
+  },
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps) {

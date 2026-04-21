@@ -4,6 +4,7 @@ import (
 	"bityagi/internal/domain"
 	"bityagi/pkg/response"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -21,12 +22,14 @@ func NewCrawlHandler(service domain.CrawlService) *crawlHandler {
 func (h *crawlHandler) SubmitURL(w http.ResponseWriter, r *http.Request) {
 	var req domain.StartURLResearchRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, http.StatusBadRequest, "invalid request body")
+		log.Printf("[CrawlHandler] JSON Decode error: %v", err)
+		response.Error(w, http.StatusBadRequest, "invalid request body: "+err.Error())
 		return
 	}
 
 	res, err := h.service.StartURLResearch(r.Context(), &req)
 	if err != nil {
+		log.Printf("[CrawlHandler] StartURLResearch error: %v", err)
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -85,4 +88,14 @@ func (h *crawlHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.JSON(w, http.StatusOK, nil, "Crawl job deleted")
+}
+
+func (h *crawlHandler) GetLiveResearch(w http.ResponseWriter, r *http.Request) {
+	res, err := h.service.GetLiveResearch(r.Context())
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, res, "Live research data fetched")
 }

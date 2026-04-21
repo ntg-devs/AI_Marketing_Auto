@@ -77,6 +77,7 @@ func NewApp(db *gorm.DB, jwtSecret string, redisAddr string) *App {
 			r.Get("/teams/health", userHandler.GetHealthStats)
 
 			r.Post("/research/url", crawlHandler.SubmitURL)
+			r.Get("/research/live", crawlHandler.GetLiveResearch)
 			r.Get("/research/jobs", crawlHandler.ListJobs)
 			r.Get("/research/jobs/{jobID}", crawlHandler.GetJob)
 			r.Delete("/research/jobs/{jobID}", crawlHandler.DeleteJob)

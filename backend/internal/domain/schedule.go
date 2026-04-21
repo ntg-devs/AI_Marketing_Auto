@@ -30,7 +30,7 @@ type Post struct {
 	TeamID             uuid.UUID              `json:"team_id" gorm:"type:uuid;not null;index"`
 	UserID             uuid.UUID              `json:"user_id" gorm:"type:uuid;not null"`
 	Title              string                 `json:"title"`
-	Slug               string                 `json:"slug,omitempty" gorm:"unique"`
+	Slug               string                 `json:"slug,omitempty" gorm:"index"`
 	Topic              string                 `json:"topic" gorm:"not null"`
 	Excerpt            string                 `json:"excerpt,omitempty"`
 	Keywords           []string               `json:"keywords,omitempty" gorm:"type:text[];serializer:json"`
@@ -38,6 +38,7 @@ type Post struct {
 	ContentJSON        map[string]interface{} `json:"content_json,omitempty" gorm:"type:jsonb;serializer:json"`
 	CurrentVersion     int                    `json:"current_version" gorm:"default:1"`
 	Language           string                 `json:"language" gorm:"type:varchar(10);default:'vi'"`
+	Platform           string                 `json:"platform" gorm:"type:varchar(20);default:'blog'"`
 	Status             string                 `json:"status" gorm:"type:varchar(20);default:'draft'"`
 	SEOScore           map[string]interface{} `json:"seo_score,omitempty" gorm:"type:jsonb;serializer:json"`
 	FeaturedImageURL   string                 `json:"featured_image_url,omitempty"`

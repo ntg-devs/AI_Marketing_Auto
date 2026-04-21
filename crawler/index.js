@@ -30,6 +30,99 @@ app.post('/crawl', async (req, res) => {
         });
 
         const page = await context.newPage();
+
+        if (strategy === 'search') {
+            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
+            console.log(`Executing live search for: ${url}`);
+            try {
+                await page.goto(searchUrl, { waitUntil: 'networkidle', timeout: 30000 });
+                
+                const results = await page.evaluate(() => {
+                    const items = [];
+                    // Common selectors for Google Search Results
+                    const searchItems = document.querySelectorAll('div.g, div.tF2Cxc, div.kvH9C, div.yuRUbf, .Ww4FFb, .MjjYud');
+                    console.log(`Found ${searchItems.length} potential search items`);
+                    
+                    searchItems.forEach((el, idx) => {
+                        const titleEl = el.querySelector('h3');
+                        const linkEl = el.querySelector('a');
+                        const snippetEl = el.querySelector('div.VwiC3b, div.kb0u9b, span.st, .IsZ68c, .LC20lb');
+                        
+                        if (titleEl && linkEl) {
+                            // Try to get URL from various possible locations
+                            let url = linkEl.href;
+                            
+                            // If it's a relative URL or about:blank, try data attributes
+                            if (!url || url === 'about:blank' || url.startsWith('javascript:')) {
+                                url = linkEl.getAttribute('data-href') || linkEl.getAttribute('data-url') || '';
+                            }
+
+                            if (url && url !== 'about:blank' && !url.startsWith('javascript:')) {
+                                // Clean up Google redirect URLs
+                                if (url.includes('google.com/url?') || url.includes('google.com.vn/url?')) {
+                                    try {
+                                        const urlObj = new URL(url);
+                                        const actualUrl = urlObj.searchParams.get('q') || urlObj.searchParams.get('url');
+                                        if (actualUrl) url = actualUrl;
+                                    } catch (e) {
+                                        console.error(`Failed to parse Google redirect URL: ${url}`, e);
+                                    }
+                                }
+
+                                items.push({
+                                    title: titleEl.innerText.trim(),
+                                    url: url,
+                                    snippet: snippetEl ? snippetEl.innerText.trim() : ''
+                                });
+                            }
+                        }
+                    });
+                    return items;
+                });
+
+                console.log(`Extracted ${results.length} results from Google Search`);
+                results.forEach((r, i) => console.log(`[Result ${i}] ${r.title}: ${r.url}`));
+                
+                if (results.length === 0) {
+                   console.log("No search results found or blocked by Google. HTML length:", (await page.content()).length);
+                }
+
+                const combinedText = results.map(r => `Source: ${r.title}\nLink: ${r.url}\nSummary: ${r.snippet}\n`).join('\n---\n\n');
+                const markdown = `# Live Search Results for: ${url}\n\n` + 
+                    results.map(r => `### [${r.title}](${r.url})\n${r.snippet}`).join('\n\n');
+
+                const result = {
+                    final_url: searchUrl,
+                    canonical_url: searchUrl,
+                    strategy_used: 'search',
+                    provider_used: 'playwright/google',
+                    http_status: 200,
+                    content_type: 'text/html',
+                    title: `Search: ${url}`,
+                    description: `Real-time search results for query: ${url}`,
+                    language: 'vi',
+                    extracted_text: combinedText,
+                    markdown: markdown,
+                    html: await page.content(),
+                    metadata: { search_results: results },
+                    pages: results.map(r => ({
+                        url: r.url,
+                        title: r.title,
+                        depth: 0,
+                        content_type: 'text/html',
+                        status: 'processed',
+                        extracted_text: r.snippet,
+                        markdown_text: `### [${r.title}](${r.url})\n${r.snippet}`,
+                        metadata: { snippet: r.snippet }
+                    }))
+                };
+
+                return res.json({ success: true, result: result, error: "" });
+            } catch (e) {
+                console.error(`Search failed: ${e.message}`);
+                return res.status(500).json({ success: false, error: `Search failed: ${e.message}`, result: null });
+            }
+        }
         
         let http_status = 200;
         let content_type = 'text/html';

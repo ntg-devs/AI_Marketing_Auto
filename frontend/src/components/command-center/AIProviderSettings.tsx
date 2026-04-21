@@ -99,7 +99,7 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
                   api_key: "", // Never pre-fill with real key (server never sends it)
                   masked_key: match.masked_key || "",
                   base_url: match.base_url || "",
-                  is_default: match.is_default ?? p.is_default,
+                  is_default: match.is_default,
                 };
               }
               return p;

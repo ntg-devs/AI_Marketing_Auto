@@ -416,7 +416,7 @@ export default function AccountTeamPanel() {
                   variant="outline"
                   className="text-[8px] px-1.5 py-0 h-3.5 border-default text-dim"
                 >
-                  {teamMembers.length} members
+                  {teamMembers?.length} members
                 </Badge>
               </div>
 
