@@ -6,6 +6,7 @@ import (
 	"bityagi/internal/task"
 	"bityagi/pkg/crawlerclient"
 	"bityagi/pkg/mail"
+	"bityagi/pkg/vertexsearch"
 	"log"
 	"os"
 
@@ -55,8 +56,32 @@ func main() {
 	crawlerAPIURL := os.Getenv("CRAWLER_API_URL")
 	crawlerSvc := crawlerclient.New(crawlerAPIURL)
 
+	// Initialize Vertex AI Search Client if configured
+	var vertexSvc vertexsearch.Client
+	vertexProjectID := os.Getenv("VERTEX_AI_PROJECT_ID")
+	vertexDataStoreID := os.Getenv("VERTEX_AI_DATA_STORE_ID")
+	if vertexProjectID != "" && vertexDataStoreID != "" {
+		cfg := vertexsearch.Config{
+			ProjectID:       vertexProjectID,
+			Location:        os.Getenv("VERTEX_AI_LOCATION"),
+			CollectionID:    os.Getenv("VERTEX_AI_COLLECTION_ID"),
+			DataStoreID:     vertexDataStoreID,
+			ServingConfigID: os.Getenv("VERTEX_AI_SERVING_CONFIG_ID"),
+			CredentialsFile: os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+		}
+		var vErr error
+		vertexSvc, vErr = vertexsearch.New(cfg)
+		if vErr != nil {
+			log.Printf("Warning: Failed to initialize Vertex AI Search: %v", vErr)
+		} else {
+			log.Println("Vertex AI Search integrated successfully")
+		}
+	} else {
+		log.Println("Vertex AI Search is not configured (missing VERTEX_AI_PROJECT_ID or VERTEX_AI_DATA_STORE_ID)")
+	}
+
 	redisOpt := asynq.RedisClientOpt{Addr: redisAddr}
-	processor := task.NewRedisTaskProcessor(redisOpt, mailer, crawlRepo, aiRepo, crawlerSvc)
+	processor := task.NewRedisTaskProcessor(redisOpt, mailer, crawlRepo, aiRepo, crawlerSvc, vertexSvc)
 
 	log.Printf("Worker server starting on Redis %s...", redisAddr)
 	if err := processor.Start(); err != nil {

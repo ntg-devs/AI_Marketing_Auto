@@ -142,12 +142,18 @@ export const researchApi = {
    * In Production, this will call: await apiClient.get<LiveResearchResponse>('/api/v1/research/live');
    */
   async getLiveResearch(): Promise<LiveResearchResponse> {
-    // 1. In standard architecture, we would just do:
-    // const response = await apiClient.get<LiveResearchResponse>('/api/v1/research/live');
-    // return response;
+    try {
+      // 1. Try to fetch from real Backend endpoint first
+      const response = await apiClient.get<LiveResearchResponse>('/api/v1/research/live');
+      const data = response as any;
+      if (data && (data.insights?.length > 0 || data.sources?.length > 0)) {
+        return data;
+      }
+    } catch (error) {
+      console.warn("Backend Live Research fetch failed, falling back to RSS...", error);
+    }
     
-    // 2. But since the endpoint is not yet implemented on Go Backend, 
-    // we encapsulate the workaround fetch here at the API layer.
+    // 2. Fallback to RSS if Backend is unavailable
     try {
       const urls = [
         'https://api.rss2json.com/v1/api.json?rss_url=https://www.reddit.com/r/marketing/hot/.rss',
@@ -172,7 +178,7 @@ export const researchApi = {
           title: item.title?.substring(0, 70) + (item.title?.length > 70 ? '...' : ''),
           snippet: (item.description || item.content || '').replace(/<[^>]*>?/gm, '').substring(0, 100) + '...',
           score: Math.floor(Math.random() * 15) + 85,
-          timestamp: 'Just now',
+          timestamp: 'Vừa xong',
         }));
         
         const liveSources: LiveSourceRef[] = shuffled.map((item, i) => ({
@@ -186,10 +192,9 @@ export const researchApi = {
         return { insights: liveInsights, sources: liveSources };
       }
     } catch (error) {
-      console.warn("Live fetch error on API layer", error);
+      console.warn("Live fallback fetch error", error);
     }
     
-    // Fallback if network fails completely
     return { insights: [], sources: [] };
   },
 };

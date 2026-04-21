@@ -14,3 +14,4 @@ frontend/.env.local
 AGENTS.md
 CLAUDE.md
 crawler/node_modules
+page-agent

@@ -40,6 +40,9 @@ func main() {
 		&domain.Post{},
 		&domain.AIProviderConfig{},
 		&domain.UserPreferences{},
+		&domain.CrawlJob{},
+		&domain.CrawlPage{},
+		&domain.KnowledgeSource{},
 	)
 	// 3. Environment Configs
 	jwtSecret := os.Getenv("JWT_SECRET")

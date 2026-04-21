@@ -16,6 +16,7 @@ import (
 
 	"bityagi/pkg/llm"
 	"bityagi/pkg/mail"
+	"bityagi/pkg/vertexsearch"
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 )
@@ -34,6 +35,7 @@ type RedisTaskProcessor struct {
 	crawlRepo     domain.CrawlRepository
 	aiRepo        domain.AIProviderRepository
 	crawlerClient crawlerclient.Client
+	vertexClient  vertexsearch.Client
 }
 
 func NewRedisTaskProcessor(
@@ -42,6 +44,7 @@ func NewRedisTaskProcessor(
 	crawlRepo domain.CrawlRepository,
 	aiRepo domain.AIProviderRepository,
 	crawlerClient crawlerclient.Client,
+	vertexClient vertexsearch.Client,
 ) TaskProcessor {
 	server := asynq.NewServer(
 		redisOpt,
@@ -60,6 +63,7 @@ func NewRedisTaskProcessor(
 		crawlRepo:     crawlRepo,
 		aiRepo:        aiRepo,
 		crawlerClient: crawlerClient,
+		vertexClient:  vertexClient,
 	}
 }
 
@@ -136,16 +140,64 @@ func (p *RedisTaskProcessor) ProcessTaskCrawlSourceURL(ctx context.Context, t *a
 		return fmt.Errorf("could not mark crawl job as running: %w", err)
 	}
 
-	result, err := p.crawlerClient.Crawl(ctx, &crawlerclient.CrawlRequest{
-		URL:         payload.URL,
-		Strategy:    payload.Strategy,
-		MaxPages:    payload.MaxPages,
-		UseStealth:  payload.UseStealth,
-		ProxyRegion: payload.ProxyRegion,
-	})
-	if err != nil {
-		_ = p.crawlRepo.MarkJobFailed(ctx, payload.JobID, err.Error())
-		return fmt.Errorf("crawler request failed: %w", err)
+	var result *domain.CrawlExtractionResult
+	var err error
+
+	// Priority: If strategy is search and Vertex AI Search is configured, use it.
+	if payload.Strategy == domain.CrawlStrategySearch && p.vertexClient != nil {
+		log.Printf("Worker: Performing Search using Vertex AI Search for query: %s", payload.URL)
+		
+		searchResults, sErr := p.vertexClient.Search(ctx, payload.URL)
+		if sErr == nil {
+			// Convert SearchResults to CrawlExtractionResult
+			pages := make([]domain.CrawlPageResult, 0, len(searchResults))
+			combinedMarkdown := fmt.Sprintf("# Vertex AI Search Results for: %s\n\n", payload.URL)
+			
+			for _, r := range searchResults {
+				pages = append(pages, domain.CrawlPageResult{
+					URL:           r.URL,
+					Title:         r.Title,
+					Depth:         0,
+					ContentType:   "text/html",
+					Status:        "processed",
+					ExtractedText: r.Snippet,
+					MarkdownText:  fmt.Sprintf("### [%s](%s)\n%s", r.Title, r.URL, r.Snippet),
+					Metadata:      map[string]interface{}{"snippet": r.Snippet},
+				})
+				combinedMarkdown += fmt.Sprintf("### [%s](%s)\n%s\n\n", r.Title, r.URL, r.Snippet)
+			}
+
+			result = &domain.CrawlExtractionResult{
+				FinalURL:      payload.URL,
+				StrategyUsed:  domain.CrawlStrategySearch,
+				ProviderUsed:  "google/vertex-ai-search",
+				HTTPStatus:    200,
+				Title:         fmt.Sprintf("Vertex Search: %s", payload.URL),
+				Description:   fmt.Sprintf("Real-time results from Vertex AI for: %s", payload.URL),
+				Language:      "vi",
+				Markdown:      combinedMarkdown,
+				ExtractedText: combinedMarkdown,
+				Pages:         pages,
+				Metadata:      map[string]interface{}{"search_results_count": len(searchResults)},
+			}
+		} else {
+			log.Printf("Worker: Vertex AI Search failed: %v. Falling back to default crawler.", sErr)
+		}
+	}
+
+	// If result is still nil (not a search or vertex failed), use default crawler
+	if result == nil {
+		result, err = p.crawlerClient.Crawl(ctx, &crawlerclient.CrawlRequest{
+			URL:         payload.URL,
+			Strategy:    payload.Strategy,
+			MaxPages:    payload.MaxPages,
+			UseStealth:  payload.UseStealth,
+			ProxyRegion: payload.ProxyRegion,
+		})
+		if err != nil {
+			_ = p.crawlRepo.MarkJobFailed(ctx, payload.JobID, err.Error())
+			return fmt.Errorf("crawler request failed: %w", err)
+		}
 	}
 
 	// ----------------------------------------------------------------------

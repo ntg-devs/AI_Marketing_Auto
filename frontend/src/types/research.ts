@@ -1,4 +1,4 @@
-export type CrawlStrategy = 'auto' | 'http' | 'browser' | 'browserless' | 'image';
+export type CrawlStrategy = 'auto' | 'http' | 'browser' | 'browserless' | 'image' | 'search';
 
 export interface StartResearchRequest {
   team_id: string;

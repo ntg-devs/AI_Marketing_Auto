@@ -664,18 +664,18 @@ FRAMEWORK DATA:
 - STRONG HOOK: Mở đầu bằng một câu hỏi nhức nhối, một con số gây sốc hoặc một lời khẳng định phá vỡ định kiến để giữ chân người đọc ngay từ 3 giây đầu.
 - NHỊP ĐIỆU VĂN BẢN: Câu văn phải có sự thay đổi về độ dài để tạo sự lôi cuốn, tránh viết các câu dài liên tiếp gây mệt mỏi.
 - NGÔN NGỮ CHUYÊN GIA: Nói tiếng nói của ngành nhưng vẫn đủ dễ hiểu để thu phục đối tượng khách hàng mục tiêu. Tránh các từ sáo rỗng như "đột phá", "vượt trội", "đẳng cấp" mà không có dẫn chứng.
-- HÀNH VĂN TỰ NHIÊN (RẤT QUAN TRỌNG): Tránh việc chia bài viết quá rập khuôn theo framework (như ghi rõ chữ Attention, Interest...). Hãy sử dụng các đoạn chuyển tiếp mượt mà như đang nói chuyện trực tiếp với độc giả. Viết sao cho người đọc cảm thấy đây là chia sẻ từ một con người thực thụ, không phải từ một cỗ máy quảng cáo.
-- GẦN GŨI & THỰC TẾ: Sử dụng các ví dụ đời thường, ngôn ngữ đời sống để giải thích các vấn đề phức tạp. Tránh lối viết lý thuyết, giáo điều.
+- HÀNH VĂN TỰ NHIÊN & KẾT NỐI: Hãy viết như một người bạn đang chia sẻ kinh nghiệm, sử dụng các câu chuyển tiếp mượt mà. Đừng trình bày bài viết như một bảng danh sách các bước AIDA hay PAS khô khan. Thay vào đó, hãy biến các bước đó thành mạch truyện dẫn dắt người đọc tự nhiên từ vấn đề đến giải pháp.
+- GẦN GŨI & THỰC TẾ: Sử dụng các ví dụ đời thường, ngôn ngữ sống động. TUYỆT ĐỐI không sử dụng hiệu ứng 'gạch ngang' (strikethrough) hay bất kỳ định dạng văn bản đặc biệt nào khác ngoài Bold và Italic để nhấn mạnh.
+- PHONG CÁCH CHUYÊN GIA: Hãy tự tin trong từng câu chữ, tránh việc xin lỗi hay giải thích về việc sử dụng framework. Cứ tự nhiên triển khai nội dung tốt nhất cho độc giả.
 
 === ĐỊNH DẠNG ĐẦU RA NGHIÊM NGẶT (RẤT QUAN TRỌNG) ===
 - BẮT BUỘC CHỈ sử dụng HTML tags. TUYỆT ĐỐI KHÔNG dùng ký hiệu Markdown (#, **, [link], -, *).
 - MỖI ĐOẠN VĂN phải được bọc trong thẻ <p>...</p>. 
 - GIỮA CÁC ĐOẠN VĂN (giữa các thẻ </p> và <p>) phải có ít nhất 1 dòng trống (\n\n) để tạo không gian thở.
 - Nội dung phải được trình bày sạch sẽ như một bài báo chuyên nghiệp trên blog.
-- Trả về mã HTML thuần (RAW HTML). TUYỆT ĐỐI KHÔNG được thực thể hóa (escape) các thẻ HTML (VD: không dùng &lt;, &gt;, &quot;). Thẻ HTML phải được render trực tiếp.
+- Trả về mã HTML thuần (RAW HTML). TUYỆT ĐỐI KHÔNG được thực thể hóa (escape) các thẻ HTML.
 - TUYỆT ĐỐI KHÔNG viết dính liền thành một khối văn bản.
-- TUYỆT ĐỐI KHÔNG sử dụng gạch ngang (strikethrough) hoặc các thẻ <s>, <strike>, <del> trong bất kỳ trường hợp nào.
-- TUYỆT ĐỐI KHÔNG sử dụng ký tự gạch chéo ngược (backslash \ ) làm dấu ngăn cách hay xuống dòng.
+- NGHIÊM CẤM sử dụng gạch ngang (strikethrough) dưới mọi hình thức (thẻ HTML <s>, <strike>, <del> hay ký tự Unicode gạch ngang).
 - ĐẢM BẢO nội dung được bọc hoàn toàn trong các thẻ HTML hợp lệ.
 
 [YÊU CẦU CỤ THỂ]: %s
@@ -736,11 +736,20 @@ FRAMEWORK DATA:
 	// POST-PROCESSING: Fix common AI formatting errors
 	// ═══════════════════════════════════════════════════
 	
-	// 1. Clean ALL strike-through tags (s, strike, del) - case insensitive, handles attributes
-	strikeRegex := regexp.MustCompile(`(?i)<(s|strike|del|strikethrough)[^>]*>|</(s|strike|del|strikethrough)>`)
+	// 1. Clean ALL strike-through tags (s, strike, del) - even those with styles
+	strikeRegex := regexp.MustCompile(`(?i)<(s|strike|del|strikethrough)[^>]*>|<\/(s|strike|del|strikethrough)>`)
 	contentHTML = strikeRegex.ReplaceAllString(contentHTML, "")
 	
-	// 2. Remove markdown strikethrough (~~)
+	// 2. Remove any inline styles that trigger line-through
+	styleStrikeRegex := regexp.MustCompile(`(?i)text-decoration\s*:\s*line-through;?`)
+	contentHTML = styleStrikeRegex.ReplaceAllString(contentHTML, "")
+	
+	// 3. Remove unicode combining strikethrough characters (U+0336, U+0335, etc.)
+	contentHTML = strings.ReplaceAll(contentHTML, "\u0336", "")
+	contentHTML = strings.ReplaceAll(contentHTML, "\u0335", "")
+	contentHTML = strings.ReplaceAll(contentHTML, "\u0334", "")
+	
+	// 4. Remove markdown strikethrough (~~)
 	contentHTML = strings.ReplaceAll(contentHTML, "~~", "")
 	
 	// 3. Convert any leaked Markdown bold (**text**) to HTML strong (<strong>text</strong>)

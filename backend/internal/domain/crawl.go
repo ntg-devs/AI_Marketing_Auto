@@ -18,6 +18,7 @@ const (
 	CrawlStrategyBrowser     = "browser"
 	CrawlStrategyBrowserless = "browserless"
 	CrawlStrategyImage       = "image"
+	CrawlStrategySearch      = "search"
 )
 
 type CrawlJob struct {
@@ -152,6 +153,29 @@ type ImageAnalysisResult struct {
 	ImageURL    string   `json:"image_url"`    // URL gốc của ảnh
 }
 
+// Live Research Models
+type LiveInsight struct {
+	ID        string `json:"id"`
+	Source    string `json:"source"`
+	Title     string `json:"title"`
+	Snippet   string `json:"snippet"`
+	Score     int    `json:"score"`
+	Timestamp string `json:"timestamp"`
+}
+
+type LiveSourceRef struct {
+	ID        string `json:"id"`
+	URL       string `json:"url"`
+	Title     string `json:"title"`
+	Relevance int    `json:"relevance"`
+	Verified  bool   `json:"verified"`
+}
+
+type LiveResearchResponse struct {
+	Insights []LiveInsight    `json:"insights"`
+	Sources  []LiveSourceRef `json:"sources"`
+}
+
 type CrawlRepository interface {
 	CreateJob(ctx context.Context, job *CrawlJob) error
 	GetJobByID(ctx context.Context, jobID uuid.UUID) (*CrawlJob, error)
@@ -169,4 +193,5 @@ type CrawlService interface {
 	GetJobDetail(ctx context.Context, jobID uuid.UUID) (*CrawlJobDetailResponse, error)
 	ListJobs(ctx context.Context, teamID uuid.UUID, limit, offset int) (*CrawlJobListResponse, error)
 	DeleteJob(ctx context.Context, jobID uuid.UUID) error
+	GetLiveResearch(ctx context.Context) (*LiveResearchResponse, error)
 }

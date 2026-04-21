@@ -23,14 +23,14 @@ func (r *postRepository) GetCampaignHistoryByTeam(ctx context.Context, teamID uu
 			p.id, 
 			p.title, 
 			COALESCE(p.topic, 'Untitled Campaign') as campaign_name,
-			COALESCE(s.platform, 'blog') as channel,
+			COALESCE(s.platform, p.platform, 'blog') as channel,
 			CASE 
 				WHEN p.status = 'published' THEN 'success'
 				WHEN ps.status = 'failed' THEN 'failed'
 				WHEN ps.status = 'scheduled' THEN 'scheduled'
 				ELSE 'draft'
 			END as status,
-			COALESCE(ps.published_at, p.published_at) as published_at,
+			COALESCE(ps.published_at, p.published_at, p.created_at) as published_at,
 			ps.scheduled_at,
 			p.content_html
 		FROM posts p
@@ -50,8 +50,8 @@ func (r *postRepository) GetCampaignHistoryByTeam(ctx context.Context, teamID uu
 	var results []domain.CampaignHistoryItem
 	for rows.Next() {
 		var (
-			id, title, campaignName, channel, status, contentHTML string
-			publishedAt, scheduledAt                             *string
+			id, campaignName, channel, status string
+			title, contentHTML, publishedAt, scheduledAt *string
 		)
 		err := rows.Scan(&id, &title, &campaignName, &channel, &status, &publishedAt, &scheduledAt, &contentHTML)
 		if err != nil {
@@ -60,11 +60,11 @@ func (r *postRepository) GetCampaignHistoryByTeam(ctx context.Context, teamID uu
 
 		item := domain.CampaignHistoryItem{
 			ID:                    id,
-			Title:                 title,
 			CampaignName:          campaignName,
 			Channel:               channel,
 			Status:                status,
-			ContentHTML:           contentHTML,
+			Title:                 "Untitled",
+			ContentHTML:           "",
 			SparklineData:         []interface{}{},
 			ResearchKnowledgeBase: []string{},
 			Sources:               []interface{}{},
@@ -81,6 +81,12 @@ func (r *postRepository) GetCampaignHistoryByTeam(ctx context.Context, teamID uu
 		}
 		if scheduledAt != nil {
 			item.ScheduledAt = *scheduledAt
+		}
+		if title != nil && *title != "" {
+			item.Title = *title
+		}
+		if contentHTML != nil {
+			item.ContentHTML = *contentHTML
 		}
 
 		results = append(results, item)

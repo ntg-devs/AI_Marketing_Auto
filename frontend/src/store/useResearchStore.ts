@@ -22,12 +22,17 @@ interface ResearchState {
   generatedContent: Record<string, GeneratedContentEntry>; // keyed by platform
   masterOutline: any[]; // The structured outline
   
+  // Live Research Bridge
+  pendingKeyword: string | null;
+  pendingImageURL: string | null;
+  
   setActiveJobId: (jobId: string) => void;
   setActiveJob: (detail: CrawlJobDetailResponse | null) => void;
   setPolling: (value: boolean) => void;
   setGeneratedContent: (platform: string, entry: GeneratedContentEntry) => void;
   clearGeneratedContent: () => void;
   setMasterOutline: (outline: any[]) => void;
+  setPendingInput: (keyword: string | null, imageURL: string | null) => void;
   
   fetchRecentJobs: (teamId: string) => Promise<void>;
   deleteJob: (jobId: string) => Promise<void>;
@@ -43,6 +48,8 @@ export const useResearchStore = create<ResearchState>()(
       isLoadingJobs: false,
       generatedContent: {},
       masterOutline: [],
+      pendingKeyword: null,
+      pendingImageURL: null,
 
       setActiveJobId: (jobId) => set({ activeJobId: jobId }),
 
@@ -51,6 +58,8 @@ export const useResearchStore = create<ResearchState>()(
       },
 
       setPolling: (value) => set({ isPolling: value }),
+
+      setPendingInput: (keyword, imageURL) => set({ pendingKeyword: keyword, pendingImageURL: imageURL }),
 
       setGeneratedContent: (platform, entry) => {
         set((state) => ({
