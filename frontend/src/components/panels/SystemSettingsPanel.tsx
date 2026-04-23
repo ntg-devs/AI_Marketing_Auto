@@ -253,10 +253,10 @@ export default function SystemSettingsPanel() {
                           value={newConn.platform} 
                           onValueChange={(v) => setNewConn(p => ({ ...p, platform: v, page_id: '' }))}
                         >
-                          <SelectTrigger className="h-9 bg-surface-active border-default text-[11px]">
+                          <SelectTrigger className="h-9 bg-surface-2 border-default text-[11px] focus:ring-primary/20">
                             <SelectValue placeholder="Chọn nền tảng" />
                           </SelectTrigger>
-                          <SelectContent className="bg-surface-active border-default">
+                          <SelectContent className="bg-surface-2 border-default shadow-xl">
                             <SelectItem value="facebook">🔵 Facebook Page</SelectItem>
                             <SelectItem value="linkedin">🔷 LinkedIn</SelectItem>
                             <SelectItem value="blog">📝 Blog / Webhook</SelectItem>
@@ -265,9 +265,9 @@ export default function SystemSettingsPanel() {
                       </div>
 
                       {/* Platform-specific setup guide */}
-                      <div className="rounded-lg border border-default bg-surface-hover/50 p-3 space-y-2">
-                        <p className="text-[9px] font-semibold text-primary uppercase tracking-wider">
-                          Hướng dẫn cấu hình {newConn.platform === 'facebook' ? 'Facebook' : newConn.platform === 'linkedin' ? 'LinkedIn' : 'Blog'}
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+                        <p className="text-[9px] font-semibold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                          <Zap className="w-3 h-3" /> Hướng dẫn cấu hình {newConn.platform === 'facebook' ? 'Facebook' : newConn.platform === 'linkedin' ? 'LinkedIn' : 'Blog'}
                         </p>
                         {newConn.platform === 'facebook' && (
                           <div className="text-[9px] text-dim space-y-1 leading-relaxed">
@@ -300,7 +300,7 @@ export default function SystemSettingsPanel() {
                         <Label className="text-[11px] text-dim">Tên hiển thị</Label>
                         <Input 
                           placeholder={newConn.platform === 'facebook' ? 'VD: Fanpage ABC' : newConn.platform === 'linkedin' ? 'VD: Nguyễn Văn A' : 'VD: Tech Blog'} 
-                          className="h-9 bg-surface-active border-default text-[11px]"
+                          className="h-9 bg-surface-2 border-default text-[11px] focus:border-primary/40 transition-colors"
                           value={newConn.profile_name}
                           onChange={(e) => setNewConn(p => ({ ...p, profile_name: e.target.value }))}
                         />
@@ -314,7 +314,7 @@ export default function SystemSettingsPanel() {
                         <Input 
                           type="password"
                           placeholder="Dán token tại đây..." 
-                          className="h-9 bg-surface-active border-default text-[11px] font-mono"
+                          className="h-9 bg-surface-2 border-default text-[11px] font-mono focus:border-primary/40 transition-colors"
                           value={newConn.access_token}
                           onChange={(e) => setNewConn(p => ({ ...p, access_token: e.target.value }))}
                         />
@@ -331,7 +331,7 @@ export default function SystemSettingsPanel() {
                             : newConn.platform === 'linkedin' ? 'VD: urn:li:person:abc123' 
                             : 'VD: https://blog.example.com'
                           }
-                          className="h-9 bg-surface-active border-default text-[11px] font-mono"
+                          className="h-9 bg-surface-2 border-default text-[11px] font-mono focus:border-primary/40 transition-colors"
                           value={newConn.page_id}
                           onChange={(e) => setNewConn(p => ({ ...p, page_id: e.target.value }))}
                         />
@@ -434,10 +434,10 @@ export default function SystemSettingsPanel() {
                     value={language} 
                     onValueChange={(v) => setLanguage(v as 'vi' | 'en')}
                   >
-                    <SelectTrigger className="w-[100px] h-7 bg-surface-active border-default text-[10px]">
+                    <SelectTrigger className="w-[100px] h-7 bg-surface-2 border-default text-[10px]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-surface-active border-default">
+                    <SelectContent className="bg-surface-2 border-default">
                       <SelectItem value="vi">Tiếng Việt</SelectItem>
                       <SelectItem value="en">English (US)</SelectItem>
                     </SelectContent>

@@ -2,7 +2,7 @@ package main
 
 import (
 	"bityagi/internal/app"
-	"bityagi/internal/domain"
+	// "bityagi/internal/domain"
 	"log"
 	"net/http"
 	"os"
@@ -31,19 +31,19 @@ func main() {
 	}
 
 	// 3. Database Migration
-	db.AutoMigrate(
-		&domain.User{},
-		&domain.Team{},
-		&domain.SocialAccount{},
-		&domain.PublishSchedule{},
-		&domain.Notification{},
-		&domain.Post{},
-		&domain.AIProviderConfig{},
-		&domain.UserPreferences{},
-		&domain.CrawlJob{},
-		&domain.CrawlPage{},
-		&domain.KnowledgeSource{},
-	)
+	// db.AutoMigrate(
+	// 	&domain.User{},
+	// 	&domain.Team{},
+	// 	&domain.SocialAccount{},
+	// 	&domain.PublishSchedule{},
+	// 	&domain.Notification{},
+	// 	&domain.Post{},
+	// 	&domain.AIProviderConfig{},
+	// 	&domain.UserPreferences{},
+	// 	&domain.CrawlJob{},
+	// 	&domain.CrawlPage{},
+	// 	&domain.KnowledgeSource{},
+	// )
 	// 3. Environment Configs
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
