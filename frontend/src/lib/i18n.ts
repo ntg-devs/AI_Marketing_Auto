@@ -86,6 +86,84 @@ export const translations = {
       delete: 'Xóa',
       online: 'Trực tuyến',
       offline: 'Ngoại tuyến',
+    },
+    smart_scheduler: {
+      title: 'Lịch đăng bài',
+      tabs: {
+        single: 'Một nền tảng',
+        all: 'Tất cả nền tảng',
+      },
+      form: {
+        post_title: 'Tiêu đề bài đăng',
+        post_title_placeholder_single: 'VD: AI Marketing Guide',
+        post_title_placeholder_all: 'VD: Chiến dịch AI Marketing...',
+        platform: 'Nền tảng',
+        date: 'Ngày',
+        time: 'Giờ',
+        select_date: 'Ngày đăng',
+        select_platform_time: 'Chọn nền tảng & giờ đăng',
+        content_exists: 'Đã có',
+        content_empty: 'Trống',
+      },
+      actions: {
+        cancel: 'Hủy',
+        schedule: 'Lên lịch',
+        scheduling: 'Đang lên lịch...',
+        schedule_all: 'Lên lịch {{count}} nền tảng',
+      },
+      status: {
+        scheduled: 'Đã lên lịch',
+        processing: 'Đang xử lý',
+        published: 'Đã đăng',
+        failed: 'Thất bại',
+        cancelled: 'Đã hủy',
+        overdue: 'Quá hạn',
+      },
+      job_card: {
+        today: 'Hôm nay',
+        publish_now: 'Đăng ngay',
+        retry: 'Thử lại',
+        view_content: 'Xem nội dung',
+        delete: 'Xóa',
+        delete_success: 'Đã xóa lịch đăng bài',
+        delete_failed: 'Xóa thất bại',
+      },
+      messages: {
+        enter_title: 'Vui lòng nhập tiêu đề bài đăng',
+        future_time: 'Thời gian phải nằm trong tương lai',
+        select_platform: 'Vui lòng chọn ít nhất 1 nền tảng',
+        schedule_success: 'Đã lên lịch "{{title}}" cho {{platform}}',
+        schedule_all_success: 'Đã lên lịch {{success}}/{{total}} nền tảng thành công',
+        schedule_failed: 'Lên lịch thất bại',
+        update_time_success: 'Đã cập nhật thời gian đăng bài',
+        update_time_failed: 'Không thể cập nhật thời gian',
+      },
+      header: {
+        title: 'Lịch đăng bài',
+        subtitle: 'Tự động phân phối nội dung đa nền tảng',
+      },
+      overview: {
+        title: 'Tổng quan tuần',
+        this_week: 'Tuần này',
+        week_offset: 'Tuần {{offset}}',
+      },
+      filter: {
+        all: 'Tất cả',
+      },
+      queue: {
+        title: 'Hàng đợi',
+        empty_title: 'Chưa có lịch đăng bài nào',
+        empty_desc: 'Tự động hoá phân phối bài viết thông minh từ Live Research',
+      },
+      cta: {
+        publish_all_overdue: 'Đăng tất cả quá hạn ({{count}})',
+        publish_all_success: 'Đã xử lý {{count}} bài đăng thành công!',
+        publish_all_failed: 'Đăng bài thất bại, vui lòng thử lại',
+      },
+      footer: {
+        all_scheduled_title: 'Tất cả đã lên lịch',
+        all_scheduled_desc: '{{count}} bài sẽ được tự động đăng theo lịch',
+      }
     }
   },
   en: {
@@ -172,6 +250,84 @@ export const translations = {
       delete: 'Delete',
       online: 'Online',
       offline: 'Offline',
+    },
+    smart_scheduler: {
+      title: 'Post Schedule',
+      tabs: {
+        single: 'Single Platform',
+        all: 'All Platforms',
+      },
+      form: {
+        post_title: 'Post Title',
+        post_title_placeholder_single: 'e.g. AI Marketing Guide',
+        post_title_placeholder_all: 'e.g. AI Marketing Campaign...',
+        platform: 'Platform',
+        date: 'Date',
+        time: 'Time',
+        select_date: 'Posting Date',
+        select_platform_time: 'Select Platform & Time',
+        content_exists: 'Available',
+        content_empty: 'Empty',
+      },
+      actions: {
+        cancel: 'Cancel',
+        schedule: 'Schedule',
+        scheduling: 'Scheduling...',
+        schedule_all: 'Schedule {{count}} platforms',
+      },
+      status: {
+        scheduled: 'Scheduled',
+        processing: 'Processing',
+        published: 'Published',
+        failed: 'Failed',
+        cancelled: 'Cancelled',
+        overdue: 'Overdue',
+      },
+      job_card: {
+        today: 'Today',
+        publish_now: 'Publish Now',
+        retry: 'Retry',
+        view_content: 'View Content',
+        delete: 'Delete',
+        delete_success: 'Post schedule deleted',
+        delete_failed: 'Delete failed',
+      },
+      messages: {
+        enter_title: 'Please enter post title',
+        future_time: 'Time must be in the future',
+        select_platform: 'Please select at least one platform',
+        schedule_success: 'Scheduled "{{title}}" for {{platform}}',
+        schedule_all_success: 'Scheduled {{success}}/{{total}} platforms successfully',
+        schedule_failed: 'Scheduling failed',
+        update_time_success: 'Posting time updated',
+        update_time_failed: 'Unable to update time',
+      },
+      header: {
+        title: 'Post Schedule',
+        subtitle: 'Automated multi-platform content distribution',
+      },
+      overview: {
+        title: 'Weekly Overview',
+        this_week: 'This week',
+        week_offset: 'Week {{offset}}',
+      },
+      filter: {
+        all: 'All',
+      },
+      queue: {
+        title: 'Queue',
+        empty_title: 'No scheduled posts yet',
+        empty_desc: 'Intelligent content distribution automation from Live Research',
+      },
+      cta: {
+        publish_all_overdue: 'Publish all overdue ({{count}})',
+        publish_all_success: 'Processed {{count}} posts successfully!',
+        publish_all_failed: 'Publishing failed, please try again',
+      },
+      footer: {
+        all_scheduled_title: 'All scheduled',
+        all_scheduled_desc: '{{count}} posts will be automatically published as scheduled',
+      }
     }
   }
 };

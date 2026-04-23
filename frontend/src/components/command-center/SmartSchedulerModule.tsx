@@ -47,7 +47,8 @@ import {
   isPast,
   isBefore,
 } from "date-fns";
-import { vi } from "date-fns/locale";
+import { vi, enUS } from "date-fns/locale";
+import { useTranslation } from "@/lib/i18n";
 import { gooeyToast } from "goey-toast";
 import { useSchedulerStore } from "@/store/useSchedulerStore";
 import { useResearchStore } from "@/store/useResearchStore";
@@ -60,16 +61,7 @@ import type {
 
 /* ─── Constants ────────────────────────────────────────────────── */
 
-const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const weekDaysFull = [
-  "Thứ 2",
-  "Thứ 3",
-  "Thứ 4",
-  "Thứ 5",
-  "Thứ 6",
-  "Thứ 7",
-  "Chủ nhật",
-];
+// Removed hardcoded weekDays arrays
 
 const timeOptions = [
   "06:00",
@@ -213,6 +205,8 @@ const statusConfig: Record<
 /* ─── Quick Scheduler Modal ─────────────────────────────────── */
 
 function QuickScheduleForm({ onClose }: { onClose: () => void }) {
+  const { t, language } = useTranslation();
+  const locale = language === "vi" ? vi : enUS;
   const user = useAuthStore((s) => s.user);
   const activeJob = useResearchStore((s) => s.activeJob);
   const generatedContent = useResearchStore((s) => s.generatedContent);
@@ -276,13 +270,13 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
 
   const handleSubmitSingle = async () => {
     if (!title.trim()) {
-      gooeyToast.error("Vui lòng nhập tiêu đề bài đăng");
+      gooeyToast.error(t("smart_scheduler.messages.enter_title"));
       return;
     }
     const dateStr = format(selectedDate, "yyyy-MM-dd");
     const scheduledAt = new Date(`${dateStr}T${selectedTime}:00`);
     if (isBefore(scheduledAt, new Date())) {
-      gooeyToast.error("Thời gian phải nằm trong tương lai");
+      gooeyToast.error(t("smart_scheduler.messages.future_time"));
       return;
     }
 
@@ -298,11 +292,13 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
         scheduledAt: scheduledAt.toISOString(),
       });
       gooeyToast.success(
-        `Đã lên lịch "${title}" cho ${platformConfig[platform].label}`,
+        t("smart_scheduler.messages.schedule_success")
+          .replace("{{title}}", title.trim())
+          .replace("{{platform}}", platformConfig[platform].label),
       );
       onClose();
     } catch (error: any) {
-      gooeyToast.error(error?.message || "Lên lịch thất bại");
+      gooeyToast.error(error?.message || t("smart_scheduler.messages.schedule_failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -314,12 +310,12 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
     ).filter((p) => perPlatformEnabled[p]);
 
     if (enabledPlatforms.length === 0) {
-      gooeyToast.error("Vui lòng chọn ít nhất 1 nền tảng");
+      gooeyToast.error(t("smart_scheduler.messages.select_platform"));
       return;
     }
     const baseTitle =
       title.trim() ||
-      `Bài đăng ${new Date(selectedDate).toLocaleDateString("vi-VN")}`;
+      `${t("smart_scheduler.form.post_title")} ${format(selectedDate, "dd/MM/yyyy")}`;
 
     setIsSubmitting(true);
     let success = 0;
@@ -347,11 +343,13 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
       }
       if (success > 0) {
         gooeyToast.success(
-          `Đã lên lịch ${success}/${enabledPlatforms.length} nền tảng thành công`,
+          t("smart_scheduler.messages.schedule_all_success")
+            .replace("{{success}}", success.toString())
+            .replace("{{total}}", enabledPlatforms.length.toString()),
         );
         onClose();
       } else {
-        gooeyToast.error("Không thể lên lịch, vui lòng kiểm tra thời gian");
+        gooeyToast.error(t("smart_scheduler.messages.future_time"));
       }
     } finally {
       setIsSubmitting(false);
@@ -375,7 +373,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
           }`}
         >
           <CalendarDays className="w-3 h-3" />
-          Một nền tảng
+          {t("smart_scheduler.tabs.single")}
         </button>
         <button
           onClick={() => setScheduleMode("all")}
@@ -386,22 +384,22 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
           }`}
         >
           <Send className="w-3 h-3" />
-          Tất cả nền tảng
+          {t("smart_scheduler.tabs.all")}
         </button>
       </div>
 
       {/* Title */}
       <div>
         <label className="text-[9px] font-medium text-dim uppercase tracking-wider block mb-1">
-          Tiêu đề bài đăng
+          {t("smart_scheduler.form.post_title")}
         </label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder={
             scheduleMode === "single"
-              ? `VD: ${platformConfig[platform].label}: AI Marketing Guide`
-              : "VD: Chiến dịch AI Marketing..."
+              ? `${t("smart_scheduler.form.post_title_placeholder_single")}`
+              : t("smart_scheduler.form.post_title_placeholder_all")
           }
           className="w-full bg-surface-hover border border-default rounded-md px-2.5 py-1.5 text-[11px] text-heading placeholder:text-faint outline-none focus:border-primary/40 focus:bg-surface-active transition-colors"
           autoFocus
@@ -413,7 +411,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
           {/* Platform Selection */}
           <div>
             <label className="text-[9px] font-medium text-dim uppercase tracking-wider block mb-1">
-              Nền tảng
+              {t("smart_scheduler.form.platform")}
             </label>
             <div className="flex gap-1.5">
               {(Object.keys(platformConfig) as SchedulePlatform[]).map((p) => {
@@ -444,12 +442,12 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-[9px] font-medium text-dim uppercase tracking-wider block mb-1">
-                Ngày
+                {t("smart_scheduler.form.date")}
               </label>
               <Popover>
                 <PopoverTrigger asChild>
                   <button className="w-full text-left bg-surface-hover border border-default rounded-md px-2.5 py-1.5 text-[11px] text-heading outline-none focus:border-strong transition-all overflow-hidden whitespace-nowrap text-ellipsis">
-                    {format(selectedDate, "dd/MM/yyyy (EEE)", { locale: vi })}
+                    {format(selectedDate, "dd/MM/yyyy (EEE)", { locale })}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-surface-1 border-default" align="start">
@@ -465,7 +463,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
                 <label className="text-[9px] font-medium text-dim uppercase tracking-wider">
-                  Giờ
+                  {t("smart_scheduler.form.time")}
                 </label>
               </div>
               <input
@@ -482,12 +480,12 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
           {/* All Platforms Mode */}
           <div>
             <label className="text-[9px] font-medium text-dim uppercase tracking-wider block mb-1">
-              Ngày đăng
+              {t("smart_scheduler.form.select_date")}
             </label>
             <Popover>
               <PopoverTrigger asChild>
                 <button className="w-full text-left bg-surface-hover border border-default rounded-md px-2.5 py-1.5 text-[11px] text-heading outline-none focus:border-strong transition-all">
-                  {format(selectedDate, "dd/MM/yyyy (EEE)", { locale: vi })}
+                  {format(selectedDate, "dd/MM/yyyy (EEE)", { locale })}
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-surface-1 border-default" align="start">
@@ -503,7 +501,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
 
           <div>
             <label className="text-[9px] font-medium text-dim uppercase tracking-wider block mb-1.5">
-              Chọn nền tảng & giờ đăng
+              {t("smart_scheduler.form.select_platform_time")}
             </label>
             <div className="space-y-1.5">
               {(Object.keys(platformConfig) as SchedulePlatform[]).map((p) => {
@@ -555,14 +553,14 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
                         variant="outline"
                         className="text-[7px] px-1 py-0 h-3.5 bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shrink-0"
                       >
-                        Đã có
+                        {t("smart_scheduler.form.content_exists")}
                       </Badge>
                     ) : (
                       <Badge
                         variant="outline"
                         className="text-[7px] px-1 py-0 h-3.5 border-default text-faint shrink-0"
                       >
-                        Trống
+                        {t("smart_scheduler.form.content_empty")}
                       </Badge>
                     )}
 
@@ -593,7 +591,7 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           disabled={isSubmitting}
         >
-          Hủy
+          {t("smart_scheduler.actions.cancel")}
         </Button>
         <Button
           size="sm"
@@ -613,10 +611,10 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
             <Send className="w-3 h-3 mr-1" />
           )}
           {isSubmitting
-            ? "Đang lên lịch..."
+            ? t("smart_scheduler.actions.scheduling")
             : scheduleMode === "single"
-              ? "Lên lịch"
-              : `Lên lịch ${enabledCount} nền tảng`}
+              ? t("smart_scheduler.actions.schedule")
+              : t("smart_scheduler.actions.schedule_all").replace("{{count}}", enabledCount.toString())}
         </Button>
       </div>
     </div>
@@ -626,6 +624,9 @@ function QuickScheduleForm({ onClose }: { onClose: () => void }) {
 /* ─── Job Card ─────────────────────────────────────────────────── */
 
 function JobCard({ job }: { job: ScheduleJob }) {
+  const { t, language } = useTranslation();
+  const locale = language === "vi" ? vi : enUS;
+
   const {
     deleteSchedule,
     updateScheduleStatus,
@@ -633,17 +634,20 @@ function JobCard({ job }: { job: ScheduleJob }) {
     setSelectedJobId,
     selectedJobId,
   } = useSchedulerStore();
-  const config = statusConfig[job.status];
+  const config = {
+    ...statusConfig[job.status],
+    label: t(`smart_scheduler.status.${job.status}`)
+  };
   const pConfig = platformConfig[job.platform];
   const StatusIcon = config.icon;
   const isSelected = selectedJobId === job.id;
   const scheduledDate = new Date(job.scheduled_at);
   const isOverdue = job.status === "scheduled" && isPast(scheduledDate);
 
-  const formattedTime = format(scheduledDate, "HH:mm", { locale: vi });
+  const formattedTime = format(scheduledDate, "HH:mm", { locale });
   const formattedDate = isDateToday(scheduledDate)
-    ? "Hôm nay"
-    : format(scheduledDate, "dd/MM (EEE)", { locale: vi });
+    ? t("smart_scheduler.job_card.today")
+    : format(scheduledDate, "dd/MM (EEE)", { locale });
 
   const [editDate, setEditDate] = useState<Date>(scheduledDate);
   const [editTime, setEditTime] = useState(() => {
@@ -663,10 +667,10 @@ function JobCard({ job }: { job: ScheduleJob }) {
       const dateStr = format(editDate, "yyyy-MM-dd");
       const newD = new Date(`${dateStr}T${editTime}:00`);
       await updateScheduleTime(job.id, newD.toISOString());
-      gooeyToast.success("Đã cập nhật thời gian đăng bài");
+      gooeyToast.success(t("smart_scheduler.messages.update_time_success"));
       setSelectedJobId(null);
     } catch {
-      gooeyToast.error("Không thể cập nhật thời gian");
+      gooeyToast.error(t("smart_scheduler.messages.update_time_failed"));
     } finally {
       setIsUpdating(false);
     }
@@ -675,9 +679,9 @@ function JobCard({ job }: { job: ScheduleJob }) {
   const handleRetry = async () => {
     try {
       await updateScheduleStatus(job.id, "scheduled");
-      gooeyToast.success("Đã đặt lại trạng thái lên lịch");
+      gooeyToast.success(t("smart_scheduler.messages.update_time_success"));
     } catch {
-      gooeyToast.error("Không thể đặt lại lịch");
+      gooeyToast.error(t("smart_scheduler.messages.update_time_failed"));
     }
   };
 
@@ -736,7 +740,7 @@ function JobCard({ job }: { job: ScheduleJob }) {
                   }}
                   className="text-[10px] text-body"
                 >
-                  <Send className="w-3 h-3 mr-1.5" /> Đăng ngay
+                  <Send className="w-3 h-3 mr-1.5" /> {t("smart_scheduler.job_card.publish_now")}
                 </DropdownMenuItem>
               )}
               {job.status === "failed" && (
@@ -747,7 +751,7 @@ function JobCard({ job }: { job: ScheduleJob }) {
                   }}
                   className="text-[10px] text-body"
                 >
-                  <RotateCcw className="w-3 h-3 mr-1.5" /> Thử lại
+                  <RotateCcw className="w-3 h-3 mr-1.5" /> {t("smart_scheduler.job_card.retry")}
                 </DropdownMenuItem>
               )}
               {job.content_html && (
@@ -755,7 +759,7 @@ function JobCard({ job }: { job: ScheduleJob }) {
                   onClick={(e) => e.stopPropagation()}
                   className="text-[10px] text-body"
                 >
-                  <Eye className="w-3 h-3 mr-1.5" /> Xem nội dung
+                  <Eye className="w-3 h-3 mr-1.5" /> {t("smart_scheduler.job_card.view_content")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator className="bg-default" />
@@ -764,14 +768,14 @@ function JobCard({ job }: { job: ScheduleJob }) {
                   e.stopPropagation();
                   try {
                     await deleteSchedule(job.id);
-                    gooeyToast.success("Đã xóa lịch đăng bài");
+                    gooeyToast.success(t("smart_scheduler.job_card.delete_success"));
                   } catch {
-                    gooeyToast.error("Xóa thất bại");
+                    gooeyToast.error(t("smart_scheduler.job_card.delete_failed"));
                   }
                 }}
                 className="text-[10px] text-red-400 focus:text-red-400"
               >
-                <Trash2 className="w-3 h-3 mr-1.5" /> Xóa
+                <Trash2 className="w-3 h-3 mr-1.5" /> {t("smart_scheduler.job_card.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -797,7 +801,7 @@ function JobCard({ job }: { job: ScheduleJob }) {
                 variant="outline"
                 className="text-[7px] px-1 py-0 h-3 bg-amber-500/10 border-amber-500/20 text-amber-400 ml-1"
               >
-                Quá hạn
+                {t("smart_scheduler.status.overdue")}
               </Badge>
             )}
           </div>
@@ -810,7 +814,7 @@ function JobCard({ job }: { job: ScheduleJob }) {
                 <Popover>
                   <PopoverTrigger asChild>
                     <button className="flex-1 text-left bg-surface-hover border border-default rounded px-2 py-1.5 text-[10px] text-heading outline-none focus:border-strong transition-all">
-                      {format(editDate, "dd/MM/yyyy", { locale: vi })}
+                      {format(editDate, "dd/MM/yyyy", { locale })}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-surface-1 border-default" align="start">
@@ -830,10 +834,10 @@ function JobCard({ job }: { job: ScheduleJob }) {
               </div>
               <div className="flex gap-1.5 justify-end mt-1">
                 <Button size="sm" variant="ghost" className="h-6 px-2.5 text-[9px] text-dim hover:text-heading" onClick={(e) => { e.stopPropagation(); setSelectedJobId(null); }}>
-                  Hủy
+                  {t("smart_scheduler.actions.cancel")}
                 </Button>
                 <Button size="sm" className="h-6 px-2.5 text-[9px] bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" disabled={isUpdating} onClick={handleSaveTime}>
-                  {isUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <CheckCircle2 className="w-3 h-3 mr-1"/>} Lưu thay đổi
+                  {isUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <CheckCircle2 className="w-3 h-3 mr-1"/>} {t("common.save")}
                 </Button>
               </div>
             </>
@@ -843,7 +847,7 @@ function JobCard({ job }: { job: ScheduleJob }) {
                   <Clock className="w-3 h-3" /> {formattedTime} · {formattedDate}
                 </span>
                 <Button size="sm" variant="ghost" className="h-6 px-2.5 text-[9px] text-dim hover:text-heading" onClick={(e) => { e.stopPropagation(); setSelectedJobId(null); }}>
-                  Đóng
+                  {t("smart_scheduler.actions.cancel")}
                 </Button>
              </div>
           )}
@@ -866,6 +870,16 @@ function JobCard({ job }: { job: ScheduleJob }) {
 /* ─── Main Component ───────────────────────────────────────────── */
 
 export default function SmartSchedulerModule() {
+  const { t, language } = useTranslation();
+  const locale = language === "vi" ? vi : enUS;
+
+  const weekDays = useMemo(() => {
+    return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((_, i) => {
+      const d = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), i);
+      return format(d, "EEEEEE", { locale });
+    });
+  }, [locale]);
+
   const user = useAuthStore((s) => s.user);
   const {
     jobs,
@@ -963,10 +977,10 @@ export default function SmartSchedulerModule() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xs font-semibold text-heading/80 uppercase tracking-wider">
-              Lịch đăng bài
+              {t("smart_scheduler.header.title")}
             </h3>
             <p className="text-[9px] text-dim mt-0.5">
-              Tự động phân phối nội dung đa nền tảng
+              {t("smart_scheduler.header.subtitle")}
             </p>
           </div>
 
@@ -1006,7 +1020,7 @@ export default function SmartSchedulerModule() {
               <div className="flex items-center gap-1.5">
                 <CalendarDays className="w-3 h-3 text-primary" />
                 <span className="text-[10px] font-medium text-body">
-                  Tổng quan tuần
+                  {t("smart_scheduler.overview.title")}
                 </span>
               </div>
               <div className="flex items-center gap-0.5">
@@ -1025,8 +1039,8 @@ export default function SmartSchedulerModule() {
                   }`}
                 >
                   {currentWeekOffset === 0
-                    ? "Tuần này"
-                    : `Tuần ${currentWeekOffset > 0 ? "+" : ""}${currentWeekOffset}`}
+                    ? t("smart_scheduler.overview.this_week")
+                    : t("smart_scheduler.overview.week_offset").replace("{{offset}}", (currentWeekOffset > 0 ? "+" : "") + currentWeekOffset)}
                 </button>
                 <button
                   onClick={() => setCurrentWeekOffset(currentWeekOffset + 1)}
@@ -1108,7 +1122,7 @@ export default function SmartSchedulerModule() {
               }`}
             >
               <ListChecks className="w-3 h-3" />
-              Tất cả
+              {t("smart_scheduler.filter.all")}
             </button>
             <div className="w-px h-4 bg-default/50 mx-0.5" />
             {(Object.keys(platformConfig) as SchedulePlatform[]).map((p) => {
@@ -1150,7 +1164,7 @@ export default function SmartSchedulerModule() {
             <h4 className="text-[10px] font-medium text-dim uppercase tracking-wider mb-2 px-0.5 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <ListChecks className="w-3 h-3" />
-                Hàng đợi ({filteredJobs.length})
+                {t("smart_scheduler.queue.title")} ({filteredJobs.length})
               </div>
               {filterDate && (
                 <Badge variant="outline" className="text-[8px] bg-primary/10 text-primary border-primary/20 animate-in fade-in slide-in-from-right-1 duration-300">
@@ -1163,10 +1177,10 @@ export default function SmartSchedulerModule() {
               <div className="rounded-lg border border-dashed border-default bg-surface-hover/30 p-6 text-center">
                 <CalendarDays className="w-8 h-8 text-faint mx-auto mb-2 opacity-40" />
                 <p className="text-[11px] text-dim mb-1">
-                  Chưa có lịch đăng bài nào
+                  {t("smart_scheduler.queue.empty_title")}
                 </p>
                 <p className="text-[9px] text-faint mb-3">
-                  Tự động hoá phân phối bài viết thông minh từ Live Research
+                  {t("smart_scheduler.queue.empty_desc")}
                 </p>
               </div>
             ) : (
@@ -1185,16 +1199,16 @@ export default function SmartSchedulerModule() {
                 try {
                   const count = await publishAllDue();
                   gooeyToast.success(
-                    `Đã xử lý ${count} bài đăng thành công!`,
+                    t("smart_scheduler.cta.publish_all_success").replace("{{count}}", count.toString()),
                   );
                 } catch {
-                  gooeyToast.error("Đăng bài thất bại, vui lòng thử lại");
+                  gooeyToast.error(t("smart_scheduler.cta.publish_all_failed"));
                 }
               }}
               className="w-full h-8 text-[11px] bg-gradient-to-r from-primary/20 to-purple-500/20 hover:from-primary/30 hover:to-purple-500/30 text-primary border border-primary/20 transition-all"
             >
               <Send className="w-3 h-3 mr-1.5" />
-              Đăng tất cả quá hạn ({pendingCount})
+              {t("smart_scheduler.cta.publish_all_overdue").replace("{{count}}", pendingCount.toString())}
             </Button>
           )}
 
@@ -1203,11 +1217,11 @@ export default function SmartSchedulerModule() {
               <div className="flex items-center justify-center gap-1.5 text-emerald-400 mb-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-medium">
-                  Tất cả đã lên lịch
+                  {t("smart_scheduler.footer.all_scheduled_title")}
                 </span>
               </div>
               <p className="text-[9px] text-dim">
-                {stats.scheduled} bài sẽ được tự động đăng theo lịch
+                {t("smart_scheduler.footer.all_scheduled_desc").replace("{{count}}", stats.scheduled.toString())}
               </p>
             </div>
           )}
