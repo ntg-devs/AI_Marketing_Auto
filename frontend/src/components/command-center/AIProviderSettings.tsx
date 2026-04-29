@@ -199,8 +199,8 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-default/20 bg-gradient-to-r from-surface-1/80 to-surface-base shrink-0">
           <DialogTitle className="flex items-center gap-2.5 text-default text-base font-semibold">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-              <Bot className="w-4.5 h-4.5 text-indigo-400" />
+            <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+              <Bot className="w-4.5 h-4.5 text-primary" />
             </div>
             AI Engine Configuration
           </DialogTitle>
@@ -273,7 +273,7 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
                     href={providerMeta.docsUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                    className="text-[10px] text-primary hover:text-primary/80 transition-colors"
                   >
                     Get API Key →
                   </a>
@@ -288,7 +288,7 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
                     }
                     value={currentConfig.api_key}
                     onChange={(e) => updateConfig("api_key", e.target.value)}
-                    className="w-full bg-surface-1/50 border border-default/30 rounded-md px-3 py-2.5 pr-10 text-sm text-default placeholder:text-faint/60 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono"
+                    className="w-full bg-surface-1/50 border border-default/30 rounded-md px-3 py-2.5 pr-10 text-sm text-default placeholder:text-faint/60 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-mono"
                   />
                   <button
                     type="button"
@@ -365,7 +365,7 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
                   placeholder={providerMeta.defaultBaseURL}
                   value={currentConfig.base_url}
                   onChange={(e) => updateConfig("base_url", e.target.value)}
-                  className="w-full bg-surface-1/50 border border-default/20 rounded-md px-3 py-2 text-default placeholder:text-faint/50 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono text-[11px]"
+                  className="w-full bg-surface-1/50 border border-default/20 rounded-md px-3 py-2 text-default placeholder:text-faint/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-mono text-[11px]"
                 />
                 <p className="text-[10px] text-dim mt-1.5">
                   Để trống để dùng endpoint mặc định. Chỉ cần cấu hình URL nếu bạn self-host hoặc chạy qua Reverse Proxy.
@@ -398,7 +398,7 @@ export function AIProviderSettings({ open, onOpenChange }: AIProviderSettingsPro
                 className={`h-9 text-xs font-semibold px-6 transition-all ${
                   saveSuccess
                     ? "bg-emerald-600 hover:bg-emerald-600 text-white"
-                    : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-primary hover:bg-primary/90 text-white"
                 }`}
               >
                 {saveSuccess ? (
