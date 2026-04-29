@@ -58,14 +58,14 @@ export function TopBar() {
                   <span className="text-slate-200">{project.name}</span>
                 </div>
                 {project.status === 'active' && (
-                  <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30">
+                  <Badge className="bg-primary/20 text-primary border-primary/30">
                     Active
                   </Badge>
                 )}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator className="bg-slate-800" />
-            <DropdownMenuItem className="text-violet-400 hover:bg-slate-800">
+            <DropdownMenuItem className="text-primary hover:bg-slate-800">
               <Sparkles className="w-4 h-4 mr-2" />
               Create New Project
             </DropdownMenuItem>
@@ -88,7 +88,7 @@ export function TopBar() {
         </Button>
 
         {/* AI Insights Badge */}
-        <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30 px-3 py-1.5">
+        <Badge className="bg-primary/20 text-primary border-primary/30 px-3 py-1.5">
           <Sparkles className="w-3 h-3 mr-1.5" />
           3 AI Insights
         </Badge>
@@ -100,7 +100,7 @@ export function TopBar() {
           className="relative h-10 w-10 bg-slate-800/30 hover:bg-slate-800 border border-slate-700"
         >
           <Bell className="w-4 h-4 text-slate-400" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-violet-500 rounded-full" />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
         </Button>
 
         {/* Profile */}
@@ -112,7 +112,7 @@ export function TopBar() {
             >
               <Avatar className="h-7 w-7 mr-2">
                 <AvatarImage src="" />
-                <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white text-xs">
+                <AvatarFallback className="bg-primary text-white text-xs">
                   JD
                 </AvatarFallback>
               </Avatar>

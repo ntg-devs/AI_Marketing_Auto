@@ -31,7 +31,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -54,12 +54,12 @@ export function Sidebar() {
               href={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
                 isActive
-                  ? 'bg-violet-500/20 text-violet-300 shadow-lg shadow-violet-500/20'
+                  ? 'bg-primary/20 text-primary shadow-lg shadow-primary/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
               {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-violet-500 rounded-r-full" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" />
               )}
               <item.icon className="w-5 h-5 flex-shrink-0" />
               <span className="flex-1">{item.label}</span>
@@ -74,10 +74,10 @@ export function Sidebar() {
       </nav>
 
       {/* AI Assistant */}
-      <div className="p-4 m-4 bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-lg">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 bg-violet-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-4 h-4 text-violet-400" />
+      <div className="p-4 m-4 bg-primary/5 border border-primary/20 rounded-lg">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-4 h-4 text-primary" />
           </div>
           <div>
             <p className="text-sm text-slate-200 mb-1">AI Assistant</p>

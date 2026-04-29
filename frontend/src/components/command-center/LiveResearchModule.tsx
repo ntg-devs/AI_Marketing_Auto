@@ -4,13 +4,14 @@ import { useResearchStore } from '@/store/useResearchStore';
 import { DEFAULT_TEAM_ID } from '@/constants/smart-entry';
 import {
   TrendingUp,
-  MessageCircle,
+  MessageSquare,
   ExternalLink,
   ShieldCheck,
   RefreshCw,
-  Flame,
+  Zap,
   Plus,
   Search,
+  Activity,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -20,10 +21,11 @@ import { gooeyToast } from 'goey-toast';
 
 type FeedTab = 'insights' | 'sources';
 
-const sourceIcons: Record<LiveInsight['source'], typeof TrendingUp> = {
-  reddit: MessageCircle,
-  quora: MessageCircle,
-  trends: TrendingUp,
+// Safe icon mapping with fallbacks to avoid "Element type is invalid" if an icon is undefined
+const sourceIcons: Record<LiveInsight['source'], any> = {
+  reddit: MessageSquare || Activity || Search,
+  quora: MessageSquare || Activity || Search,
+  trends: TrendingUp || Search,
 };
 
 const sourceColors: Record<LiveInsight['source'], string> = {
@@ -125,12 +127,9 @@ export default function LiveResearchModule() {
   const handleApplySource = (source: LiveSourceRef) => {
     const url = source.url.startsWith('http') ? source.url : `https://${source.url}`;
     
-    // Open in new tab as requested
-    window.open(url, '_blank');
-    
     // Push to Smart Entry input
     setPendingInput(url, null);
-    gooeyToast.success("Đã đẩy URL vào Smart Entry");
+    gooeyToast.success("Đã copy URL vào mục Web Link của Smart Entry");
   };
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -235,7 +234,22 @@ export default function LiveResearchModule() {
       <ScrollArea className="flex-1 relative">
         {isLoading && (
           <div className="absolute inset-0 z-10 flex flex-col justify-center items-center bg-surface/50 backdrop-blur-sm break-all">
-            <RefreshCw className="w-5 h-5 text-primary animate-spin mb-2" />
+            <svg 
+              viewBox="0 0 512 512" 
+              className="w-5 h-5 animate-spin mb-2" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g>
+                <polygon fill="#69C9C9" points="408.8,410.3 394.7,396.2 401.7,389.1 392.1,379.5 468.9,364.3 453.7,441.1 415.9,403.3" />
+                <g>
+                  <path fill="#4D5152" d="M355.3,62.6c-12.4-6.4-25.5-11.7-39-15.6l5.6-19.2c14.7,4.3,29,10,42.6,17L355.3,62.6z" />
+                  <path fill="#4D5152" d="M402.9,96.1c-9.5-8.8-19.8-16.7-30.6-23.6l10.8-16.9c11.8,7.5,23,16.2,33.4,25.8L402.9,96.1z" />
+                  <path fill="#4D5152" d="M456.7,129.8l-16.9,10.6c-6.8-10.8-14.7-21.2-23.4-30.7l14.8-13.5C440.7,106.6,449.3,117.9,456.7,129.8z" />
+                  <path fill="#4D5152" d="M483.9,190.9l-19.2,5.5c-3.8-13.3-8.9-26.4-15.1-38.7l17.8-9C474.2,162.1,479.8,176.3,483.9,190.9z" />
+                  <path fill="#4D5152" d="M466,481.7l-50.4-50.4c-44,40.3-100.6,62.3-160.7,62.3c-63.4-0.1-122.9-24.8-167.7-69.6 c-44.9-44.9-69.6-104.6-69.6-168c0-63.5,24.7-123.1,69.6-168c55.2-55.2,134.1-79.8,211-65.7L294.7,42 C224.3,29,152,51.5,101.4,102.1c-84.9,84.9-84.9,222.9,0,307.8c84.6,84.6,222.5,84.8,307.3,0.4l7.1-7l37.8,37.8l15.2-76.8 l-76.8,15.2l9.6,9.6l-14.1,14.1l-36.1-36.1l142.8-28.3L466,481.7z" />
+                </g>
+              </g>
+            </svg>
             <p className="text-[10px] text-primary font-medium tracking-wide">Syncing Global Data...</p>
           </div>
         )}
@@ -254,15 +268,17 @@ export default function LiveResearchModule() {
                   </div>
                   <div className="flex items-start justify-between mb-1">
                     <div className="flex items-center gap-1.5">
-                      <SourceIcon
-                        className={`w-3 h-3 ${sourceColors[insight.source]}`}
-                      />
+                      {SourceIcon ? (
+                        <SourceIcon className={`w-3 h-3 ${sourceColors[insight.source]}`} />
+                      ) : (
+                        <Search className={`w-3 h-3 ${sourceColors[insight.source]}`} />
+                      )}
                       <span className="text-[10px] text-dim capitalize">
                         {insight.source}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Flame className="w-3 h-3 text-amber-400" />
+                      <Zap className="w-3 h-3 text-amber-400" />
                       <span className="text-[10px] text-amber-500 font-medium">
                         {insight.score}
                       </span>
@@ -301,24 +317,24 @@ export default function LiveResearchModule() {
                 <div
                   key={source.id}
                   onClick={() => handleApplySource(source)}
-                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-colors group cursor-pointer break-words relative overflow-hidden"
+                  className="rounded-lg border border-default bg-surface-hover p-2.5 hover:bg-surface-active transition-all group cursor-pointer relative overflow-hidden w-full active:scale-[0.98]"
+                  title="Click để copy URL vào Smart Entry"
                 >
-                  <div className="absolute right-0 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-500/10 rounded-bl-lg">
+                  <div className="absolute right-0 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-500/10 rounded-bl-lg flex items-center gap-1">
+                    <span className="text-[8px] text-emerald-500 font-bold px-1">APPLY</span>
                     <Plus className="w-3 h-3 text-emerald-500" />
                   </div>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-heading font-medium truncate break-words">
-                        {source.title}
-                      </p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <ExternalLink className="w-2.5 h-2.5 text-faint" />
-                        <span className="text-[9px] text-dim truncate">
-                          {source.url}
-                        </span>
-                      </div>
+                  <div className="flex flex-col gap-1.5 min-w-0">
+                    <p className="text-[11px] text-heading font-medium leading-snug break-words line-clamp-2">
+                      {source.title}
+                    </p>
+                    <div className="flex items-center gap-1 opacity-80 min-w-0">
+                      <ExternalLink className="w-2.5 h-2.5 text-faint shrink-0" />
+                      <span className="text-[9px] text-dim break-all line-clamp-1">
+                        {source.url}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1 ml-2 shrink-0">
+                    <div className="flex items-center gap-1.5">
                       {source.verified && (
                         <ShieldCheck className="w-3 h-3 text-emerald-400" />
                       )}

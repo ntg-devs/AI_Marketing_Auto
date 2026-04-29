@@ -85,7 +85,7 @@ export default function ImageUploadDialog({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
           <div className="flex items-center gap-2">
-            <ImagePlus className="w-4 h-4 text-indigo-400" />
+            <ImagePlus className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-semibold text-white">Insert Image</h3>
           </div>
           <button
@@ -102,7 +102,7 @@ export default function ImageUploadDialog({
             onClick={() => { setTab('upload'); setPreview(null); setUrl(''); }}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
               tab === 'upload'
-                ? 'text-indigo-300 border-b-2 border-indigo-400'
+                ? 'text-primary border-b-2 border-primary'
                 : 'text-slate-500 hover:text-slate-300'
             }`}
           >
@@ -113,7 +113,7 @@ export default function ImageUploadDialog({
             onClick={() => { setTab('url'); setPreview(null); setUrl(''); }}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
               tab === 'url'
-                ? 'text-indigo-300 border-b-2 border-indigo-400'
+                ? 'text-primary border-b-2 border-primary'
                 : 'text-slate-500 hover:text-slate-300'
             }`}
           >
@@ -130,7 +130,7 @@ export default function ImageUploadDialog({
               <div
                 className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
                   isDragging
-                    ? 'border-indigo-500/50 bg-indigo-500/[0.05]'
+                    ? 'border-primary/50 bg-primary/[0.05]'
                     : 'border-white/[0.1] hover:border-white/[0.2] bg-white/[0.02]'
                 }`}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -149,7 +149,7 @@ export default function ImageUploadDialog({
                   }}
                 />
                 {isLoading ? (
-                  <Loader2 className="w-8 h-8 text-indigo-400 mx-auto animate-spin" />
+                  <Loader2 className="w-8 h-8 text-primary mx-auto animate-spin" />
                 ) : (
                   <>
                     <Upload className="w-8 h-8 text-slate-500 mx-auto mb-3" />
@@ -178,7 +178,7 @@ export default function ImageUploadDialog({
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     placeholder="https://example.com/image.jpg"
-                    className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none focus:border-indigo-500/40 transition-colors"
+                    className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none focus:border-primary/40 transition-colors"
                     onKeyDown={(e) => e.key === 'Enter' && handleUrlPreview()}
                   />
                   <Button
@@ -205,7 +205,7 @@ export default function ImageUploadDialog({
               value={alt}
               onChange={(e) => setAlt(e.target.value)}
               placeholder="Describe the image for accessibility"
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none focus:border-indigo-500/40 transition-colors"
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none focus:border-primary/40 transition-colors"
             />
           </div>
 
@@ -247,7 +247,7 @@ export default function ImageUploadDialog({
           </Button>
           <Button
             size="sm"
-            className="text-xs bg-indigo-500 hover:bg-indigo-600 text-white"
+            className="text-xs bg-primary hover:bg-primary/90 text-white"
             onClick={handleInsert}
             disabled={!url.trim()}
           >
